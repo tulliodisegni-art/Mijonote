@@ -1964,7 +1964,7 @@ function resultsHTML(res,fridge){
       ${fridge?(miss.length?`<span class="miss">Il te manque : ${esc(miss.join(", "))}</span>`:`<span class="ok">Tu as tout ce qu'il faut</span>`):""}
     </button>`}).join("")}
     ${res.idee?`<div class="eyebrow">Une idée hors des livres</div>
-      <button class="pick idea" data-idea-open="1"><span class="t">${esc(res.idee.titre)}</span><span>${esc(res.idee.resume)}</span><span class="muted" style="font-size:.85rem">${mins(total(res.idee))} · ${res.idee.etapes.length} étapes — touche pour la voir</span></button>`:""}
+      <button class="pick idea" data-idea-open="${fridge?"fridge":"ask"}"><span class="t">${esc(res.idee.titre)}</span><span>${esc(res.idee.resume)}</span><span class="muted" style="font-size:.85rem">${mins(total(res.idee))} · ${res.idee.etapes.length} étapes — touche pour la voir</span></button>`:""}
   </div>`;
 }
 
@@ -2286,7 +2286,7 @@ function bind(root){
   root.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>saveFound(+b.dataset.save,b));
   root.querySelectorAll("[data-drop]").forEach(b=>b.onclick=()=>{st.scan.found.splice(+b.dataset.drop,1);if(!st.scan.found.length)st.scan.found=null;render()});
   root.querySelectorAll("[data-peek]").forEach(b=>b.onclick=()=>{const f=st.scan.found[+b.dataset.peek];showRecipe(f.lien?{...f,livre:host(f.lien)}:f._src?{...f,livre:f._src}:{...f,livre:st.scan.livre,page:st.scan.page},{temp:true})});
-  root.querySelectorAll("[data-idea-open]").forEach(b=>b.onclick=()=>{const r=(st.view==="ask"?st.ask:st.fridge).res.idee;showRecipe({...r,livre:"Idée de Claude"},{temp:true,idea:true})});
+  root.querySelectorAll("[data-idea-open]").forEach(b=>b.onclick=()=>{const r=(b.dataset.ideaOpen==="fridge"?st.fridge:st.ask).res?.idee;if(!r)return;showRecipe({...r,livre:"Idée de Claude"},{temp:true,idea:true})});
   const q=root.querySelector("#q");if(q&&!q.oninput){let tq;const later=()=>{clearTimeout(tq);tq=setTimeout(()=>{if(document.getElementById("q")===q)render()},200)};q.oninput=e=>{st.q=q.value;const go=q.form?.querySelector(".envie-go");if(go)go.disabled=!q.value.trim();if(!e.isComposing)later()};q.oncompositionend=()=>{st.q=q.value;later()}}
   const ef=root.querySelector("#envieForm");if(ef)ef.onsubmit=e=>{e.preventDefault();if(!st.q.trim())return;
     const w=st.q.trim().split(/\s+/).length;
