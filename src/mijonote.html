@@ -1327,6 +1327,10 @@ function viewAccount(){
   const p=profile(),F=favs(),c=ls.get("shopcfg",null),ad=st.addr||null;
   return `<button class="backlink" data-go="lib">‹ Accueil</button>
   <h1 class="lux-title">Mon compte</h1><p class="lux-sub">Tes infos restent sur ce téléphone. Elles servent à préparer tes courses plus vite.</p>
+  <section class="acc"><h2>${L("Partager Mijonote","Share Mijonote")}</h2>
+    <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook.")}</p>
+    <button class="btn block" data-acc="shareapp">${emo("📲")} ${L("Envoyer l'appli à quelqu'un","Send the app to someone")}</button>
+  </section>
   <section class="acc"><h2>Profil</h2>
     <div class="field"><label for="pfPrenom">Prénom</label><input id="pfPrenom" autocomplete="given-name" value="${esc(p.prenom||"")}" placeholder="Ton prénom"></div>
     <div class="field"><label for="pfTel">Téléphone</label><input id="pfTel" type="tel" autocomplete="tel" inputmode="tel" value="${esc(p.tel||"")}" placeholder="06 12 34 56 78"></div>
@@ -1399,6 +1403,7 @@ function bindAccount(root){
     else if(a==="rmaddr"){const F=favs();F.splice(i,1);ls.set("shopfavs",F)}
     else if(a==="tuto"){tutoMark("tuto_recette",0);ls.set("tuto_v1",0);st.view="lib";render();startTour(TOUR_MAIN,"tuto_v1");return}
     else if(a==="export"){exportCarnet();return}
+    else if(a==="shareapp"){shareApp();return}
     else if(a==="savekey"){const k=(root.querySelector("#aiKey")?.value||"").trim();if(!/^sk-/.test(k)){toast(L("Colle une clé qui commence par sk-","Paste a key starting with sk-"));return}window.MJ.setKey(k);toast(L("Clé enregistrée","Key saved"))}
     else if(a==="rmkey"){window.MJ.setKey("");toast(L("Clé retirée","Key removed"))}
     else if(a==="wipe")st.wipeAsk=true;
@@ -3659,6 +3664,13 @@ function maybeRecipeTour(){
 }
 
 /* ---------- toast ---------- */
+const APP_URL="https://tulliodisegni-art.github.io/Mijonote/";
+async function shareApp(){
+  const text=L("Mijonote, mon carnet de recettes : photographie tes livres et les recettes de tes proches, Claude les range pour toi. Ouvre le lien puis ajoute-le à ton écran d'accueil.","Mijonote, my recipe notebook: snap your cookbooks and family recipes, Claude files them for you. Open the link, then add it to your home screen.");
+  if(navigator.share){try{await navigator.share({title:"Mijonote",text,url:APP_URL});return}catch(e){if(e?.name==="AbortError")return}}
+  try{await navigator.clipboard.writeText(text+" "+APP_URL);toast(L("Lien copié : colle-le dans un message","Link copied: paste it in a message"))}
+  catch{prompt(L("Copie ce lien :","Copy this link:"),APP_URL)}
+}
 function toast(m){
   let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";t.setAttribute("role","status");
     t.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 78px);background:var(--ink);color:var(--bg);padding:.6rem 1.1rem;border-radius:999px;font-weight:600;z-index:60;font-size:.92rem;max-width:90vw";document.body.appendChild(t)}
