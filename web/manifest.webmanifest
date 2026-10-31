@@ -1,0 +1,17 @@
+{
+  "name": "Mijonote – Carnet de recettes",
+  "short_name": "Mijonote",
+  "description": "Ton carnet de recettes : livres de cuisine et recettes de famille.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffaf3",
+  "theme_color": "#b8402c",
+  "lang": "fr",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
