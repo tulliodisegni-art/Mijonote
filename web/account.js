@@ -119,7 +119,7 @@
   async function signOut(clearLocal) { try { await sb.auth.signOut(); } catch (e) {} if (clearLocal) await clearLocal(); location.reload(); }
 
   window.Account = {
-    ready, push, flush, pullAll, pending, putBlob, getBlob, delBlob, listBlobs, signOut,
+    ready, push, flush, pullAll, pending, putBlob, getBlob, delBlob, listBlobs, signOut, sb,
     get user() { return user; },
     isFirstSync: () => !LS.get(syncedKey(), false), markSynced: () => LS.set(syncedKey(), true),
   };
