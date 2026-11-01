@@ -17,6 +17,7 @@ head = (
     '<meta name="mobile-web-app-capable" content="yes">'
     '<meta name="apple-mobile-web-app-title" content="Mijonote">'
     '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
+    '<script>window.GATE_CFG={app:"mijonote",name:"Mijonote",url:"https://vvxkkqcmjrwytagbxdfg.supabase.co",key:"sb_publishable_A-kJQIoJXxdXmjHF8iM40g_RP6myhMo",link:"https://tulliodisegni-art.github.io/Mijonote/",logo:"icons/icon-192.png",accent:"#E9B949",isOwner:function(){try{return JSON.parse(localStorage.getItem("mj_owner")||"false")===true}catch(e){return false}}};</script><script src="gate.js"></script>'
     '<script src="shim.js"></script>'
 )
 assert html.count("</head>") >= 1
