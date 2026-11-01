@@ -620,7 +620,8 @@ const SCHEMA=`{
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const arr=a=>Array.isArray(a)?a:[];
-const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(window.Account&&window.MJ_LSYNC&&window.MJ_LSYNC.includes(k))window.Account.push("ls/"+k,v)}};
+document.addEventListener("mj-sync",()=>{try{render()}catch(e){}});
 document.documentElement.dataset.theme=ls.get("theme",document.documentElement.dataset.theme||"light");
 const curTheme=()=>document.documentElement.dataset.theme==="dark"?"dark":"light",thDone=()=>document.documentElement.classList.remove("thwait");
 /* ---------- langue : français par défaut, anglais au choix ---------- */
@@ -1331,6 +1332,9 @@ function viewAccount(){
     <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet. Toi seul peux partager l'appli.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook. Only you can share the app.")}</p>
     <button class="btn block" data-acc="shareapp">${emo("📲")} ${L("Envoyer l'appli à quelqu'un","Send the app to someone")}</button>
   </section>`:""}
+  ${window.MJ&&window.MJ.account&&window.MJ.account()?`<section class="acc"><h2>${L("Mon compte en ligne","My online account")}</h2>
+    <p class="note" style="margin:0 0 .5rem">${L("Connecté : ","Signed in: ")}<b>${esc(window.MJ.account())}</b>. ${L("Tes recettes, photos et goûts sont sauvegardés et se retrouvent sur tes autres appareils.","Your recipes, photos and tastes are backed up and show up on your other devices.")}</p>
+    <button class="btn ghost block" data-acc="signout">${L("Se déconnecter","Sign out")}</button></section>`:""}
   <section class="acc"><h2>Profil</h2>
     <div class="field"><label for="pfPrenom">Prénom</label><input id="pfPrenom" autocomplete="given-name" value="${esc(p.prenom||"")}" placeholder="Ton prénom"></div>
     <div class="field"><label for="pfTel">Téléphone</label><input id="pfTel" type="tel" autocomplete="tel" inputmode="tel" value="${esc(p.tel||"")}" placeholder="06 12 34 56 78"></div>
@@ -1404,6 +1408,7 @@ function bindAccount(root){
     else if(a==="tuto"){tutoMark("tuto_recette",0);ls.set("tuto_v1",0);st.view="lib";render();startTour(TOUR_MAIN,"tuto_v1");return}
     else if(a==="export"){exportCarnet();return}
     else if(a==="shareapp"){shareApp();return}
+    else if(a==="signout"){if(confirm(L("Te déconnecter ? Tes recettes restent sauvegardées sur ton compte.","Sign out? Your recipes stay saved in your account.")))window.MJ.signOut();return}
     else if(a==="ownercode"&&window.Gate){window.Gate.ownerLogin().then(ok=>{if(ok)render()});return}
     else if(a==="ownercode"){const c=prompt(L("Code propriétaire","Owner code"));if(c)ownerCode(c).then(ok=>{toast(ok?L("Mode propriétaire activé","Owner mode on"):L("Code incorrect","Wrong code"));if(ok)render()});return}
     else if(a==="savekey"){const k=(root.querySelector("#aiKey")?.value||"").trim();if(!/^sk-/.test(k)){toast(L("Colle une clé qui commence par sk-","Paste a key starting with sk-"));return}window.MJ.setKey(k);toast(L("Clé enregistrée","Key saved"))}

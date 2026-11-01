@@ -39,6 +39,7 @@ async function write(key,val){
   if(val===undefined){m.delete(key);await tx("docs","readwrite",s=>s.delete(key))}
   else{val=clone(val);m.set(key,val);await tx("docs","readwrite",s=>s.put(val,key))}
   notify(key);
+  if(window.Account)window.Account.push(key,val);
 }
 function deepMerge(a,b){const o=isObj(a)?{...a}:{};for(const k in b)o[k]=isObj(b[k])&&isObj(o[k])?deepMerge(o[k],b[k]):b[k];return o}
 function sub(key,fn,init){let set=subs.get(key);if(!set)subs.set(key,set=new Set());set.add(fn);loadAll().then(m=>{if(set.has(fn))fn(init(m))});return ()=>set.delete(fn)}
@@ -66,10 +67,38 @@ const db=Object.freeze({collection:collRef,doc:p=>{const i=p.lastIndexOf("/");re
 /* ---------- assets : photos stockées sur l'appareil, servies par le service worker sous _blob/<id> ---------- */
 const hex=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>b.toString(16).padStart(2,"0")).join("");
 const assets=Object.freeze({
-  upload:async(blob,o)=>{const id=hex(16),type=(o&&o.type)||blob.type||"application/octet-stream";const b=blob.type===type?blob:new Blob([blob],{type});await tx("blobs","readwrite",s=>s.put(b,id));return {id,url:"_blob/"+id,sizeBytes:b.size,contentType:type}},
-  delete:async id=>{await tx("blobs","readwrite",s=>s.delete(id))},
+  upload:async(blob,o)=>{const id=hex(16),type=(o&&o.type)||blob.type||"application/octet-stream";const b=blob.type===type?blob:new Blob([blob],{type});await tx("blobs","readwrite",s=>s.put(b,id));if(window.Account&&window.Account.user)window.Account.putBlob(id,b).catch(()=>{});return {id,url:"_blob/"+id,sizeBytes:b.size,contentType:type}},
+  delete:async id=>{await tx("blobs","readwrite",s=>s.delete(id));if(window.Account&&window.Account.user)window.Account.delBlob(id).catch(()=>{})},
   list:async()=>({assets:[],usage:null})
 });
+
+/* ---------- compte : sauvegarde en ligne (recettes, photos, préférences) et récupération sur un autre appareil ---------- */
+const LSYNC=["profil","gouts","habits","shopcfg","shopfavs","famwho","livre","auteur","auteurLivre","lang","source","type"];
+window.MJ_LSYNC=LSYNC;
+let syncing=null;
+function syncAccount(){
+  const Acc=window.Account;if(!Acc||syncing)return syncing;
+  syncing=(async()=>{await Acc.ready;const m=await loadAll();
+    await Acc.flush();const remote=await Acc.pullAll();const rmap=new Map(remote.map(r=>[r.key,r.data]));const pend=new Set(Acc.pending());const changed=[];let lsChanged=false;
+    const first=Acc.isFirstSync();
+    if(first){for(const [k,v] of m)if(!rmap.has(k))Acc.push(k,v);
+      for(const k of LSYNC){const v=localStorage.getItem(k);if(v!=null&&!rmap.has("ls/"+k))try{Acc.push("ls/"+k,JSON.parse(v))}catch{}}
+      await Acc.flush()}
+    else for(const k of [...m.keys()])if(!rmap.has(k)&&!pend.has(k)){m.delete(k);await tx("docs","readwrite",s=>s.delete(k));changed.push(k)}
+    for(const [k,v] of rmap){if(pend.has(k))continue;
+      if(k.startsWith("ls/")){const n=k.slice(3);if(!LSYNC.includes(n))continue;const cur=localStorage.getItem(n),nv=JSON.stringify(v);if(cur!==nv){try{localStorage.setItem(n,nv)}catch{}lsChanged=true}continue}
+      if(JSON.stringify(m.get(k))!==JSON.stringify(v)){m.set(k,v);await tx("docs","readwrite",s=>s.put(v,k));changed.push(k)}}
+    Acc.markSynced();changed.forEach(notify);if(lsChanged||changed.length)document.dispatchEvent(new Event("mj-sync"));
+    // photos : on envoie celles qui manquent en ligne, on récupère celles qui manquent ici
+    const local=await tx("blobs","readonly",s=>s.getAllKeys());const online=new Set(await Acc.listBlobs());
+    for(const id of local)if(!online.has(id)){const b=await tx("blobs","readonly",s=>s.get(id));if(b)await Acc.putBlob(id,b).catch(()=>{})}
+    const have=new Set(local);for(const id of online)if(!have.has(id)){const b=await Acc.getBlob(id);if(b)await tx("blobs","readwrite",s=>s.put(b,id))}
+  })().catch(()=>{}).finally(()=>{syncing=null});
+  return syncing;
+}
+if(window.Account){syncAccount();document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncAccount()})}
+window.MJ.account=()=>window.Account&&window.Account.user?window.Account.user.email:null;
+window.MJ.signOut=()=>window.Account&&window.Account.signOut(async()=>{await tx("docs","readwrite",s=>s.clear());await tx("blobs","readwrite",s=>s.clear());try{for(const k of LSYNC)localStorage.removeItem(k);for(const k of Object.keys(localStorage))if(k.startsWith("acct.mijonote"))localStorage.removeItem(k)}catch{}});
 
 /* ---------- downloads ---------- */
 const downloads=Object.freeze({save:async({filename,data})=>{
