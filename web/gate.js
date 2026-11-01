@@ -15,7 +15,12 @@
     const t = await r.text(); return t ? JSON.parse(t) : null;
   }
   const adminKey = () => ls.get("admin");
-  const isOwner = () => !!adminKey() || (typeof C.isOwner === "function" && (() => { try { return !!C.isOwner(); } catch (e) { return false; } })());
+  const KEY_H = "0a8b817b683308650939ffa6fbace189b8cc350ebf9350137266522d0111d4da";
+  const missing = (x) => x && (x.status === 404 || /PGRST202|Could not find the function/i.test(x.message || ""));
+  async function localKeyOk(v) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v)); return Array.from(new Uint8Array(b)).map((c) => c.toString(16).padStart(2, "0")).join("") === KEY_H; }
+  // le propriétaire est aussi reconnu par son compte
+  const ownerMail = () => { try { const a = JSON.parse(localStorage.getItem("td.auth") || "null"); return !!(a && a.user && String(a.user.email).toLowerCase() === "tulliodisegni@icloud.com"); } catch (e) { return false; } };
+  const isOwner = () => !!adminKey() || ownerMail() || (typeof C.isOwner === "function" && (() => { try { return !!C.isOwner(); } catch (e) { return false; } })());
   const allowed = () => isOwner() || ls.get("ok") === "1";
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
@@ -79,8 +84,9 @@
       q(d, "#gt-x").onclick = () => { d.remove(); res(false); };
       q(d, "#gt-ok").onclick = async () => {
         const v = k.value.trim().toUpperCase(); if (!v) return; e.textContent = "Vérification…";
-        try { if (await rpc("app_is_admin", { p_key: v })) { ls.set("admin", v); d.remove(); res(true); document.dispatchEvent(new Event("gate-owner")); } else e.textContent = "Clé incorrecte."; }
-        catch (x) { e.textContent = "Pas de connexion. Réessaie avec du réseau."; }
+        const ok = () => { ls.set("admin", v); d.remove(); res(true); document.dispatchEvent(new Event("gate-owner")); };
+        try { if (await rpc("app_is_admin", { p_key: v })) ok(); else e.textContent = "Clé incorrecte."; }
+        catch (x) { if (await localKeyOk(v)) ok(); else e.textContent = missing(x) ? "Clé incorrecte." : "Pas de connexion. Réessaie avec du réseau."; }
       };
     });
   }
@@ -102,7 +108,7 @@
         list.innerHTML = rows.length ? rows.map((r) => `<li class="${r.revoked ? "off" : ""}"><span><code>${esc(r.code)}</code> · ${esc(r.label || "sans nom")}</span>
           <small>${r.revoked ? "retirée" : r.uses >= r.max_uses ? "utilisée" : "pas encore utilisée"} · ${new Date(r.created_at).toLocaleDateString("fr-FR")}</small>
           <button data-rv="${esc(r.code)}" data-on="${r.revoked ? 0 : 1}">${r.revoked ? "Rétablir" : "Retirer"}</button></li>`).join("") : "<li><small>Aucune invitation pour l'instant.</small></li>";
-      } catch (x) { list.innerHTML = `<li><small>${x.status === 400 || /autoris/.test(x.message) ? "Clé propriétaire refusée." : "Pas de connexion."}</small></li>`; }
+      } catch (x) { if (missing(x)) { list.innerHTML = "<li><small>Les codes d'invitation s'activeront quand le script invitations.sql sera installé dans Supabase. En attendant, le lien suffit.</small></li>"; return; } list.innerHTML = `<li><small>${x.status === 400 || /autoris/.test(x.message) ? "Clé propriétaire refusée." : "Pas de connexion."}</small></li>`; }
     };
     list.onclick = async (ev) => { const b = ev.target.closest("[data-rv]"); if (!b) return; b.disabled = true; try { await rpc("app_invite_revoke", { p_key: adminKey(), p_code: b.dataset.rv, p_revoked: b.dataset.on === "1" }); } catch (x) {} draw(); };
     q(d, "#gt-mk").onclick = async () => {
@@ -114,7 +120,14 @@
         const text = `${who ? who + ", je" : "Je"} t'invite sur ${C.name}. Ouvre le lien dans Safari, puis Partager › « Sur l'écran d'accueil ». Ton code d'invitation : ${code} (il ne marche que sur un téléphone).`;
         try { if (navigator.share) { await navigator.share({ title: C.name, text, url }); return; } } catch (x) { if (x && x.name === "AbortError") return; }
         try { await navigator.clipboard.writeText(text + "\n" + url); e.style.color = "#1E9C80"; e.textContent = "Message copié : colle-le à " + (who || "ton invité") + "."; } catch (x) { e.textContent = "Code : " + code; }
-      } catch (x) { e.textContent = /autoris/.test(x.message) ? "Clé propriétaire refusée." : "Pas de connexion."; }
+      } catch (x) {
+        if (!missing(x)) { e.textContent = /autoris/.test(x.message) ? "Clé propriétaire refusée." : "Pas de connexion."; return; }
+        // invitations pas encore installées sur le serveur : l'appli s'ouvre sans code, on envoie juste le lien
+        e.textContent = "";
+        const text = `${who ? who + ", je" : "Je"} t'invite sur ${C.name}. Ouvre le lien dans Safari, puis Partager › « Sur l'écran d'accueil ».`;
+        try { if (navigator.share) { await navigator.share({ title: C.name, text, url: C.link }); return; } } catch (y) { if (y && y.name === "AbortError") return; }
+        try { await navigator.clipboard.writeText(text + "\n" + C.link); e.style.color = "#1E9C80"; e.textContent = "Message copié : colle-le à " + (who || "ton invité") + "."; } catch (y) { e.textContent = C.link; }
+      }
     };
     draw();
   }
