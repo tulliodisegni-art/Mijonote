@@ -1327,10 +1327,10 @@ function viewAccount(){
   const p=profile(),F=favs(),c=ls.get("shopcfg",null),ad=st.addr||null;
   return `<button class="backlink" data-go="lib">‹ Accueil</button>
   <h1 class="lux-title">Mon compte</h1><p class="lux-sub">Tes infos restent sur ce téléphone. Elles servent à préparer tes courses plus vite.</p>
-  <section class="acc"><h2>${L("Partager Mijonote","Share Mijonote")}</h2>
-    <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook.")}</p>
+  ${isOwner()?`<section class="acc"><h2>${L("Partager Mijonote","Share Mijonote")}</h2>
+    <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet. Toi seul peux partager l'appli.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook. Only you can share the app.")}</p>
     <button class="btn block" data-acc="shareapp">${emo("📲")} ${L("Envoyer l'appli à quelqu'un","Send the app to someone")}</button>
-  </section>
+  </section>`:""}
   <section class="acc"><h2>Profil</h2>
     <div class="field"><label for="pfPrenom">Prénom</label><input id="pfPrenom" autocomplete="given-name" value="${esc(p.prenom||"")}" placeholder="Ton prénom"></div>
     <div class="field"><label for="pfTel">Téléphone</label><input id="pfTel" type="tel" autocomplete="tel" inputmode="tel" value="${esc(p.tel||"")}" placeholder="06 12 34 56 78"></div>
@@ -1383,7 +1383,7 @@ function viewAccount(){
   <section class="acc"><h2>Données</h2>
     <button class="btn danger block" data-acc="wipe">Effacer mes infos de cet appareil</button>
     ${st.wipeAsk?`<div class="notice" style="margin-top:.6rem">Effacer ton profil, tes adresses et tes habitudes ? Tes recettes restent.<div class="row" style="gap:.5rem;margin-top:.5rem"><button class="btn danger" data-acc="wipeyes">Oui, effacer</button><button class="btn ghost" data-acc="wipeno">Annuler</button></div></div>`:""}
-  </section>`;
+  </section>${isOwner()?"":`<button class="btn ghost" data-acc="ownercode" style="opacity:.55;font-size:.8rem;border:0;display:block;margin:1rem auto 0">${L("Propriétaire ?","Owner?")}</button>`}`;
 }
 function bindAccount(root){
   const save=()=>{const p=profile();p.prenom=($("#pfPrenom")?.value||"").trim();p.tel=($("#pfTel")?.value||"").trim();ls.set("profil",p)};
@@ -1404,6 +1404,7 @@ function bindAccount(root){
     else if(a==="tuto"){tutoMark("tuto_recette",0);ls.set("tuto_v1",0);st.view="lib";render();startTour(TOUR_MAIN,"tuto_v1");return}
     else if(a==="export"){exportCarnet();return}
     else if(a==="shareapp"){shareApp();return}
+    else if(a==="ownercode"){const c=prompt(L("Code propriétaire","Owner code"));if(c)ownerCode(c).then(ok=>{toast(ok?L("Mode propriétaire activé","Owner mode on"):L("Code incorrect","Wrong code"));if(ok)render()});return}
     else if(a==="savekey"){const k=(root.querySelector("#aiKey")?.value||"").trim();if(!/^sk-/.test(k)){toast(L("Colle une clé qui commence par sk-","Paste a key starting with sk-"));return}window.MJ.setKey(k);toast(L("Clé enregistrée","Key saved"))}
     else if(a==="rmkey"){window.MJ.setKey("");toast(L("Clé retirée","Key removed"))}
     else if(a==="wipe")st.wipeAsk=true;
@@ -3665,7 +3666,13 @@ function maybeRecipeTour(){
 
 /* ---------- toast ---------- */
 const APP_URL="https://tulliodisegni-art.github.io/Mijonote/";
-async function shareApp(){
+/* partage de l'appli réservé au propriétaire (code propriétaire, empreinte ci-dessous) ; la version Claude est la sienne */
+const OWNER_H="63fda2eab9893320e9e13b672e032351a66650386c54f3f430a19d37165aaffd";
+function isOwner(){return !window.MJ_PWA||ls.get("mj_owner",false)===true}
+async function ownerCode(code){const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("owner:"+String(code||"").trim()));
+  const h=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");if(h!==OWNER_H)return false;ls.set("mj_owner",true);return true}
+{const q=new URLSearchParams(location.search).get("proprio");if(q)ownerCode(q).finally(()=>{try{history.replaceState(null,"",location.pathname+location.hash)}catch{}})}
+async function shareApp(){if(!isOwner())return;
   const text=L("Mijonote, mon carnet de recettes : photographie tes livres et les recettes de tes proches, Claude les range pour toi. Ouvre le lien puis ajoute-le à ton écran d'accueil.","Mijonote, my recipe notebook: snap your cookbooks and family recipes, Claude files them for you. Open the link, then add it to your home screen.");
   if(navigator.share){try{await navigator.share({title:"Mijonote",text,url:APP_URL});return}catch(e){if(e?.name==="AbortError")return}}
   try{await navigator.clipboard.writeText(text+" "+APP_URL);toast(L("Lien copié : colle-le dans un message","Link copied: paste it in a message"))}
