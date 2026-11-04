@@ -153,22 +153,24 @@ async function imgPart(blob){
 /* Sans clé sur le téléphone : la lecture passe par la fonction « ia » partagée avec Good Food (Supabase),
    qui garde la clé côté serveur (Gemini gratuit). Rien à payer ni à saisir pour la personne. */
 const IA={url:"https://vvxkkqcmjrwytagbxdfg.supabase.co/functions/v1/ia",key:"sb_publishable_A-kJQIoJXxdXmjHF8iM40g_RP6myhMo"};
-async function jpeg64(blob){
-  let out=blob;
-  if(blob.type!=="image/jpeg"||blob.size>3.5e6){
-    try{const bmp=await createImageBitmap(blob,{imageOrientation:"from-image"});const s=Math.min(1,2400/Math.max(bmp.width,bmp.height));
-      const c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);bmp.close&&bmp.close();
-      out=await new Promise(r=>c.toBlob(r,"image/jpeg",.86))}catch{throw err("image_rejected")}
-  }
+async function jpeg64(blob,max=1568,q=.82){
+  // toujours réduite (comme Good Food) : un envoi trop lourd fait tomber le serveur avant qu'il ne réponde
+  let out;
+  try{const bmp=await createImageBitmap(blob,{imageOrientation:"from-image"});const s=Math.min(1,max/Math.max(bmp.width,bmp.height));
+    const c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);bmp.close&&bmp.close();
+    out=await new Promise(r=>c.toBlob(r,"image/jpeg",q))}catch{throw err("image_rejected")}
   return await new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=()=>ko(r.error);r.readAsDataURL(out)});
 }
 async function callServer(input,o){
   const prompt=typeof input==="string"?input:input.map(m=>(m.role==="assistant"?"Ta réponse précédente : ":"")+m.content).join("\n\n");
   if(prompt.length>30000)throw err("prompt_too_large");
-  const images=[];for(const b of (o.images||[]).slice(0,6))images.push(await jpeg64(b));
+  const send=async(max,q)=>{const images=[];for(const b of (o.images||[]).slice(0,6))images.push(await jpeg64(b,max,q));
+    return fetch(IA.url,{method:"POST",signal:o.signal,headers:{"content-type":"application/json",apikey:IA.key},body:JSON.stringify({prompt,images,web:false})})};
   let r;
-  try{r=await fetch(IA.url,{method:"POST",signal:o.signal,headers:{"content-type":"application/json",apikey:IA.key},body:JSON.stringify({prompt,images,web:false})})}
-  catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");throw err("network","Pas de connexion. Vérifie internet et réessaie.")}
+  try{r=await send(1568,.82)}
+  catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");
+    // deuxième essai avec des images plus légères
+    try{r=await send(1024,.75)}catch(e2){if(o.signal&&o.signal.aborted)throw err("cancelled");throw err("network",navigator.onLine===false?"Pas de connexion. Vérifie internet et réessaie.":"Le serveur de lecture n'a pas répondu. Réessaie avec moins d'images, ou dans un instant.")}}
   const out=await r.json().catch(()=>({}));
   if(!r.ok){const st=out.status||r.status;if(st===429)throw err("rate_limited");if(r.status===400)throw err("prompt_too_large");throw err("api_error","La lecture n'a pas marché ("+st+"). Réessaie dans un instant.")}
   const text=String(out.text||"");o.onText&&o.onText({text,delta:text});
