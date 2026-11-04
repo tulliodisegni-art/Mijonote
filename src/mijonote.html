@@ -1371,8 +1371,8 @@ function viewAccount(){
     <button class="btn ghost block" data-go="album">${emo("🎁")} ${L("Mon livre de recettes (PDF)","My recipe book (PDF)")}</button>
     <button class="btn ghost block" data-acc="tuto">${emo("🧭")} ${L("Revoir le tutoriel","Replay the tutorial")}</button>
   </section>
-  ${window.MJ_PWA?`<section class="acc"><h2>${L("Claude (lecture des recettes)","Claude (reading recipes)")}</h2>
-    <p class="note" style="margin:0 0 .4rem">${L("Pour lire tes photos, vidéos et liens, l'appli utilise Claude avec ta propre clé Anthropic. Crée-la sur console.anthropic.com (Settings → API Keys) puis colle-la ici. Elle reste sur ce téléphone. Compte quelques centimes par recette lue.","To read your photos, videos and links, the app uses Claude with your own Anthropic key. Create it on console.anthropic.com (Settings → API Keys) and paste it here. It stays on this phone. Expect a few cents per recipe read.")}</p>
+  ${window.MJ_PWA?`<section class="acc"><h2>${L("Lecture des recettes","Recipe reading")}</h2>
+    <p class="note" style="margin:0 0 .4rem">${L("La lecture des photos, vidéos et liens est incluse : tu n'as rien à faire ni à payer. Facultatif : si tu as une clé Anthropic, colle-la ici pour que la lecture passe directement par Claude (facturée sur ton compte).","Reading photos, videos and links is included: nothing to set up or pay. Optional: paste an Anthropic key here to read directly with Claude (billed to your account).")}</p>
     <div class="kv"><span>${L("Clé","Key")}</span><b>${window.MJ.hasKey()?L("enregistrée ✓","saved ✓"):L("à ajouter","not set")}</b></div>
     <div class="field"><label for="aiKey">${L("Clé API","API key")}</label><input id="aiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…"></div>
     <div class="row" style="gap:.5rem"><button class="btn" data-acc="savekey">${L("Enregistrer","Save")}</button>${window.MJ.hasKey()?`<button class="btn ghost" data-acc="rmkey">${L("Retirer","Remove")}</button>`:""}</div>

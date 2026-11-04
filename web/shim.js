@@ -150,8 +150,32 @@ async function imgPart(blob){
   const b64=await new Promise((ok2,ko)=>{const r=new FileReader();r.onload=()=>ok2(String(r.result).split(",")[1]);r.onerror=()=>ko(r.error);r.readAsDataURL(out)});
   return {type:"image",source:{type:"base64",media_type:type,data:b64}};
 }
+/* Sans clé sur le téléphone : la lecture passe par la fonction « ia » partagée avec Good Food (Supabase),
+   qui garde la clé côté serveur (Gemini gratuit). Rien à payer ni à saisir pour la personne. */
+const IA={url:"https://vvxkkqcmjrwytagbxdfg.supabase.co/functions/v1/ia",key:"sb_publishable_A-kJQIoJXxdXmjHF8iM40g_RP6myhMo"};
+async function jpeg64(blob){
+  let out=blob;
+  if(blob.type!=="image/jpeg"||blob.size>3.5e6){
+    try{const bmp=await createImageBitmap(blob,{imageOrientation:"from-image"});const s=Math.min(1,2400/Math.max(bmp.width,bmp.height));
+      const c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);bmp.close&&bmp.close();
+      out=await new Promise(r=>c.toBlob(r,"image/jpeg",.86))}catch{throw err("image_rejected")}
+  }
+  return await new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=()=>ko(r.error);r.readAsDataURL(out)});
+}
+async function callServer(input,o){
+  const prompt=typeof input==="string"?input:input.map(m=>(m.role==="assistant"?"Ta réponse précédente : ":"")+m.content).join("\n\n");
+  if(prompt.length>30000)throw err("prompt_too_large");
+  const images=[];for(const b of (o.images||[]).slice(0,6))images.push(await jpeg64(b));
+  let r;
+  try{r=await fetch(IA.url,{method:"POST",signal:o.signal,headers:{"content-type":"application/json",apikey:IA.key},body:JSON.stringify({prompt,images,web:false})})}
+  catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");throw err("network","Pas de connexion. Vérifie internet et réessaie.")}
+  const out=await r.json().catch(()=>({}));
+  if(!r.ok){const st=out.status||r.status;if(st===429)throw err("rate_limited");if(r.status===400)throw err("prompt_too_large");throw err("api_error","La lecture n'a pas marché ("+st+"). Réessaie dans un instant.")}
+  const text=String(out.text||"");o.onText&&o.onText({text,delta:text});
+  return {text,truncated:false,modelApplied:"serveur"};
+}
 async function call(input,o={}){
-  if(!getKey()&&!(await askKey()))throw err("not_granted","Ajoute ta clé Claude dans Mon compte pour lire les recettes.");
+  if(!getKey())return callServer(input,o);
   const msgs=typeof input==="string"?[{role:"user",content:input}]:input.map(m=>({role:m.role,content:m.content}));
   const imgs=o.images||[];
   if(imgs.length){const last=msgs[msgs.length-1];const parts=[];for(const b of imgs)parts.push(await imgPart(b));last.content=[...parts,{type:"text",text:String(last.content)}]}
