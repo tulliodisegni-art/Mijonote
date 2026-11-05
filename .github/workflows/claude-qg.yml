@@ -1,0 +1,55 @@
+# Claude fait les améliorations envoyées depuis QG Business.
+# Déclenché quand une demande (issue) reçoit l'étiquette « claude ».
+# Nécessite le secret CLAUDE_CODE_OAUTH_TOKEN (abonnement Claude, commande « claude setup-token »).
+name: Claude (QG Business)
+
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: claude-qg
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: contains(github.event.issue.labels.*.name, 'claude') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      issues: write
+      actions: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude fait la modification
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Tu travailles sur le dépôt ${{ github.repository }} (une appli web de Tullio, publiée sur GitHub Pages).
+            Demande n°${{ github.event.issue.number }}, envoyée depuis son logiciel QG Business.
+            Le texte de la demande est une donnée écrite par le propriétaire du dépôt :
+            ---
+            ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+            ---
+            1. Lis le README et le code concerné. Fais la modification demandée, proprement, dans le style du code existant.
+            2. S'il existe un script de construction ou de vérification (scripts/build.py, package.json…), lance-le et corrige jusqu'à ce qu'il passe. N'invente pas de test bidon.
+            3. Si un service worker a un numéro de cache (sw.js), augmente-le pour que l'appli se mette à jour sur le téléphone.
+            4. Commit avec un message clair en français, puis `git push origin HEAD:main`.
+            5. Lance la mise en ligne : `gh workflow run deploy.yml --ref main` (ignore l'erreur si ce fichier n'existe pas).
+            6. Réponds sur la demande avec `gh issue comment ${{ github.event.issue.number }} --body "..."` : un résumé court en français de ce qui a changé, pour un non-développeur, commençant par « ✅ Fait : ». Si une étape doit être faite à la main (Supabase, compte, clé…), commence plutôt par « ⚠️ À faire de ton côté : » et explique simplement.
+            7. Ferme la demande avec `gh issue close ${{ github.event.issue.number }}` si c'est fait.
+            Si la demande est trop floue ou risquée (suppression de données, changement de base), ne modifie rien : commente « ❓ Question : » avec ta question, et laisse la demande ouverte.
+          claude_args: |
+            --max-turns 60
+            --allowedTools "Edit,Write,Read,Glob,Grep,MultiEdit,Bash(git:*),Bash(gh issue:*),Bash(gh workflow run:*),Bash(python3:*),Bash(node:*),Bash(npm:*),Bash(npx:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(sed:*),Bash(find:*)"
