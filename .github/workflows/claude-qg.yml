@@ -6,6 +6,8 @@ name: Claude (QG Business)
 on:
   issues:
     types: [opened]
+  issue_comment:
+    types: [created]
 
 concurrency:
   group: claude-qg
@@ -13,7 +15,10 @@ concurrency:
 
 jobs:
   claude:
-    if: contains(github.event.issue.labels.*.name, 'claude') && github.event.issue.user.login == github.repository_owner
+    if: >-
+      contains(github.event.issue.labels.*.name, 'claude') && !github.event.issue.pull_request &&
+      ((github.event_name == 'issues' && github.event.issue.user.login == github.repository_owner) ||
+       (github.event_name == 'issue_comment' && github.event.comment.user.login == github.repository_owner))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -42,6 +47,7 @@ jobs:
 
             ${{ github.event.issue.body }}
             ---
+            Lis d'abord toute la discussion avec `gh issue view ${{ github.event.issue.number }} --comments` : si tu avais posé une question, le dernier commentaire de Tullio y répond, continue alors le travail avec sa réponse.
             1. Lis le README et le code concerné. Fais la modification demandée, proprement, dans le style du code existant.
             2. S'il existe un script de construction ou de vérification (scripts/build.py, package.json…), lance-le et corrige jusqu'à ce qu'il passe. N'invente pas de test bidon.
             3. Si un service worker a un numéro de cache (sw.js), augmente-le pour que l'appli se mette à jour sur le téléphone.
