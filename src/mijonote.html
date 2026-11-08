@@ -444,7 +444,7 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .stores button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:.55rem .8rem;font:inherit;cursor:pointer}
 .stores button span{font-size:.8rem;color:var(--muted)}
 .shopwhere{font-size:.9rem;margin-top:.5rem}
-.favs{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
+.favs{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}.shopext a{text-decoration:none}
 .favwrap{display:inline-flex;align-items:center}
 .favchip{display:inline-flex;align-items:center;gap:.3rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:.35rem .75rem;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
 .favchip[aria-pressed="true"]{background:var(--saffron-soft);border-color:var(--saffron)}
@@ -3368,7 +3368,7 @@ function openShop(r,f){
   arr(r.ingredients).forEach((g,gi)=>arr(g.items).forEach((i,ii)=>{
     if(haveOf(r).has(gi+"-"+ii)||!i.nom||STAPLES.test(i.nom.trim()))return;
     const q=scaleQ(i.q,i.unite,f);
-    items.push({nom:i.nom,src:arr(arr(r._raw?.ingredients)[gi]?.items)[ii]?.nom||i.nom,qtxt:q==null?"":`${fmtQ(q,i.unite)} ${uL(i.unite)}`.trim(),kw:null,opts:[],pick:0,qty:1,on:true});
+    items.push({nom:i.nom,src:arr(arr(r._raw?.ingredients)[gi]?.items)[ii]?.nom||i.nom,qtxt:q==null?"":`${fmtQ(q,i.unite)} ${i.unite?uL(i.unite)||"":""}`.trim(),kw:null,opts:[],pick:0,qty:1,on:true});
   }));
   const last=ls.get("shopcfg",null);
   shop={r,items,cfg:last,stage:"list",busy:"",err:"",stores:null,done:null,mode:last?.mode||"DRIVE",where:last?.where||favs().find(f=>f.mode==="LAD")?.where||""};
@@ -3419,7 +3419,10 @@ function renderShop(){
       h+=`<button class="btn block" data-sh="cart" ${S.busy||!chosen.length?"disabled":""} style="margin-top:.7rem">${S.busy==="cart"?"Ajout au panier…":S.busy==="search"?"Recherche des produits…":`Ajouter au panier Carrefour${tot?" · "+euro(tot):""}`}</button>`;
     }
   }
-  h+=`<button class="btn ghost block" data-sh="copy" style="margin-top:.5rem">Copier la liste</button></div>`;
+  h+=`<button class="btn ghost block" data-sh="copy" style="margin-top:.5rem">Copier la liste</button>
+  <p class="note" style="margin:.8rem 0 .3rem">${mcp?"Ailleurs qu'à Carrefour":"Faire tes courses chez"} : ta liste est copiée, tu la colles dans la recherche du site.</p>
+  <div class="favs shopext">${SHOPS.map((R,k)=>`<a class="qf" href="${R[1]}" target="_blank" rel="noopener" data-sh="ext" data-i="${k}">${emo(R[2])} ${esc(R[0])}</a>`).join("")}</div>
+  <p class="note" style="margin:.3rem 0 0">Lidl ne fait pas de courses en ligne : la liste te sert en magasin.</p></div>`;
   z.style.minHeight=z.offsetHeight+"px";
   z.innerHTML=h;
   z.style.minHeight="";
@@ -3430,7 +3433,9 @@ function renderShop(){
     const a=el.dataset.sh,i=+el.dataset.i;
     if(a==="on")el.onchange=()=>{S.items[i].on=el.checked;S.done=null;renderShop()};
     else if(a==="pick")el.onchange=()=>{S.items[i].pick=+el.value;S.done=null;renderShop()};
-    else if(a==="pay")el.onclick=e=>{e.preventDefault();if(!openOut(el.href)){try{window.top.location.href=el.href}catch{location.href=el.href}}};
+    else if(a==="pay")el.onclick=e=>{e.preventDefault();if(!openOut(el.href))copyOut(el.href,"Lien du panier copié : colle-le dans Safari ou Chrome")};
+    else if(a==="ext")el.onclick=async e=>{e.preventDefault();const R=SHOPS[i];try{await navigator.clipboard.writeText(shopListText())}catch{}
+      if(openOut(R[1]))toast(`Liste copiée : colle-la dans la recherche ${R[0]}`);else copyOut(R[1],`Liste copiée. Ouvre ${R[1].replace(/^https:\/\//,"")} dans ton navigateur et colle-la`,true)};
     else el.onclick=()=>shopAct(a,i,el);
   });
   const fn=$("#favName");if(fn)fn.onkeydown=e=>{if(e.key==="Enter")shopAct("favsave")};
@@ -3513,7 +3518,10 @@ Réponds UNIQUEMENT avec ce JSON : {"kw":[ une chaîne ou null par ingrédient, 
 }
 // the basket link must be an absolute https Carrefour address, whatever shape the connector gives
 function cartLink(v){let u=String(typeof v==="object"&&v?(v.url||v.href||""):v||"").trim();if(u.startsWith("/"))u="https://www.carrefour.fr"+u;else if(/^www\./.test(u))u="https://"+u;try{const x=new URL(u);if(x.protocol==="https:"&&/(^|\.)carrefour\.fr$/.test(x.hostname))return x.href}catch{}return "https://www.carrefour.fr/mon-panier"}
-function openOut(u){let w=null;try{w=window.open(u,"_blank","noopener")}catch{}return !!w}
+// other retailers: no connector exists for them, so the list is copied and their site opened
+const SHOPS=[["Auchan","https://www.auchan.fr","🛒"],["E.Leclerc Drive","https://www.leclercdrive.fr","🛒"],["Intermarché","https://www.intermarche.com","🛒"],["Super U","https://www.coursesu.com","🛒"],["Monoprix","https://courses.monoprix.fr","🛒"],["Franprix","https://www.franprix.fr","🛒"],["Chronodrive","https://www.chronodrive.com","🚗"],["Lidl","https://www.lidl.fr","🏬"]];
+async function copyOut(u,msg,keepList){if(!keepList){try{await navigator.clipboard.writeText(u)}catch{prompt("Copie ce lien :",u);return}}toast(msg)}
+function openOut(u){let w=null;try{w=window.open(u,"_blank");if(w)try{w.opener=null}catch{}}catch{}return !!w}
 async function addCart(){
   const S=shop,c=S.cfg;
   const chosen=S.items.filter(x=>x.on&&x.opts[x.pick]);if(!chosen.length)return;
