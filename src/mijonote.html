@@ -3412,7 +3412,9 @@ function renderShop(){
   if(mcp&&c&&S.stage==="list"){
     if(S.done){
       h+=`<div class="notice good">${emo("✅")} ${EN()?`${S.done.n} product${S.done.n>1?"s":""} added to your Carrefour basket${S.done.total!=null?` (${euro(S.done.total)})`:""}.${S.done.rej?` ${S.done.rej} product${S.done.rej>1?"s":""} couldn't be added.`:""}`:`${S.done.n} produit${S.done.n>1?"s":""} ajouté${S.done.n>1?"s":""} à ton panier Carrefour${S.done.total!=null?` (${euro(S.done.total)})`:""}.${S.done.rej?` ${S.done.rej} produit${S.done.rej>1?"s n'ont":" n'a"} pas pu être ajouté${S.done.rej>1?"s":""}.`:""}`}</div>
-      <a class="btn block" href="${esc(S.done.link)}" target="_blank" rel="noopener" style="margin-top:.6rem">Payer et choisir le créneau sur Carrefour.fr ↗</a>`;
+      <a class="btn block" href="${esc(S.done.link)}" target="_blank" rel="noopener" data-sh="pay" style="margin-top:.6rem">Payer et choisir le créneau sur Carrefour.fr ↗</a>
+      <button class="btn soft block" data-sh="copylink" style="margin-top:.4rem">${emo("🔗")} Copier le lien du panier</button>
+      <p class="note" style="margin:.4rem 0 0">Si le bouton ne s'ouvre pas, copie le lien et colle-le dans Safari ou Chrome. Connecte-toi avec le même compte Carrefour que dans Claude pour retrouver ton panier.</p>`;
     }else{
       h+=`<button class="btn block" data-sh="cart" ${S.busy||!chosen.length?"disabled":""} style="margin-top:.7rem">${S.busy==="cart"?"Ajout au panier…":S.busy==="search"?"Recherche des produits…":`Ajouter au panier Carrefour${tot?" · "+euro(tot):""}`}</button>`;
     }
@@ -3428,6 +3430,7 @@ function renderShop(){
     const a=el.dataset.sh,i=+el.dataset.i;
     if(a==="on")el.onchange=()=>{S.items[i].on=el.checked;S.done=null;renderShop()};
     else if(a==="pick")el.onchange=()=>{S.items[i].pick=+el.value;S.done=null;renderShop()};
+    else if(a==="pay")el.onclick=e=>{e.preventDefault();if(!openOut(el.href)){try{window.top.location.href=el.href}catch{location.href=el.href}}};
     else el.onclick=()=>shopAct(a,i,el);
   });
   const fn=$("#favName");if(fn)fn.onkeydown=e=>{if(e.key==="Enter")shopAct("favsave")};
@@ -3437,6 +3440,7 @@ async function shopAct(a,i,el){
   const S=shop;if(!S)return;S.err="";
   if(a==="close"){shop=null;$("#shopZone").innerHTML="";return}
   if(a==="copy"){try{await navigator.clipboard.writeText(shopListText());toast("Liste copiée")}catch{toast("Copie impossible ici")}return}
+  if(a==="copylink"){const u=S.done?.link||"https://www.carrefour.fr/mon-panier";try{await navigator.clipboard.writeText(u);toast("Lien copié : colle-le dans ton navigateur")}catch{prompt("Copie ce lien :",u)}return}
   if(a==="mode"){S.mode=el.dataset.m;S.stores=null;return renderShop()}
   if(a==="fav"&&favs()[i]&&!favs()[i].fsid){const f=favs()[i];S.mode="LAD";S.where=f.where||"";S.pendingFav=i;return shopAct("find")}
   if(a==="fav"){const f=favs()[i];if(!f)return;S.cfg={...f};ls.set("shopcfg",S.cfg);S.mode=f.mode;S.where=f.where||"";S.stage="list";S.done=null;S.anchor=true;S.items.forEach(x=>{x.opts=[];x.pick=0});renderShop();return loadProducts()}
@@ -3507,6 +3511,9 @@ Réponds UNIQUEMENT avec ce JSON : {"kw":[ une chaîne ou null par ingrédient, 
   if(!fail)S.err="";
   S.busy="";renderShop();
 }
+// the basket link must be an absolute https Carrefour address, whatever shape the connector gives
+function cartLink(v){let u=String(typeof v==="object"&&v?(v.url||v.href||""):v||"").trim();if(u.startsWith("/"))u="https://www.carrefour.fr"+u;else if(/^www\./.test(u))u="https://"+u;try{const x=new URL(u);if(x.protocol==="https:"&&/(^|\.)carrefour\.fr$/.test(x.hostname))return x.href}catch{}return "https://www.carrefour.fr/mon-panier"}
+function openOut(u){let w=null;try{w=window.open(u,"_blank","noopener")}catch{}return !!w}
 async function addCart(){
   const S=shop,c=S.cfg;
   const chosen=S.items.filter(x=>x.on&&x.opts[x.pick]);if(!chosen.length)return;
@@ -3520,7 +3527,7 @@ async function addCart(){
   }
   const cartId=findKey(out,"cart_id");if(cartId){c.cartId=String(cartId);ls.set("shopcfg",c)}
   const rej=arr(findKey(out,"rejected_gtins")).length;
-  S.done={n:chosen.length-rej,rej,total:findKey(out,"total_with_bags_deposit")??null,link:findKey(out,"cart_in_carrefour_link")||"https://www.carrefour.fr/mon-panier"};
+  S.done={n:chosen.length-rej,rej,total:findKey(out,"total_with_bags_deposit")??null,link:cartLink(findKey(out,"cart_in_carrefour_link"))};
   S.busy="";renderShop();
 }
 
