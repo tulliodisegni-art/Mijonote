@@ -515,6 +515,26 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .apg .abub.s-postit{border-radius:3px;background:#fff3b0;box-shadow:0 4px 8px rgba(0,0,0,.13)}.apg .abub.s-postit::after{display:none}
 .apg .abub.s-etiquette{border-radius:4px;border-left:4px solid var(--c)}.apg .abub.s-etiquette::after{display:none}
 .apg .anote,.apg .arph{position:relative}
+.apg [data-mv]{position:relative}
+.apg .arph.x{height:150px;max-width:70%}
+.apg .arph.ph-ronde{border-radius:50%;width:200px;height:200px;margin-left:auto;margin-right:auto}.apg .arph.x.ph-ronde{width:150px;height:150px}
+.apg .arph.ph-carre{border-radius:0}
+.apg .arph.ph-polaroid{border-radius:2px;background:#fff;padding:8px 8px 26px;box-shadow:0 6px 14px rgba(0,0,0,.18)}
+.apg .arph.ph-arche{border-radius:999px 999px 10px 10px}
+.apg.cover.full{position:relative}.apg.cover.full .acph{position:absolute;inset:0;height:auto}.apg.cover.full .actx{position:absolute;left:28px;right:28px;bottom:34px;flex:none;background:rgba(255,255,255,.9);border-top:0;border-radius:12px;padding:22px 26px}
+.apg.cover.nophoto .actx{border-top:0}
+.apg.fr-filet::before,.apg.fr-double::before,.apg.fr-points::before,.apg.fr-coins::before{content:"";position:absolute;inset:16px;pointer-events:none;z-index:3}
+.apg.fr-filet::before{border:1px solid var(--c)}.apg.fr-double::before{border:3px double var(--c)}.apg.fr-points::before{border:1.5px dashed var(--c)}.apg.fr-coins::before{border:2px solid var(--c);border-radius:22px}
+.apg.ing-une .aing{columns:1}.apg.ing-boite .aing{columns:1;background:rgba(255,255,255,.65);border-radius:10px;padding:10px 12px 10px 30px;border:1px solid var(--cb)}
+.apvrail.editing [data-mv]{cursor:pointer}.apvrail.editing [data-mv].sel{outline:2px dashed #e0553a;outline-offset:3px;z-index:5}
+.mvh.rs{top:auto;bottom:-12px;right:auto;left:-12px;cursor:nwse-resize}.apg .arph>.mvh{top:6px;right:6px}.apg .arph>.mvh.rs{top:auto;bottom:6px;left:6px;right:auto}
+#albPrev .apvtb{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:6px 12px 0}#albPrev .apvtb[hidden]{display:none}
+#albPrev .apvtb button{min-width:36px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font:700 14px/1 "Figtree",sans-serif;padding:0 9px;cursor:pointer}
+#albPrev .apvtb button.sw{min-width:26px;width:26px;height:26px;border-radius:50%;padding:0;border:2px solid rgba(255,255,255,.6)}
+#albPrev .apvtb .lab{font-size:11px;opacity:.6;align-self:center;text-transform:uppercase;letter-spacing:.1em}
+.albthumbs{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}.albthumbs span{position:relative;width:56px;height:44px;border-radius:7px;overflow:hidden;border:1px solid var(--line)}.albthumbs img{width:100%;height:100%;object-fit:cover}.albthumbs button{position:absolute;top:1px;right:1px;width:18px;height:18px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:10px;line-height:18px;padding:0;cursor:pointer}
+.albbubs{display:flex;flex-direction:column;gap:.3rem;margin-top:.4rem}.albbubs div{display:flex;gap:.4rem;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:.25rem .3rem .25rem .7rem;font-family:"Caveat",cursive;font-size:1.05rem}.albbubs div span{flex:1}
+.swatch.pick{position:relative}.swatch.pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .editing [data-ek]{outline:1.5px dashed rgba(224,85,58,.55);outline-offset:2px;border-radius:3px;cursor:text}.editing [data-ek]:focus{outline:2px solid #e0553a;background:rgba(255,255,255,.6)}
 .mvh{position:absolute;top:-12px;right:-12px;width:30px;height:30px;border-radius:50%;background:#e0553a;color:#fff;display:grid;place-items:center;font:700 16px/1 sans-serif;touch-action:none;cursor:grab;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:2}
 #albPrev .iconbtn.on{background:#e0553a;color:#fff}
@@ -1984,7 +2004,7 @@ function resultsHTML(res,fridge){
 /* ---------- « Mon livre à offrir » : choose recipes, personalise, export a PDF ---------- */
 const ALBUM_THEMES=[["terra","Terracotta","#b5532f","#fbf1e8"],["sauge","Sauge","#4f6b4a","#f1f4ec"],["nuit","Bleu nuit","#24324d","#eef1f6"],["creme","Crème","#8a6a3b","#fbf7ef"]];
 const newAlbum=()=>({id:null,titre:L("Nos recettes de famille","Our family recipes"),sous:L("Transmises avec amour","Passed down with love"),par:(profile().prenom||"").trim(),dedicace:"",theme:"terra",recettes:[],notes:{}});
-const albumTheme=a=>ALBUM_THEMES.find(t=>t[0]===a.theme)||ALBUM_THEMES[0];
+const albumTheme=a=>{const t=ALBUM_THEMES.find(t=>t[0]===a.theme)||ALBUM_THEMES[0],c=a.theme==="perso"&&/^#[0-9a-f]{6}$/i.test(a.color||"")?a.color:t[2];return [t[0],t[1],c,/^#[0-9a-f]{6}$/i.test(a.bgc||"")?a.bgc:(c===t[2]?t[3]:tint(c,.06))]};
 function viewAlbum(){
   const A=st.album,a=A.cur,plats=recettes.filter(r=>!isBase(r)&&isPerso(r));
   const head=`<button class="backlink" data-alb="back">‹ ${a?L("Mes livres","My books"):L("Accueil","Home")}</button>
@@ -2003,7 +2023,10 @@ function viewAlbum(){
     <div class="field"><label for="alT">${L("Titre","Title")}</label><input id="alT" value="${esc(a.titre)}"></div>
     <div class="field"><label for="alS">${L("Sous-titre","Subtitle")} <span class="muted" style="font-weight:400">(${L("facultatif","optional")})</span></label><input id="alS" value="${esc(a.sous)}"></div>
     <div class="field"><label for="alP">${L("De la part de","From")} <span class="muted" style="font-weight:400">(${L("facultatif","optional")})</span></label><input id="alP" value="${esc(a.par)}" placeholder="${L("ex. La famille Disegni","e.g. The Smith family")}"></div>
-    <div class="field"><label>${L("Couleur","Colour")}</label><div class="row" style="gap:.5rem">${ALBUM_THEMES.map(([k,n,c,bg])=>`<button class="swatch" data-alb="theme" data-k="${k}" aria-pressed="${a.theme===k}" style="--c:${c};--bg:${bg};--cb:${tint(c)}"><span></span>${n}</button>`).join("")}</div></div>
+    <div class="field"><label>${L("Couleur","Colour")}</label><div class="row" style="gap:.5rem;flex-wrap:wrap">${ALBUM_THEMES.map(([k,n,c,bg])=>`<button class="swatch" data-alb="theme" data-k="${k}" aria-pressed="${a.theme===k}" style="--c:${c};--bg:${bg};--cb:${tint(c)}"><span></span>${n}</button>`).join("")}<label class="swatch pick" aria-pressed="${a.theme==="perso"}" style="--c:${esc(a.color||"#c2185b")};--bg:#fff"><span></span>${L("Ma couleur","My colour")}<input type="color" id="alC" value="${esc(a.color||"#c2185b")}"></label><label class="swatch pick" aria-pressed="${!!a.bgc}" style="--c:${esc(a.bgc||"#fbf1e8")};--bg:${esc(a.bgc||"#fbf1e8")}"><span></span>${L("Fond des pages","Page background")}<input type="color" id="alBg" value="${esc(a.bgc||"#fbf1e8")}"></label>${a.bgc?`<button class="linkbtn" data-alb="bgreset">${L("Fond d'origine","Default background")}</button>`:""}</div></div>
+    <div class="field"><label>${L("Photo de couverture","Cover photo")}</label><div class="albph"><span class="th">${a.cover?`<img src="${pic(a.cover)}" alt="">`:emo("📖")}</span>
+      <label class="pb">${emo("📷")} ${a.cover?L("Changer","Change"):L("Choisir une photo","Pick a photo")}<input type="file" accept="image/*" id="alCov"></label>${a.cover?`<button class="pb" data-alb="covrm">✕ ${L("Enlever","Remove")}</button>`:""}</div>
+      <p class="note" style="margin:.3rem 0 0">${L("Sans photo choisie, je prends celle de la première recette.","Without one, I use the first recipe's photo.")}</p></div>
   </section>
   <section class="block albsec"><h2>2. ${L("Un mot pour commencer","A note to begin")}</h2><p class="note" style="margin:-.3rem 0 .6rem">${L("Facultatif : une dédicace en première page, écrite à la main.","Optional: a handwritten dedication on the first page.")}</p>
     <textarea id="alD" style="min-height:5.5rem" placeholder="${L("ex. Pour Léa, les recettes de Mamie Rose, pour que tu les refasses à ton tour.","e.g. For Léa, Grandma Rose's recipes, so you can make them in turn.")}">${esc(a.dedicace)}</textarea>
@@ -2021,12 +2044,15 @@ function viewAlbum(){
       <div class="albph"><span class="th">${r.photo?`<img src="${pic(r.photo)}" alt="">`:icoOf(r)}</span>
         <label class="pb">${emo("📷")} ${r.photo?L("Changer la photo","Change photo"):L("Ma photo","My photo")}<input type="file" accept="image/*" data-alphoto="${esc(r.id)}"></label>
         ${!r.photo&&sample?`<button class="pb" data-alillu="${esc(r.id)}">${emo("🎨")} ${L("Faire dessiner","Get it drawn")}</button>`:""}</div>
+      <div class="albph" style="flex-wrap:wrap"><label class="pb">${emo("🖼️")} ${L("＋ Photos","＋ Photos")}<input type="file" accept="image/*" multiple data-almore="${esc(r.id)}"></label><button class="pb" data-alb="bubadd" data-id="${esc(r.id)}">${emo("💬")} ${L("＋ Bulle","＋ Bubble")}</button></div>
+      ${arr((a.photos||{})[r.id]).length?`<div class="albthumbs">${arr(a.photos[r.id]).map((p,j)=>`<span><img src="${pic(p)}" alt=""><button data-alb="phrm" data-id="${esc(r.id)}" data-i="${j}" aria-label="${L("Enlever","Remove")}">✕</button></span>`).join("")}</div>`:""}
+      ${arr((a.bulles||{})[r.id]).length?`<div class="albbubs">${arr(a.bulles[r.id]).map((t,j)=>`<div><span>${esc(t)}</span><button class="iconbtn" data-alb="bubrm" data-id="${esc(r.id)}" data-i="${j}" aria-label="${L("Enlever","Remove")}">✕</button></div>`).join("")}</div>`:""}
       <textarea data-note="${esc(r.id)}" rows="2" placeholder="${L("Ton mot (facultatif)","Your note (optional)")}">${esc(a.notes[r.id]||"")}</textarea></li>`).join("")}</ol>
   </section>`:""}
   <section class="block albsec"><h2>${chosen.length?"5":"4"}. ${L("Le style du livre","The book's style")}</h2>
-    ${[["format",ALB_FMT,L("Format","Size"),"a5"],["tfont",ALB_TFONT,L("Police des titres","Title font"),"serif"],["bfont",ALB_BFONT,L("Police du texte","Text font"),"moderne"],["bulle",ALB_SHAPE,L("Forme des bulles","Bubble shape"),"bulle"]].map(([f,list,lab,def])=>`<div class="field"><label>${lab}</label><div class="rail pills">${list.map(o=>`<button class="qf albst" data-alb="set" data-f="${f}" data-v="${o[0]}" aria-pressed="${(a[f]||def)===o[0]}"${f==="tfont"||f==="bfont"?` style="font-family:${esc(o[2])}"`:""}>${esc(L(o[1][0],o[1][1]))}</button>`).join("")}</div></div>`).join("")}
-    <p class="note" style="margin:.2rem 0 0">${L("Pour changer un texte ou déplacer une bulle, une photo ou ton mot : ouvre l'aperçu et touche « Modifier ».","To change any text or move a bubble, photo or note: open the preview and tap “Edit”.")}</p>
-    ${Object.keys(a.edits||{}).length||Object.keys(a.pos||{}).length?`<button class="linkbtn" data-alb="reset" style="margin-top:.5rem">${L("Annuler mes retouches dans l'aperçu","Undo my preview edits")}</button>`:""}
+    ${[["format",ALB_FMT,L("Format et forme du livre","Book size and shape"),"a5"],["clay",ALB_CLAY,L("Couverture","Cover"),"haut"],["frame",ALB_FRAME,L("Cadre des pages","Page frame"),"aucun"],["tfont",ALB_TFONT,L("Police des titres","Title font"),"serif"],["bfont",ALB_BFONT,L("Police du texte","Text font"),"moderne"],["bulle",ALB_SHAPE,L("Forme des bulles","Bubble shape"),"bulle"],["pforme",ALB_PSHAPE,L("Forme des photos","Photo shape"),"arrondie"],["ing",ALB_ING,L("Ingrédients","Ingredients"),"deux"]].map(([f,list,lab,def])=>`<div class="field"><label>${lab}</label><div class="rail pills">${list.map(o=>`<button class="qf albst" data-alb="set" data-f="${f}" data-v="${o[0]}" aria-pressed="${(a[f]||def)===o[0]}"${f==="tfont"||f==="bfont"?` style="font-family:${esc(o[2])}"`:""}>${esc(L(o[1][0],o[1][1]))}</button>`).join("")}</div></div>`).join("")}
+    <p class="note" style="margin:.2rem 0 0">${L("Pour tout retoucher (écrire, déplacer, agrandir, tourner, changer la taille, la police ou la couleur d'un texte) : ouvre l'aperçu et touche « Modifier ».","To retouch anything (rewrite, move, resize, rotate, change a text's size, font or colour): open the preview and tap “Edit”.")}</p>
+    ${Object.keys(a.edits||{}).length||Object.keys(a.pos||{}).length||Object.keys(a.sty||{}).length?`<button class="linkbtn" data-alb="reset" style="margin-top:.5rem">${L("Annuler mes retouches dans l'aperçu","Undo my preview edits")}</button>`:""}
   </section>
   ${chosen.length?`<section class="block albsec"><h2>6. ${L("Le faire imprimer en vrai","Get it printed for real")}</h2>
     <p class="note" style="margin-top:0">${L("Ton PDF se garde tel quel, ou s'imprime en vrai livre relié. Coche la version imprimeur, crée le PDF, puis envoie-le sur un de ces sites (format A5). Là-bas, tu choisis le papier, la couverture rigide ou souple et le nombre d'exemplaires.","Keep the PDF as is, or print it as a real bound book. Tick the printer version, make the PDF, then upload it to one of these sites (A5 size). There you pick paper, hard or soft cover and how many copies.")}</p>
@@ -2046,6 +2072,10 @@ function bindAlbum(root){
   root.querySelectorAll("[data-alphoto]").forEach(inp=>inp.onchange=()=>albumPhoto(inp.dataset.alphoto,inp));
   root.querySelectorAll("[data-alillu]").forEach(b=>b.onclick=()=>albumIllu(b.dataset.alillu,b));
   const bl=root.querySelector("#alB");if(bl)bl.onchange=()=>{a.imprimeur=bl.checked;albumDirty()};
+  const cc=root.querySelector("#alC");if(cc)cc.onchange=()=>{a.color=cc.value;a.theme="perso";albumDirty();render()};
+  const cb=root.querySelector("#alBg");if(cb)cb.onchange=()=>{a.bgc=cb.value;albumDirty();render()};
+  const cv=root.querySelector("#alCov");if(cv)cv.onchange=async()=>{const ids=await albumUpload(cv);if(ids[0]){a.cover=ids[0];albumDirty()}render()};
+  root.querySelectorAll("[data-almore]").forEach(inp=>inp.onchange=async()=>{const id=inp.dataset.almore,ids=await albumUpload(inp);if(ids.length){a.photos=a.photos||{};a.photos[id]=[...arr(a.photos[id]),...ids];albumDirty();toast(ids.length>1?L(`${ids.length} photos ajoutées`,`${ids.length} photos added`):L("Photo ajoutée","Photo added"))}render()});
   if(a){inp("alT","titre");inp("alS","sous");inp("alP","par");inp("alD","dedicace")}
   const q=root.querySelector("#alQ");if(q)q.oninput=()=>{A.q=q.value;render()};
   root.querySelectorAll("[data-pick]").forEach(c=>c.onchange=()=>{const id=c.dataset.pick;a.recettes=c.checked?[...a.recettes.filter(x=>x!==id),id]:a.recettes.filter(x=>x!==id);albumDirty();render()});
@@ -2056,6 +2086,11 @@ function bindAlbum(root){
     if(k==="new"){A.cur=newAlbum();A.link="";A.q=""}
     else if(k==="open"){const x=A.list.find(x=>x.id===b.dataset.id);if(x){A.cur={...newAlbum(),...JSON.parse(JSON.stringify(x))};A.link="";A.q=""}}
     else if(k==="theme"){a.theme=b.dataset.k;albumDirty()}
+    else if(k==="bgreset"){a.bgc="";albumDirty()}
+    else if(k==="covrm"){a.cover="";albumDirty()}
+    else if(k==="phrm"){const l=arr((a.photos||{})[b.dataset.id]);l.splice(i,1);a.photos[b.dataset.id]=l;albumDirty()}
+    else if(k==="bubadd"){const t=prompt(L("Le texte de ta bulle (un souvenir, un secret, un clin d'œil…)","Your bubble's text (a memory, a secret, a wink…)"),"");if(!t||!t.trim())return;a.bulles=a.bulles||{};a.bulles[b.dataset.id]=[...arr(a.bulles[b.dataset.id]),t.trim()];albumDirty()}
+    else if(k==="bubrm"){const l=arr((a.bulles||{})[b.dataset.id]);l.splice(i,1);a.bulles[b.dataset.id]=l;albumDirty()}
     else if(k==="addlivre"){const ids=recettes.filter(r=>!isBase(r)&&r.livre===b.dataset.l).map(r=>r.id);a.recettes=[...a.recettes,...ids.filter(id=>!a.recettes.includes(id))];albumDirty()}
     else if(k==="up"||k==="down"||k==="rm"){
       // i is a position in the list shown (recipes that still exist and are personal), not in a.recettes
@@ -2066,7 +2101,7 @@ function bindAlbum(root){
     else if(k==="pdf"){albumPdf();return}
     else if(k==="preview"){albumPreview();return}
     else if(k==="set"){a[b.dataset.f]=b.dataset.v;albumDirty()}
-    else if(k==="reset"){if(!confirm(L("Remettre tous les textes et les positions comme au début ?","Reset all texts and positions?")))return;a.edits={};a.pos={};albumDirty()}
+    else if(k==="reset"){if(!confirm(L("Remettre tous les textes et les positions comme au début ?","Reset all texts and positions?")))return;a.edits={};a.pos={};a.sty={};albumDirty()}
     else if(k==="del"){if(!confirm(L("Supprimer ce livre ? Tes recettes restent dans le carnet.","Delete this book? Your recipes stay in the notebook.")))return;try{await db.collection("albums").doc(a.id).delete()}catch{}A.cur=null}
     render();if(["new","open"].includes(k))window.scrollTo(0,0);
   });
@@ -2122,6 +2157,12 @@ async function albumPhoto(id,inp){
   try{const b=await cropBlob(f,[0,0,1,1])||f;const pid=(await assets.upload(b,{type:b.type||"image/jpeg"})).id;await albumSetPhoto(id,pid);toast(L("Photo ajoutée","Photo added"))}
   catch{lab.classList.remove("busy");toast(L("La photo n'a pas pu être envoyée","The photo could not be uploaded"));render()}
 }
+async function albumUpload(inp){
+  const fs=[...(inp.files||[])],lab=inp.closest("label"),ids=[];if(!fs.length||!assets)return ids;
+  if(lab){lab.classList.add("busy");lab.childNodes[lab.childNodes.length-2].textContent=" "+L("Envoi…","Uploading…")}
+  for(const f of fs){try{const b=await cropBlob(f,[0,0,1,1])||f;ids.push((await assets.upload(b,{type:b.type||"image/jpeg"})).id)}catch{toast(L("Une photo n'a pas pu être envoyée","A photo could not be uploaded"))}}
+  return ids;
+}
 async function albumIllu(id,btn){
   const r=recettes.find(x=>x.id===id);if(!r||!sample||!assets||!db)return;
   btn.classList.add("busy");btn.lastChild.textContent=" "+L("Claude dessine…","Claude is drawing…");
@@ -2142,7 +2183,7 @@ let albumT=null;
 function albumDirty(){clearTimeout(albumT);albumT=setTimeout(albumSave,1200)}
 async function albumSave(){
   clearTimeout(albumT);const a=st.album.cur;if(!a||!db)return;
-  const data={titre:a.titre,sous:a.sous,par:a.par,dedicace:a.dedicace,theme:a.theme,imprimeur:!!a.imprimeur,pleine:!!a.pleine,format:a.format||"a5",tfont:a.tfont||"serif",bfont:a.bfont||"moderne",bulle:a.bulle||"bulle",edits:a.edits||{},pos:a.pos||{},recettes:a.recettes,notes:Object.fromEntries(Object.entries(a.notes).filter(([id,t])=>t&&a.recettes.includes(id))),maj:Date.now()};
+  const data={titre:a.titre,sous:a.sous,par:a.par,dedicace:a.dedicace,theme:a.theme,imprimeur:!!a.imprimeur,pleine:!!a.pleine,format:a.format||"a5",tfont:a.tfont||"serif",bfont:a.bfont||"moderne",bulle:a.bulle||"bulle",clay:a.clay||"haut",frame:a.frame||"aucun",pforme:a.pforme||"arrondie",ing:a.ing||"deux",color:a.color||"",bgc:a.bgc||"",cover:a.cover||"",photos:Object.fromEntries(Object.entries(a.photos||{}).filter(([id,l])=>arr(l).length&&a.recettes.includes(id))),bulles:Object.fromEntries(Object.entries(a.bulles||{}).filter(([id,l])=>arr(l).length&&a.recettes.includes(id))),sty:a.sty||{},edits:a.edits||{},pos:a.pos||{},recettes:a.recettes,notes:Object.fromEntries(Object.entries(a.notes).filter(([id,t])=>t&&a.recettes.includes(id))),maj:Date.now()};
   try{if(!a.id&&a.recettes.length)a.id=db.collection("albums").doc().id;if(a.id)await db.collection("albums").doc(a.id).set(data)}catch{}
 }
 let pdfLibs=null;
@@ -2154,7 +2195,13 @@ function albumLibs(){
 const PW=520,PH=736;
 const tint=(h,k=.13)=>"#"+[1,3,5].map(i=>Math.round(255-(255-parseInt(h.slice(i,i+2),16))*k).toString(16).padStart(2,"0")).join("");
 function ingLine(i){return [fmtQ(i.q,i.unite),uL(i.unite),i.nom].filter(Boolean).join(" ")+(i.note?", "+i.note:"")}
-const ALB_FMT=[["a5",["A5 classique","A5 classic"],148,210],["a4",["A4 grand","A4 large"],210,297],["carre",["Carré 21 cm","Square 21 cm"],210,210]];
+const ALB_FMT=[["a5",["A5 classique","A5 classic"],148,210],["a4",["A4 grand","A4 large"],210,297],["p2025",["Portrait 20×25","Portrait 20×25"],200,250],["carre",["Carré 21 cm","Square 21 cm"],210,210],["c15",["Petit carré 15 cm","Small square 15 cm"],150,150],["c30",["Grand carré 30 cm","Large square 30 cm"],300,300],["a5p",["A5 à l'italienne","A5 landscape"],210,148],["a4p",["A4 à l'italienne","A4 landscape"],297,210]];
+const ALB_CLAY=[["haut",["Photo en haut","Photo on top"]],["plein",["Photo pleine page","Full-page photo"]],["sans",["Sans photo","No photo"]]];
+const ALB_FRAME=[["aucun",["Sans cadre","No frame"]],["filet",["Filet fin","Thin line"]],["double",["Double trait","Double line"]],["points",["Pointillés","Dashed"]],["coins",["Coins arrondis","Rounded"]]];
+const ALB_PSHAPE=[["arrondie",["Arrondies","Rounded"]],["carre",["Carrées","Square"]],["ronde",["Rondes","Round"]],["arche",["En arche","Arch"]],["polaroid",["Polaroïd","Polaroid"]]];
+const ALB_ING=[["deux",["Sur 2 colonnes","2 columns"]],["une",["Sur 1 colonne","1 column"]],["boite",["Dans un encadré","In a box"]]];
+const ALB_TXFONTS=['"Figtree",sans-serif','"Young Serif",Georgia,serif','"Playfair Display",Georgia,serif','"Lora",Georgia,serif','"Caveat",cursive'];
+const ALB_TXCOL=["var(--c)","#2b2420","#7a6e66","#ffffff","#b5532f","#4f6b4a","#24324d","#c2185b","#e8a33d"];
 const ALB_TFONT=[["serif",["Classique","Classic"],'"Young Serif",Georgia,serif'],["elegant",["Élégante","Elegant"],'"Playfair Display",Georgia,serif'],["main",["Écrite à la main","Handwritten"],'"Caveat",cursive'],["moderne",["Moderne","Modern"],'"Figtree",sans-serif']];
 const ALB_BFONT=[["moderne",["Moderne","Modern"],'"Figtree",sans-serif'],["classique",["Classique","Classic"],'"Lora",Georgia,serif']];
 const ALB_SHAPE=[["bulle",["Bulles","Bubbles"],1.2],["ronde",["Rondes","Round"],0],["postit",["Post-it","Sticky notes"],2.5],["etiquette",["Étiquettes","Labels"],0]];
@@ -2166,39 +2213,50 @@ function albCss(a){
   return `.apg{width:${W}px;height:${H}px;font-family:${bf}}.apg h1,.apg h2,.apg h3{font-family:${tf}}
 .apg.rec .abody{height:${H-106}px}.apg .acph{height:${ph}px}.apg .acorn{height:${co}px}
 .apg.bleed{width:${W+2*b}px;height:${H+2*b}px;padding:${46+b}px ${46+b}px ${40+b}px}.apg.bleed.cover,.apg.bleed.photo{padding:0}.apg.bleed .acph{height:${ph+b}px}.apg.bleed .acorn{height:${co+b}px}.apg.bleed .actx{padding:26px ${44+b}px ${26+b}px}.apg.bleed.ded{padding:${80+b}px}.apg.bleed .afoot{bottom:${18+b}px}
-${hand?`.apg.cover h1{font-size:46px}.apg .arh h2{font-size:34px}.apg h3{font-size:22px}.apg.toc h2{font-size:38px}`:""}`;
+${hand?`.apg.cover h1{font-size:46px}.apg .arh h2{font-size:34px}.apg h3{font-size:22px}.apg.toc h2{font-size:38px}`:""}
+${albStyCss(a)}`;
+}
+// per-element text styles chosen in the preview (« e:key » = a text, « m:key » = a block)
+function albStyCss(a){
+  const q=v=>String(v).replace(/["\\<>{};]/g,"");
+  return Object.entries(a.sty||{}).map(([k,o])=>{if(!o)return "";const blk=k.startsWith("m:"),sel=blk?`.apg [data-mv="${q(k.slice(2))}"]`:`.apg [data-ek="${q(k.slice(2))}"]`;
+    const t=[o.fs?`font-size:${+o.fs}px`:"",o.al?`text-align:${["left","center","right"].includes(o.al)?o.al:"left"}`:"",o.co?`color:${q(o.co)}`:"",o.b?"font-weight:700":"",o.i?"font-style:italic":"",o.f!=null&&ALB_TXFONTS[o.f]?`font-family:${ALB_TXFONTS[o.f]}`:""].filter(Boolean).join(";");
+    return (t||o.bg?`${sel}{${t}${o.bg?(t?";":"")+`background:${q(o.bg)};--cb:${q(o.bg)}`:""}}`:"")+(blk&&t?`${sel} *:not(.mvh){${t}}`:"");}).join("\n");
 }
 function albumPages(a){
   const [,,c,bg]=albumTheme(a),rs=a.recettes.map(id=>recettes.find(r=>r.id===id)).filter(r=>r&&isPerso(r));
   const ED=a.edits||{},POS=a.pos||{},shape=albOpt(ALB_SHAPE,a.bulle),sty=`--c:${c};--bg:${bg};--cb:${tint(c)}`;
   const E=(k,d)=>k in ED?ED[k]:d;
-  const tx=(k,d,tag,cls="",br)=>{const v=String(E(k,d)??"");return v.trim()?`<${tag}${cls?` class="${cls}"`:""} data-ek="${k}">${br?esc(v).replace(/\n/g,"<br>"):esc(v)}</${tag}>`:""};
-  const mv=(k,rot=0)=>{const q=POS[k]||{};return `data-mv="${k}" data-rot="${rot}" style="transform:translate(${q.x||0}px,${q.y||0}px) rotate(${rot}deg)"`};
-  const pages=[],P=(cls,html)=>pages.push(`<div class="apg ${cls}" style="${sty}">${html}</div>`);
-  const cover=rs.find(r=>r.photo);
-  P("cover",`${cover?`<div class="acph"><img src="${pic(cover.photo)}" crossorigin="anonymous" alt=""></div>`:`<div class="acorn">${emo("📖")}</div>`}<div class="actx">${tx("ct",a.titre,"h1")}${tx("cs",a.sous,"p","asub")}${tx("cp",a.par,"p","apar")}</div>`);
-  if(String(E("dd",a.dedicace)).trim())P("ded",tx("dd",a.dedicace,"p","",1));
+  const mv=(k,rot=0)=>{const q=POS[k]||{},r=q.r!=null?q.r:rot;return `data-mv="${k}" data-rot="${rot}" style="transform:translate(${q.x||0}px,${q.y||0}px) rotate(${r}deg) scale(${q.s||1})${q.h?";display:none":""}"`};
+  const tx=(k,d,tag,cls="",br,m)=>{const v=String(E(k,d)??"");return v.trim()?`<${tag}${cls?` class="${cls}"`:""} data-ek="${k}"${m?" "+mv(k):""}>${br?esc(v).replace(/\n/g,"<br>"):esc(v)}</${tag}>`:""};
+  const frame=a.frame&&a.frame!=="aucun"?" fr-"+a.frame:"",ingc=a.ing&&a.ing!=="deux"?" ing-"+a.ing:"",phc=" ph-"+(a.pforme||"arrondie");
+  const pages=[],P=(cls,html)=>pages.push(`<div class="apg ${cls}${frame}" style="${sty}">${html}</div>`);
+  const cp=a.cover||(rs.find(r=>r.photo)||{}).photo,clay=a.clay||"haut";
+  P("cover"+(clay==="plein"&&cp?" full":clay==="sans"||!cp?" nophoto":""),`${clay!=="sans"&&cp?`<div class="acph"><img src="${pic(cp)}" crossorigin="anonymous" alt=""></div>`:`<div class="acorn">${emo("📖")}</div>`}<div class="actx" ${mv("ctx")}>${tx("ct",a.titre,"h1","",0,1)}${tx("cs",a.sous,"p","asub",0,1)}${tx("cp",a.par,"p","apar",0,1)}</div>`);
+  if(String(E("dd",a.dedicace)).trim())P("ded",tx("dd",a.dedicace,"p","",1,1));
   const tocAt=pages.length;P("toc","");
   const titles=[];
   for(const r of rs){
     const id=r.id,K=x=>`r_${id}_${x}`,blocks=[],x=srcOf(r),titre=E(K("t"),r.titre);titles.push(titre);
-    blocks.push(`<div class="arh">${tx(K("t"),r.titre,"h2")}${tx(K("m"),[x?x[1]:"",r.portions?L(`Pour ${r.portions} personnes`,`Serves ${r.portions}`):"",total(r)?mins(total(r)):""].filter(Boolean).join(" · "),"p")}</div>`);
+    blocks.push(`<div class="arh" ${mv(K("hd"))}>${tx(K("t"),r.titre,"h2")}${tx(K("m"),[x?x[1]:"",r.portions?L(`Pour ${r.portions} personnes`,`Serves ${r.portions}`):"",total(r)?mins(total(r)):""].filter(Boolean).join(" · "),"p")}</div>`);
     const who=secretWho(r),secs=arr(r.secrets);
     const bub=(k,t,side,sig)=>{const v=String(E(k,t)||"");return v.trim()?`<div class="abub ${side} s-${shape[0]}" ${mv(k,side==="l"?-shape[2]:shape[2])}><p data-ek="${k}">${esc(v)}</p>${sig&&who?`<span>${esc(who)}</span>`:""}</div>`:""};
     if(r.histoire)blocks.push(bub(K("h"),"« "+r.histoire+" »","l",1));
-    if(r.photo&&a.pleine)pages.push(`<div class="apg photo" style="${sty}"><img src="${pic(r.photo)}" crossorigin="anonymous" alt=""></div>`);
-    else if(r.photo)blocks.push(`<div class="arph" ${mv(K("p"))}><img src="${pic(r.photo)}" crossorigin="anonymous" alt=""></div>`);
-    blocks.push(`<h3>${L("Ingrédients","Ingredients")}</h3>`);
-    arr(r.ingredients).forEach((g,gi)=>{if(arr(g.items).length)blocks.push(`${g.groupe?tx(K(`g${gi}`),g.groupe,"h4"):""}<ul class="aing">${g.items.map((i,j)=>tx(K(`i${gi}_${j}`),ingLine(i),"li")).join("")}</ul>`)});
-    blocks.push(`<h3>${L("Préparation","Method")}</h3>`);
+    arr((a.bulles||{})[id]).forEach((t,i)=>blocks.push(bub(K("b"+i),t,i%2?"l":"r")));
+    if(r.photo&&a.pleine)pages.push(`<div class="apg photo${frame}" style="${sty}"><img src="${pic(r.photo)}" crossorigin="anonymous" alt=""></div>`);
+    else if(r.photo)blocks.push(`<div class="arph${phc}" ${mv(K("p"))}><img src="${pic(r.photo)}" crossorigin="anonymous" alt=""></div>`);
+    arr((a.photos||{})[id]).forEach(p=>blocks.push(`<div class="arph x${phc}" ${mv(K("x"+p))}><img src="${pic(p)}" crossorigin="anonymous" alt=""></div>`));
+    blocks.push(tx(K("hi"),L("Ingrédients","Ingredients"),"h3","",0,1));
+    arr(r.ingredients).forEach((g,gi)=>{if(arr(g.items).length)blocks.push(`${g.groupe?tx(K(`g${gi}`),g.groupe,"h4","",0,1):""}<ul class="aing" ${mv(K(`ig${gi}`))}>${g.items.map((i,j)=>tx(K(`i${gi}_${j}`),ingLine(i),"li")).join("")}</ul>`)});
+    blocks.push(tx(K("hp"),L("Préparation","Method"),"h3","",0,1));
     const ns=arr(r.etapes).length,at=secs.map((_,i)=>Math.min(ns-1,Math.round((i+1)*ns/(secs.length+1))-1));
     const side=i=>(i+(r.histoire?1:0))%2?"l":"r";
     arr(r.etapes).forEach((e,k)=>{const d=(e.titre?e.titre+". ":"")+e.texte,v=String(E(K(`e${k}`),d));
-      if(v.trim())blocks.push(`<div class="astep"><span>${k+1}</span><p data-ek="${K(`e${k}`)}">${K(`e${k}`) in ED?esc(v):`${e.titre?`<b>${esc(e.titre)}.</b> `:""}${esc(e.texte)}`}</p></div>`);
+      if(v.trim())blocks.push(`<div class="astep" ${mv(K(`st${k}`))}><span>${k+1}</span><p data-ek="${K(`e${k}`)}">${K(`e${k}`) in ED?esc(v):`${e.titre?`<b>${esc(e.titre)}.</b> `:""}${esc(e.texte)}`}</p></div>`);
       secs.forEach((t,i)=>{if(at[i]===k)blocks.push(bub(K(`s${i}`),t,side(i),!r.histoire&&i===0))})});
     if(!ns)secs.forEach((t,i)=>blocks.push(bub(K(`s${i}`),t,side(i),!r.histoire&&i===0)));
     const tips=arr(r.astuces).filter(t=>!/^À vérifier/.test(t)).join(" ");
-    if(String(E(K("tip"),tips)).trim())blocks.push(`<p class="atip"><b>${L("Astuce","Tip")} :</b> <span data-ek="${K("tip")}">${esc(E(K("tip"),tips))}</span></p>`);
+    if(String(E(K("tip"),tips)).trim())blocks.push(`<p class="atip" ${mv(K("tipb"))}><b>${L("Astuce","Tip")} :</b> <span data-ek="${K("tip")}">${esc(E(K("tip"),tips))}</span></p>`);
     if((a.notes[id]||"").trim())blocks.push(`<div class="anote" ${mv(`n_${id}`)}><span data-ek="n_${id}">${esc(a.notes[id]).replace(/\n/g,"<br>")}</span></div>`);
     pages.push({blocks,titre});
   }
@@ -2206,7 +2264,7 @@ function albumPages(a){
 }
 // lay the whole book out into fixed pages (shared by the preview and the PDF)
 async function albumLayout(a,host){
-  let dyn=document.getElementById("albDyn");if(!dyn){dyn=document.createElement("style");dyn.id="albDyn";document.head.appendChild(dyn)}
+  let dyn=document.getElementById("albDyn");if(!dyn){dyn=document.createElement("style");dyn.id="albDyn";document.body.appendChild(dyn)}
   dyn.textContent=albCss(a);
   try{await Promise.all([albOpt(ALB_TFONT,a.tfont)[2],albOpt(ALB_BFONT,a.bfont)[2],'"Caveat"'].map(f=>document.fonts.load("20px "+f.split(",")[0])));await document.fonts.ready}catch{}
   const {pages,tocAt,titles,sty}=albumPages(a);
@@ -2218,7 +2276,8 @@ async function albumLayout(a,host){
     if(typeof p==="string"){flat.push(bc(p));continue}
     recStart.push(flat.length);
     let cur=[],cont=false;
-    const wrap=(bl,ct)=>`<div class="apg ${BL?"bleed ":""}rec" style="${sty}">${ct?`<div class="acont">${esc(p.titre)} (${L("suite","cont.")})</div>`:""}<div class="abody">${bl.join("")}</div><div class="afoot"></div></div>`;
+    const fx=(a.frame&&a.frame!=="aucun"?" fr-"+a.frame:"")+(a.ing&&a.ing!=="deux"?" ing-"+a.ing:"");
+    const wrap=(bl,ct)=>`<div class="apg ${BL?"bleed ":""}rec${fx}" style="${sty}">${ct?`<div class="acont">${esc(p.titre)} (${L("suite","cont.")})</div>`:""}<div class="abody">${bl.join("")}</div><div class="afoot"></div></div>`;
     for(const b of p.blocks){
       if(fits(wrap([...cur,b],cont))){cur.push(b);continue}
       if(cur.length){flat.push(wrap(cur,cont));cont=true;cur=[b]}else{flat.push(wrap([b],cont));cont=true;cur=[]}
@@ -2226,7 +2285,8 @@ async function albumLayout(a,host){
     if(cur.length)flat.push(wrap(cur,cont));
   }
   const ED=a.edits||{},tt="tt" in ED?ED.tt:L("Sommaire","Contents");
-  flat[tocAt]=bc(`<div class="apg toc" style="${sty}"><h2 data-ek="tt">${esc(tt)}</h2><ol>${titles.map((t,i)=>`<li><span>${esc(t)}</span><i></i><b>${recStart[i]+1}</b></li>`).join("")}</ol></div>`);
+  const P0=(a.pos||{}),tm=k=>{const q=P0[k]||{};return `data-mv="${k}" data-rot="0" style="transform:translate(${q.x||0}px,${q.y||0}px) rotate(${q.r||0}deg) scale(${q.s||1})${q.h?";display:none":""}"`};
+  flat[tocAt]=bc(`<div class="apg toc${a.frame&&a.frame!=="aucun"?" fr-"+a.frame:""}" style="${sty}"><h2 data-ek="tt" ${tm("tt")}>${esc(tt)}</h2><ol ${tm("tol")}>${titles.map((t,i)=>`<li><span>${esc(t)}</span><i></i><b>${recStart[i]+1}</b></li>`).join("")}</ol></div>`);
   for(let i=1;i<flat.length;i++)flat[i]=flat[i].replace('<div class="afoot"></div>',`<div class="afoot">${i+1}</div>`);
   return {flat,BL};
 }
@@ -2236,10 +2296,11 @@ async function albumPreview(at){
   let flat;try{({flat}=await albumLayout(a,host))}finally{host.remove()}
   let ov=document.getElementById("albPrev");const fresh=!ov;
   if(fresh){ov=document.createElement("div");ov.id="albPrev";ov.setAttribute("role","dialog");ov.setAttribute("aria-label",L("Aperçu du livre","Book preview"));document.body.appendChild(ov);document.body.style.overflow="hidden"}
-  const editing=ov.dataset.edit==="1",g=albGeom(a),w=g.W+2*g.b,h=g.H+2*g.b,sc=Math.min((innerWidth-40)/w,(innerHeight-(editing?230:190))/h,1);
+  const editing=ov.dataset.edit==="1",g=albGeom(a),w=g.W+2*g.b,h=g.H+2*g.b,sc=Math.min((innerWidth-40)/w,(innerHeight-(editing?300:190))/h,1);
   ov.innerHTML=`<div class="apvtop"><button class="iconbtn" data-pv="close">‹ ${L("Retour","Back")}</button><span class="apvn">1 / ${flat.length}</span><button class="iconbtn${editing?" on":""}" data-pv="edit">${editing?`${emo("✓")} ${L("Terminé","Done")}`:`${emo("✏️")} ${L("Modifier","Edit")}`}</button></div>
     <div class="apvrail${editing?" editing":""}">${flat.map(pg=>`<div class="apvpg" style="width:${w*sc}px;height:${h*sc}px"><div style="transform:scale(${sc});transform-origin:0 0;width:${w}px">${pg}</div></div>`).join("")}</div>
-    <p class="apvhint">${editing?L("Touche un texte pour l'écrire autrement (vide-le pour l'enlever). Fais glisser ✥ pour déplacer une bulle, une photo ou ton mot.","Tap any text to rewrite it (empty it to remove it). Drag ✥ to move a bubble, a photo or your note."):L("Fais glisser pour tourner les pages","Swipe to turn the pages")}</p>
+    ${editing?`<div class="apvtb" hidden></div>`:""}
+    <p class="apvhint">${editing?L("Touche un élément pour le choisir : écris dedans, fais glisser ✥ pour le déplacer, ⤡ pour l'agrandir. La barre au-dessus change la police, la taille, la couleur…","Tap an element to pick it: type in it, drag ✥ to move it, ⤡ to resize it. The bar above changes font, size, colour…"):L("Fais glisser pour tourner les pages","Swipe to turn the pages")}</p>
     <div class="apvbar"><button class="btn block" data-pv="ok">${emo("✓")} ${L("Valider et créer le PDF","Approve and make the PDF")}</button></div>`;
   const rail=ov.querySelector(".apvrail"),n=ov.querySelector(".apvn"),step=w*sc+16;
   rail.onscroll=()=>{const k=Math.round(rail.scrollLeft/step);n.textContent=`${Math.min(k+1,flat.length)} / ${flat.length}`};
@@ -2251,14 +2312,48 @@ async function albumPreview(at){
   if(!editing)return;
   a.edits=a.edits||{};a.pos=a.pos||{};
   rail.querySelectorAll("[data-ek]").forEach(el=>{el.contentEditable="true";el.spellcheck=false;const was=el.innerText.replace(/\u00a0/g," ").trim();
-    el.onblur=()=>{const k=el.dataset.ek,v=el.innerText.replace(/ /g," ").trim();
+    el.onblur=()=>{const k=el.dataset.ek,hs=[...el.querySelectorAll(".mvh")];hs.forEach(h=>h.remove());const v=el.innerText.replace(/\u00a0/g," ").trim();hs.forEach(h=>el.appendChild(h));
       if(v===was&&!(k in a.edits))return;if(k.startsWith("n_"))a.notes[k.slice(2)]=v;else a.edits[k]=v;albumDirty()}});
-  rail.querySelectorAll("[data-mv]").forEach(el=>{
-    const hd=document.createElement("span");hd.className="mvh";hd.textContent="✥";hd.setAttribute("aria-label",L("Déplacer","Move"));el.appendChild(hd);
-    hd.onpointerdown=e=>{e.preventDefault();e.stopPropagation();hd.setPointerCapture(e.pointerId);
-      const k=el.dataset.mv,rot=+el.dataset.rot||0,q=a.pos[k]||{x:0,y:0},sx=e.clientX,sy=e.clientY;let nx=q.x||0,ny=q.y||0;
-      hd.onpointermove=m=>{nx=(q.x||0)+(m.clientX-sx)/sc;ny=(q.y||0)+(m.clientY-sy)/sc;el.style.transform=`translate(${nx}px,${ny}px) rotate(${rot}deg)`};
-      hd.onpointerup=hd.onpointercancel=()=>{hd.onpointermove=null;a.pos[k]={x:Math.round(nx),y:Math.round(ny)};albumDirty()}}});
+  a.sty=a.sty||{};
+  const tb=ov.querySelector(".apvtb");let sel=null,ek=null;
+  const dyn=()=>{const d=document.getElementById("albDyn");if(d)d.textContent=albCss(a)};
+  const tr=(el,q)=>`translate(${q.x||0}px,${q.y||0}px) rotate(${q.r!=null?q.r:(+el.dataset.rot||0)}deg) scale(${q.s||1})`;
+  const handle=(el,cls,txt,lab,onMove)=>{const hd=document.createElement("span");hd.className="mvh"+cls;hd.textContent=txt;hd.contentEditable="false";hd.setAttribute("aria-label",lab);el.appendChild(hd);
+    hd.onpointerdown=e=>{e.preventDefault();e.stopPropagation();hd.setPointerCapture(e.pointerId);const k=el.dataset.mv,q={...(a.pos[k]||{})},sx=e.clientX,sy=e.clientY;let nq=q;
+      hd.onpointermove=m=>{nq=onMove(q,(m.clientX-sx)/sc,(m.clientY-sy)/sc);el.style.transform=tr(el,nq)};
+      hd.onpointerup=hd.onpointercancel=()=>{hd.onpointermove=null;a.pos[k]=nq;albumDirty()}}};
+  const target=()=>ek?["e:"+ek.dataset.ek,ek]:sel?["m:"+sel.dataset.mv,sel]:[null,null];
+  const setSty=(f)=>{const [k,el]=target();if(!k)return;const o={...(a.sty[k]||{})};f(o,el);a.sty[k]=o;dyn();albumDirty();drawTb()};
+  const setPos=(f)=>{if(!sel)return;const k=sel.dataset.mv,q={...(a.pos[k]||{})};f(q);a.pos[k]=q;sel.style.transform=tr(sel,q);if(q.h){sel.style.display="none";pick(null)}albumDirty()};
+  const isBox=el=>el&&el.matches(".abub,.anote,.atip,.actx");
+  function drawTb(){
+    if(!tb)return;const [k,el]=target();tb.hidden=!k;if(!k){tb.innerHTML="";return}
+    const o=a.sty[k]||{},B=(act,html,lab,extra="")=>`<button data-tb="${act}" aria-label="${lab}" ${extra}>${html}</button>`;
+    const img=!ek&&sel&&sel.matches(".arph");
+    tb.innerHTML=`${img?"":B("fs-","A−",L("Plus petit","Smaller"))+B("fs+","A+",L("Plus grand","Bigger"))+B("b","<b>G</b>",L("Gras","Bold"),o.b?'style="background:#e0553a"':"")+B("i","<i>I</i>",L("Italique","Italic"),o.i?'style="background:#e0553a"':"")+B("al",{left:"⇤",center:"↔",right:"⇥"}[o.al||"left"],L("Alignement","Alignment"))+B("f","Aa",L("Changer de police","Change font"))}
+      ${sel?B("r-","↺",L("Tourner à gauche","Rotate left"))+B("r+","↻",L("Tourner à droite","Rotate right"))+B("hide","🗑",L("Cacher","Hide")):""}${B("clr","⟲",L("Style d'origine","Original style"))}
+      ${img?"":`<span style="flex-basis:100%;height:0"></span><span class="lab">${L("Texte","Text")}</span>${ALB_TXCOL.map((c,n)=>B("co",``,c,`class="sw" data-v="${n}" style="background:${c==="var(--c)"?albumTheme(a)[2]:c}"`)).join("")}`}
+      ${isBox(sel)&&!ek?`<span style="flex-basis:100%;height:0"></span><span class="lab">${L("Fond","Fill")}</span>${["#ffffff","#fff3b0",tint(albumTheme(a)[2]),"#f6d5cc","#dfe9d8","#dde4f0","transparent"].map(c=>B("bg",c==="transparent"?"∅":"",c,`class="sw" data-c="${c}" style="background:${c==="transparent"?"none":c}"`)).join("")}`:""}`;
+    tb.querySelectorAll("[data-tb]").forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>{const t=b.dataset.tb;
+      if(t==="fs-"||t==="fs+")setSty((o,el)=>{const cur=o.fs||parseFloat(getComputedStyle(el.matches("[data-ek]")?el:(el.querySelector("[data-ek]")||el)).fontSize)||13;o.fs=Math.max(7,Math.min(90,Math.round(cur+(t==="fs+"?2:-2))))});
+      else if(t==="b")setSty(o=>{o.b=!o.b});else if(t==="i")setSty(o=>{o.i=!o.i});
+      else if(t==="al")setSty(o=>{o.al={left:"center",center:"right",right:"left"}[o.al||"left"]});
+      else if(t==="f")setSty(o=>{o.f=o.f==null?0:(o.f+1)%ALB_TXFONTS.length});
+      else if(t==="co")setSty(o=>{o.co=ALB_TXCOL[+b.dataset.v]});
+      else if(t==="bg")setSty(o=>{o.bg=b.dataset.c});
+      else if(t==="clr"){const [k]=target();delete a.sty[k];dyn();albumDirty();drawTb()}
+      else if(t==="r-"||t==="r+")setPos(q=>{q.r=(q.r!=null?q.r:(+sel.dataset.rot||0))+(t==="r+"?4:-4)});
+      else if(t==="hide"){if(confirm(L("Cacher cet élément ? (« Annuler mes retouches » le fait revenir)","Hide this element? (“Undo my preview edits” brings it back)")))setPos(q=>{q.h=1})}}});
+  }
+  function pick(el){
+    if(sel===el)return;rail.querySelectorAll(".mvh").forEach(h=>h.remove());if(sel)sel.classList.remove("sel");sel=el;
+    if(el){el.classList.add("sel");
+      handle(el,"","✥",L("Déplacer","Move"),(q,dx,dy)=>({...q,x:Math.round((q.x||0)+dx),y:Math.round((q.y||0)+dy)}));
+      handle(el," rs","⤡",L("Agrandir ou réduire","Resize"),(q,dx,dy)=>({...q,s:Math.round(Math.max(.3,Math.min(3,(q.s||1)*(1+(dy-dx)/220)))*100)/100}))}
+    drawTb();
+  }
+  rail.addEventListener("pointerdown",e=>{if(e.target.closest(".mvh"))return;const m=e.target.closest("[data-mv]"),t=e.target.closest("[data-ek]");ek=t||null;pick(m||null);if(!m)drawTb()});
+  rail.querySelectorAll("[data-ek]").forEach(el=>el.addEventListener("focus",()=>{ek=el;drawTb()}));
 }
 async function albumPdf(){
   const A=st.album,a=A.cur;A.busy=true;A.link="";A.prog=L("Je prépare la mise en page…","Preparing the layout…");render();
