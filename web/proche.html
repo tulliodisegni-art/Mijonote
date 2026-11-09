@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#fbf4ea">
+<title>Ta recette · Mijonote</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbf4ea;--surface:#fffdf9;--ink:#2b211b;--muted:#7a6c62;--line:#eadfd2;--tomato:#c4492f;--basil:#3f6b3a;--shadow:0 6px 22px rgba(60,40,20,.08);--display:"Fraunces",Georgia,serif;--hand:"Caveat",cursive}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 "Figtree",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:520px;margin:0 auto;padding:28px 20px calc(40px + env(safe-area-inset-bottom))}
+.brand{font-family:var(--display);font-size:1.1rem;color:var(--tomato);letter-spacing:.02em}
+.hand{font-family:var(--hand);font-size:1.5rem;color:var(--tomato);line-height:1.1}
+h1{font-family:var(--display);font-weight:400;font-size:2rem;line-height:1.15;margin:.3rem 0 .6rem}
+p{margin:0 0 1rem}.muted{color:var(--muted)}
+.card{background:var(--surface);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin:0 0 14px}
+.card h2{font-family:var(--display);font-weight:400;font-size:1.25rem;margin:0 0 .2rem;display:flex;gap:.5rem;align-items:center}
+.card .sub{color:var(--muted);font-size:.92rem;margin:0 0 .8rem}
+label.btn,button.btn{display:flex;justify-content:center;align-items:center;gap:.5rem;width:100%;border:0;border-radius:999px;padding:.9rem 1rem;font:inherit;font-weight:700;cursor:pointer;background:var(--basil);color:#fff;text-align:center}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.big{background:var(--tomato);font-size:1.08rem;padding:1.05rem}
+.btn:disabled{opacity:.5}
+input[type=text],textarea{width:100%;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);padding:.75rem .9rem;font:inherit;color:var(--ink)}
+textarea{min-height:140px;resize:vertical}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.thumbs:empty{display:none}
+.thumbs div{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:var(--line)}
+.thumbs img{width:100%;height:100%;object-fit:cover}
+.thumbs button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:.8rem;cursor:pointer}
+.rec{display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.recbtn{width:76px;height:76px;border-radius:50%;border:4px solid var(--tomato);background:transparent;display:grid;place-items:center;cursor:pointer}
+.recbtn span{width:52px;height:52px;border-radius:50%;background:var(--tomato);transition:all .2s}
+.recbtn.on span{width:28px;height:28px;border-radius:7px;animation:p 1.4s infinite}@keyframes p{50%{opacity:.5}}
+.time{font-variant-numeric:tabular-nums;font-size:1.6rem}
+.got{display:flex;gap:.6rem;align-items:center;justify-content:center;flex-wrap:wrap}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.9rem;cursor:pointer}
+.err{background:#fde9e4;color:#8a2b17;border-radius:14px;padding:.8rem 1rem;margin:0 0 14px}
+.done{text-align:center;padding:40px 10px}.done .big{font-size:3rem}
+.foot{text-align:center;color:var(--muted);font-size:.8rem;margin-top:22px}
+</style>
+</head>
+<body>
+<main id="app"><p class="muted">Chargement…</p></main>
+<script>
+const FN="https://vvxkkqcmjrwytagbxdfg.supabase.co/functions/v1/mijonote",KEY="sb_publishable_A-kJQIoJXxdXmjHF8iM40g_RP6myhMo";
+const token=location.hash.slice(1).replace(/[^a-z0-9]/gi,"");
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const st={qui:"",de:"",photos:[],audio:null,dur:0,busy:false,err:"",done:false,rec:null};
+async function call(body){
+  const r=await fetch(FN,{method:"POST",headers:{"content-type":"application/json",apikey:KEY},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||("Erreur "+r.status));return j;
+}
+const b64=b=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=ko;r.readAsDataURL(b)});
+async function shrink(f,max=1600){
+  try{const bm=await createImageBitmap(f,{imageOrientation:"from-image"});const k=Math.min(1,max/Math.max(bm.width,bm.height)),c=document.createElement("canvas");c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext("2d").drawImage(bm,0,0,c.width,c.height);return await new Promise(ok=>c.toBlob(ok,"image/jpeg",.85))}
+  catch{return f}
+}
+const mmss=s=>Math.floor(s/60)+":"+String(Math.round(s)%60).padStart(2,"0");
+function draw(){
+  const a=$("#app");
+  if(!token){a.innerHTML=`<div class="done"><div class="big">🔗</div><h1>Lien incomplet</h1><p class="muted">Demande à la personne de te renvoyer son lien.</p></div>`;return}
+  if(st.done){a.innerHTML=`<div class="done"><div class="big">💌</div><span class="hand">Merci ${esc(st.qui)} !</span><h1>Ta recette est bien arrivée</h1><p class="muted">${st.de?esc(st.de)+" la retrouve":"Elle arrive"} dans son carnet Mijonote. Tu peux fermer cette page.</p><button class="btn ghost" id="again" style="max-width:280px;margin:1rem auto 0">Envoyer une autre recette</button></div>`;$("#again").onclick=()=>{Object.assign(st,{photos:[],audio:null,dur:0,done:false});draw()};return}
+  if(!st.qui&&!st.err){return}
+  const r=st.rec;
+  a.innerHTML=`<span class="brand">Mijonote</span>
+  ${st.err&&!st.qui?`<div class="err" style="margin-top:1rem">${esc(st.err)}</div>`:`
+  <span class="hand" style="display:block;margin-top:1.2rem">Bonjour ${esc(st.qui)} !</span>
+  <h1>${st.de?esc(st.de)+" aimerait":"On aimerait"} garder ta recette</h1>
+  <p class="muted">Choisis ce qui est le plus simple pour toi : une photo de ta fiche, quelques lignes, ou ta voix. Rien à installer.</p>
+  ${st.err?`<div class="err">${esc(st.err)}</div>`:""}
+  <div class="card"><h2>📷 En photo</h2><p class="sub">Ta fiche, ton cahier, une page… même tachée, ça se lit.</p>
+    <label class="btn ghost">Prendre ou choisir des photos<input id="ph" type="file" accept="image/*" multiple hidden></label>
+    <div class="thumbs">${st.photos.map((p,i)=>`<div><img src="${p.url}" alt=""><button data-rm="${i}" aria-label="Retirer">✕</button></div>`).join("")}</div></div>
+  <div class="card"><h2>🎙️ À voix haute</h2><p class="sub">Raconte-la comme tu la ferais : les ingrédients, les gestes, un souvenir. Jusqu'à 10 minutes.</p>
+    <div class="rec">${st.audio?`<div class="got"><span>✓ Enregistré · ${mmss(st.dur)}</span><button class="link" id="play">Écouter</button><button class="link" id="redo">Recommencer</button></div>`
+      :`<button class="recbtn${r?" on":""}" id="recb" aria-label="${r?"Arrêter":"Enregistrer"}"><span></span></button><span class="time" id="t">${r?"0:00":"Touche pour parler"}</span>${r?"":`<label class="link">ou choisir un fichier audio<input id="au" type="file" accept="audio/*" hidden></label>`}`}</div></div>
+  <div class="card"><h2>✍️ Par écrit</h2><p class="sub">Le nom du plat, puis la recette, avec tes mots.</p>
+    <input id="ti" type="text" placeholder="Le nom de ta recette (ex. Le gâteau du dimanche)" maxlength="120" style="margin-bottom:.6rem">
+    <textarea id="tx" placeholder="Les ingrédients, comment tu fais, tes petits secrets…" maxlength="8000"></textarea></div>
+  <button class="btn big" id="send" ${st.busy?"disabled":""}>${st.busy?"Envoi en cours…":"💌 Envoyer ma recette"}</button>
+  <p class="foot">Ta recette va seulement à ${st.de?esc(st.de):"la personne qui t'a envoyé ce lien"}.</p>`}`;
+  const keep=["ti","tx"].map(id=>[id,sessionStorage.getItem("pr_"+id)||""]);keep.forEach(([id,v])=>{const el=$("#"+id);if(el){el.value=v;el.oninput=()=>sessionStorage.setItem("pr_"+id,el.value)}});
+  const ph=$("#ph");if(ph)ph.onchange=async()=>{for(const f of ph.files){if(st.photos.length>=8){st.err="8 photos maximum.";break}const b=await shrink(f);st.photos.push({blob:b,url:URL.createObjectURL(b)})}draw()};
+  document.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{st.photos.splice(+b.dataset.rm,1);draw()});
+  const au=$("#au");if(au)au.onchange=()=>{const f=au.files[0];if(!f)return;if(f.size>15e6){st.err="Ce fichier est trop long (15 Mo max).";draw();return}st.audio=f;const x=new Audio(URL.createObjectURL(f));x.onloadedmetadata=()=>{st.dur=isFinite(x.duration)?x.duration:0;draw()};draw()};
+  const pl=$("#play");if(pl)pl.onclick=()=>new Audio(URL.createObjectURL(st.audio)).play();
+  const rd=$("#redo");if(rd)rd.onclick=()=>{st.audio=null;st.dur=0;draw()};
+  const rb=$("#recb");if(rb)rb.onclick=toggleRec;
+  $("#send")&&($("#send").onclick=send);
+}
+async function toggleRec(){
+  if(st.rec){st.rec.stop();return}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})}catch{st.err="Le micro n'est pas autorisé. Tu peux enregistrer avec l'appli Dictaphone puis choisir le fichier.";draw();return}
+  const type=["audio/mp4","audio/webm;codecs=opus","audio/webm"].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||"";
+  const rec=new MediaRecorder(stream,{...(type?{mimeType:type}:{}),audioBitsPerSecond:48000}),parts=[],t0=Date.now();
+  rec.ondataavailable=e=>e.data.size&&parts.push(e.data);
+  const tick=setInterval(()=>{const s=(Date.now()-t0)/1000,t=$("#t");if(t)t.textContent=mmss(s);if(s>=600)rec.stop()},500);
+  rec.onstop=()=>{clearInterval(tick);stream.getTracks().forEach(t=>t.stop());st.audio=new Blob(parts,{type:(rec.mimeType||type||"audio/mp4").split(";")[0]});st.dur=(Date.now()-t0)/1000;st.rec=null;draw()};
+  rec.start(1000);st.rec=rec;st.err="";draw();
+}
+async function send(){
+  const titre=($("#ti").value||"").trim(),texte=($("#tx").value||"").trim();
+  if(!st.photos.length&&!st.audio&&!texte){st.err="Ajoute une photo, ta voix ou quelques lignes avant d'envoyer.";draw();return}
+  st.busy=true;st.err="";draw();
+  try{
+    const fichiers=[];for(const p of st.photos)fichiers.push({type:"image/jpeg",data:await b64(p.blob)});
+    if(st.audio)fichiers.push({type:(st.audio.type||"audio/mp4").split(";")[0],data:await b64(st.audio)});
+    await call({action:"envoi",token,titre,texte,fichiers});
+    sessionStorage.removeItem("pr_ti");sessionStorage.removeItem("pr_tx");st.done=true;
+  }catch(e){st.err="L'envoi n'a pas marché ("+e.message+"). Vérifie ta connexion et réessaie."}
+  st.busy=false;draw();
+}
+(async()=>{
+  if(!token){draw();return}
+  try{const d=await call({action:"demande",token});st.qui=d.qui||"";st.de=d.de||"";if(!st.qui)st.qui=" "}
+  catch(e){st.err="Ce lien ne marche plus. Demande à la personne de t'en renvoyer un."}
+  draw();
+})();
+</script>
+</body>
+</html>

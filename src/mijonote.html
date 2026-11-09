@@ -288,7 +288,7 @@ textarea{resize:vertical;min-height:4.5rem}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;pointer-events:none;
   padding:0 12px calc(env(safe-area-inset-bottom,0px) + 18px);
   background:linear-gradient(to top,var(--bg) 55%,transparent)}
-.tabs nav{pointer-events:auto;max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;
+.tabs nav{pointer-events:auto;max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
   background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:7px;
   box-shadow:0 2px 6px rgba(60,40,20,.08),0 14px 34px rgba(60,40,20,.16)}
 .tabs button{border:0;background:transparent;min-height:60px;border-radius:20px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
@@ -590,14 +590,77 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .apg .anote{margin:14px 0 0;font-family:"Caveat",cursive;font-size:22px;line-height:1.25;color:var(--c);padding:10px 14px;border-left:3px solid var(--c)}
 .apg .acont{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7a6e66;margin:0 0 12px}
 .apg .afoot{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:11px;color:#9a8e86}
+/* ---- 2026-11 : accueil allégé, raccourcis, notes, portraits, voix, demandes, famille ---- */
+.ideabar{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-top:10px}
+.ideabar .linkbtn{display:inline-flex;align-items:center;gap:.35rem;font-weight:700;font-size:.9rem}
+.ideabar .emo{font-size:1rem;filter:none}
+.morebtn{color:var(--muted)!important}
+.more{animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:34px}
+.shortcuts button{display:flex;align-items:center;gap:.7rem;border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:.8rem .85rem;text-align:left;font:inherit;color:var(--ink);cursor:pointer;box-shadow:var(--shadow);min-width:0}
+.shortcuts .disc{flex:none;width:42px;height:42px;border-radius:50%;background:var(--bg);display:grid;place-items:center}
+.shortcuts .disc .emo{font-size:1.4rem}
+.shortcuts b{display:block;font-family:var(--display);font-weight:400;font-size:1rem;line-height:1.15}
+.shortcuts small{display:block;color:var(--muted);font-size:.76rem;line-height:1.25;margin-top:.15rem}
+.journal{background:var(--surface);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.6rem}
+.journal .jh{display:flex;justify-content:space-between;align-items:baseline;gap:.8rem}
+.journal .jh .hand{color:var(--tomato)}
+.journal .jlast{margin:0;font-size:.9rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}.journal .jlast .emo{font-size:1rem;filter:none}
+.journal textarea{font-family:var(--hand);font-size:1.25rem;line-height:1.3;background:var(--bg);border-style:dashed;min-height:3.2rem}
+.journal .jdone{display:inline-flex;align-items:center;gap:.35rem;color:var(--basil);font-weight:700;font-size:.92rem}.journal .jdone .emo{font-size:1rem;filter:none}
+.cook .cknote{display:flex;gap:.5rem;align-items:flex-start;background:var(--saffron-soft);border-radius:14px;padding:.6rem .8rem;margin:.6rem 0;font-size:.95rem}.cook .cknote .emo{font-size:1.1rem;filter:none}
+.portrait{display:flex;gap:1rem;align-items:center;background:var(--surface);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);margin:4px 0 18px}
+.portrait .pph{position:relative;flex:none;width:84px;height:84px;border-radius:50%;overflow:hidden;background:var(--tomato-soft);display:grid;place-items:center;cursor:pointer;color:var(--tomato);font-family:var(--display);font-size:1.7rem}
+.portrait .pph img{width:100%;height:100%;object-fit:cover}
+.portrait .pph i{position:absolute;right:2px;bottom:2px;width:26px;height:26px;border-radius:50%;background:var(--surface);display:grid;place-items:center;box-shadow:var(--shadow)}.portrait .pph i .emo{font-size:.85rem;filter:none}
+.portrait .pbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:.3rem}.portrait .hand{color:var(--tomato);font-size:1.2rem}
+.portrait textarea{font-family:var(--hand);font-size:1.2rem;line-height:1.25;border:0;border-bottom:1px dashed var(--line);border-radius:0;background:transparent;padding:.2rem 0;min-height:2.6rem}
+.book.face img{object-position:center 30%}
+.apg.portrait{display:flex;align-items:center;justify-content:center;text-align:center}
+.apg .aport{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:80%}
+.apg .aporph{width:230px;height:230px;border-radius:50%;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.15);border:6px solid #fff}.apg .aporph img{width:100%;height:100%;object-fit:cover}
+.apg.portrait h2{font-size:34px;color:var(--c);margin:6px 0 0}
+.apg .apmot{font-family:"Caveat",cursive;font-size:23px;line-height:1.3;color:#4a3f38;margin:0}
+.apg .apn{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7a6e66;margin:4px 0 0}
+.voix{background:var(--surface);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.6rem}
+.voix .jh{display:flex;justify-content:space-between;align-items:baseline;gap:.8rem}.voix .jh h2{margin:0}.voix .jh .hand{color:var(--tomato)}
+.vrow{display:flex;align-items:center;gap:.75rem}
+.vplay{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--tomato);color:#fff;font-size:.95rem;cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+.vplay.on{background:var(--ink)}
+.vbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem}.vbody b{font-family:var(--display);font-weight:400;font-size:1.02rem}.vbody small{color:var(--muted);font-size:.8rem}
+.vtrack{height:3px;border-radius:3px;background:var(--line);overflow:hidden}.vtrack i{display:block;height:100%;width:0;background:var(--tomato);transition:width .4s linear}
+.recov{position:fixed;inset:0;z-index:300;background:rgba(20,14,10,.55);display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s ease}
+.recbox{position:relative;width:100%;max-width:520px;background:var(--bg);border-radius:26px 26px 0 0;padding:26px 22px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.7rem;text-align:center}
+.recbox h2{margin:0;font-family:var(--display);font-weight:400}.recbox p{margin:0;max-width:34ch}.recbox .hand{color:var(--tomato);font-size:1.2rem}
+.recbox .btn.block{width:100%}
+.recx{position:absolute;top:12px;right:12px}
+.rectime{font-variant-numeric:tabular-nums;font-size:2.2rem;letter-spacing:.04em;margin:.3rem 0}
+.recbtn{width:84px;height:84px;border-radius:50%;border:4px solid var(--tomato);background:transparent;display:grid;place-items:center;cursor:pointer;margin:.2rem 0 .4rem}
+.recbtn span{width:58px;height:58px;border-radius:50%;background:var(--tomato);transition:all .2s ease}
+.recbtn.on span{width:30px;height:30px;border-radius:8px;animation:recpulse 1.4s ease-in-out infinite}
+@keyframes recpulse{50%{opacity:.55}}
+.recfile{font-size:.88rem;color:var(--muted)}
+.apg .aqr{display:flex;align-items:center;gap:12px;margin:14px 0 0}.apg .aqr img{width:74px;height:74px;image-rendering:pixelated;flex:none}
+.apg .aqr span{font-family:"Caveat",cursive;font-size:19px;line-height:1.2;color:var(--c)}
+.envois{display:flex;flex-direction:column;gap:.6rem;margin:18px 0 0}
+.envoi{display:flex;gap:.8rem;align-items:flex-start;background:var(--surface);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);border-left:4px solid var(--tomato);animation:fadein .3s ease}
+.envoi .ee{font-size:1.5rem;line-height:1}.envoi .et{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem}
+.envoi b{font-family:var(--display);font-weight:400;font-size:1.05rem}.envoi small{color:var(--muted);font-size:.82rem}
+.envoi .emsg{font-family:var(--hand,"Caveat",cursive);font-size:1.1rem;color:var(--tomato);margin-top:.2rem}
+.envoi .btn{padding:.5rem 1rem}
+.famrail{display:flex;gap:.75rem;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;scrollbar-width:none}.famrail::-webkit-scrollbar{display:none}
+.famcard{flex:none;width:150px;scroll-snap-align:start;display:flex;flex-direction:column;gap:.25rem;border:0;background:var(--surface);border-radius:18px;padding:0 0 .7rem;box-shadow:var(--shadow);text-align:left;font:inherit;color:var(--ink);cursor:pointer;overflow:hidden}
+.famcard img,.famcard .fi{width:100%;height:110px;object-fit:cover;display:grid;place-items:center;background:var(--bg);font-size:2.2rem}
+.famcard b{font-family:var(--display);font-weight:400;font-size:.98rem;line-height:1.2;padding:0 .7rem}
+.famcard small{color:var(--muted);font-size:.76rem;padding:0 .7rem;line-height:1.25}
 </style>
 
 <div class="wrap" id="app"></div>
 
 <div class="tabs"><nav id="tabs" aria-label="Navigation">
-  <button data-v="lib" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5M12 6.5c2-1.5 5-2 8.5-1.5v13c-3.5-.5-6.5 0-8.5 1.5M12 6.5v13"/><path d="M6.5 9c1.2-.1 2.4.1 3 .4M6.5 12c1.2-.1 2.4.1 3 .4"/></svg>Recettes</button>
-  <button data-v="sauces"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 11h13v4.5a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 4 15.5z"/><path d="M4 11h13v4.5a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 4 15.5z"/><path d="M17 12.5h3.5"/><path d="M8 7.5c0-1 .8-1.3.8-2.3M11.5 7.5c0-1 .8-1.3.8-2.3"/></svg>Sauces</button>
-  <button data-v="fridge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="5.5" y="2.5" width="13" height="19" rx="3"/><rect x="5.5" y="2.5" width="13" height="19" rx="3"/><path d="M5.5 9.5h13M8.5 5.5v1.5M8.5 12.5v3"/><path d="M9 21.5v.8M15 21.5v.8"/></svg>Frigo</button>
+  <button data-v="lib" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5M12 6.5c2-1.5 5-2 8.5-1.5v13c-3.5-.5-6.5 0-8.5 1.5M12 6.5v13"/><path d="M6.5 9c1.2-.1 2.4.1 3 .4M6.5 12c1.2-.1 2.4.1 3 .4"/></svg>Carnet</button>
+  <button data-v="album"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M5.5 3.5h11a2 2 0 0 1 2 2v15h-11a2 2 0 0 1-2-2z"/><path d="M5.5 18.5v-13a2 2 0 0 1 2-2h11v15h-11a2 2 0 0 0 0 4h11"/><path d="M12 13.2c-1.6-1-2.6-2-2.6-3.1 0-.9.7-1.5 1.4-1.5.6 0 1 .3 1.2.8.2-.5.6-.8 1.2-.8.7 0 1.4.6 1.4 1.5 0 1.1-1 2.1-2.6 3.1z"/></svg>Livre</button>
   <button data-v="scan" class="add"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="disc" cx="12" cy="12" r="10"/><path class="plus" d="M12 7.5v9M7.5 12h9"/></svg>Ajouter</button>
 </nav></div>
 
@@ -651,7 +714,7 @@ const L=(fr,en)=>LANG==="en"?en:fr;
 document.documentElement.lang=LANG;
 const I18N={
 "Carnet de cuisine":"Cookbook","Mon carnet":"My cookbook","Mon compte":"My account","Navigation":"Navigation",
-"Recettes":"Recipes","Sauces":"Sauces","Frigo":"Fridge","Ajouter":"Add","Livres":"Books","Réseaux":"Social","De qui vient la recette ?":"Who is the recipe from?","Terracotta":"Terracotta","Sauge":"Sage","Bleu nuit":"Navy","Crème":"Cream","Copie impossible ici":"Copying isn't possible here",
+"Recettes":"Recipes","Carnet":"Cookbook","Sauces":"Sauces","Frigo":"Fridge","Ajouter":"Add","Livres":"Books","Réseaux":"Social","De qui vient la recette ?":"Who is the recipe from?","Terracotta":"Terracotta","Sauge":"Sage","Bleu nuit":"Navy","Crème":"Cream","Copie impossible ici":"Copying isn't possible here",
 "Passer en mode sombre":"Switch to dark mode","Passer en mode clair":"Switch to light mode","Mode sombre":"Dark mode","Mode clair":"Light mode",
 "Envie":"Craving","Chocolat… ou une envie":"Chocolate… or a craving","Trouver":"Find",
 "Un mot pour chercher dans tes recettes. Une phrase, et Claude devine ce qui te ferait plaisir.":"One word searches your recipes. A whole sentence, and Claude guesses what you'd enjoy.",
@@ -893,8 +956,8 @@ function wrapSample(s){
 document.addEventListener("click",ev=>{if(!ev.target.closest("#themeBtn"))return;const t=curTheme()==="dark"?"light":"dark";tutoMark("theme",t);document.documentElement.dataset.theme=t;render()});
 
 let db=null, assets=null, downloads=null, sample=null, mcp=null, importing=false, imgLimits=null, ready={db:false,sample:false};
-let recettes=[], loaded=false, liens=[];
-const st={view:"lib",type:"tout",cat:null,q:"",livre:"",goal:null,quick:false,all:false,stype:"tout",scat:null,sq:"",
+let recettes=[], loaded=false, liens=[], proches={};
+const st={more:ls.get("homemore",false),view:"lib",type:"tout",cat:null,q:"",livre:"",goal:null,quick:false,all:false,stype:"tout",scat:null,sq:"",
   scan:{files:[],busy:false,err:"",found:null,social:{url:"",text:"",frames:[],shots:[],busyV:false,fam:false,who:"",said:""},livre:ls.get("livre",""),fam:false,famWho:ls.get("famwho",""),auteur:ls.get("auteur",""),auteurLivre:ls.get("auteurLivre",""),page:"",pdf:null,prog:null,auto:true,
     mode:(m=>["photo","social","lien","texte","pdf"].includes(m)?m:"photo")(ls.get("scanmode","photo")),url:"",text:"",source:ls.get("source","")},
   ask:{q:"",busy:false,err:"",res:null},
@@ -915,9 +978,10 @@ let ctl=null;
       recRaw=s.docs.map(d=>({id:d.id,...d.data()}));
       for(const r of recRaw)if(typeof r.origine==="string"){const v=r.origine;r.origine=null;if(v&&!r.provenance)r.provenance=v;try{db.collection("recettes").doc(r.id).update({origine:null,...(v?{provenance:v}:{})}).catch(()=>{})}catch{}}
       relocalize();
-      loaded=true;render();if(openId&&JSON.stringify(recRaw.find(r=>r.id===openId))!==was)openRecipe(openId,true);trQueue();
+      loaded=true;famSyncSoon();render();if(openId&&JSON.stringify(recRaw.find(r=>r.id===openId))!==was)openRecipe(openId,true);trQueue();
     },e=>{loaded=true;render()});
       db.collection("albums").onSnapshot(s=>{st.album.list=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.maj||0)-(a.maj||0));if(st.view==="album"&&!st.album.cur)render()},()=>{});
+      db.collection("proches").onSnapshot(s=>{proches=Object.fromEntries(s.docs.map(d=>[d.id,d.data()]));if(st.view==="lib"||st.view==="album")render()},()=>{});
       db.collection("liens").onSnapshot(s=>{liens=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ajoute||0)-(a.ajoute||0));if(st.view==="scan")render()},()=>{});
     }else{thDone();render()}
   },()=>{ready.db=true;thDone();render()});
@@ -1026,13 +1090,41 @@ function errText(e){
 }
 
 /* ---------- views ---------- */
+const TAB_OF={sauces:"lib",fridge:"lib",ask:"lib",compte:"lib"};
+let lastView=null;
 function render(){
-  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.v===st.view?"page":"false"));
+  const tab=TAB_OF[st.view]||st.view;
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.v===tab?"page":"false"));
   const v={lib:viewLib,sauces:viewSauces,scan:viewScan,ask:viewAsk,fridge:viewFridge,compte:viewAccount,album:viewAlbum}[st.view];
   const a=$("#app"); const focusId=document.activeElement?.id; const sel=document.activeElement?.selectionStart;
-  if(focusId==="q"&&renderKeep(document.activeElement,v))return;
-  a.innerHTML=v(); bind(a);if(typeof maybeTour==="function")maybeTour();
-  if(focusId){const el=document.getElementById(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch{}}}
+  const html=v();
+  // same page: only what changed is redrawn (no flicker, photos are not reloaded, the field being typed in keeps its keyboard)
+  if(lastView===st.view&&a.firstChild){const t=document.createElement("div");t.innerHTML=html;morph(a,t)}else a.innerHTML=html;
+  lastView=st.view;
+  bind(a);if(typeof maybeTour==="function")maybeTour();
+  if(focusId&&document.activeElement?.id!==focusId){const el=document.getElementById(focusId);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch{}}}
+}
+/* light DOM patch: keeps the nodes that did not change */
+function morph(from,to){
+  const A=[...from.childNodes],B=[...to.childNodes];
+  for(let i=0;i<B.length;i++){
+    const x=A[i],y=B[i];
+    if(!x){from.appendChild(y);continue}
+    if(x.nodeType!==y.nodeType||x.nodeName!==y.nodeName||(x.nodeType===1&&(x.id!==y.id||x.getAttribute("type")!==y.getAttribute("type")))){from.replaceChild(y,x);continue}
+    if(x.nodeType===3||x.nodeType===8){if(x.nodeValue!==y.nodeValue)x.nodeValue=y.nodeValue;continue}
+    if(x.nodeType!==1)continue;
+    let ch=false;
+    for(const at of [...x.attributes])if(!y.hasAttribute(at.name)){x.removeAttribute(at.name);ch=true}
+    for(const at of [...y.attributes])if(x.getAttribute(at.name)!==at.value){x.setAttribute(at.name,at.value);ch=true}
+    if(ch)x.onclick=x.onchange=x.oninput=x.onsubmit=null; // bind() sets them again from the new attributes
+    const tag=x.nodeName;
+    if(tag==="INPUT"){const ty=x.type;if(ty==="checkbox"||ty==="radio")x.checked=y.hasAttribute("checked");else if(ty!=="file"&&x!==document.activeElement&&x.value!==(y.getAttribute("value")||""))x.value=y.getAttribute("value")||"";continue}
+    if(tag==="TEXTAREA"){if(x!==document.activeElement&&x.value!==y.value)x.value=y.value;continue}
+    if(tag==="SELECT"){morph(x,y);const o=y.querySelector("option[selected]");x.selectedIndex=o?[...y.options].indexOf(o):0;continue}
+    if(tag==="VIDEO"||tag==="AUDIO"||tag==="svg"||tag==="SVG"){if(x.outerHTML!==y.outerHTML)from.replaceChild(y,x);continue}
+    morph(x,y);
+  }
+  for(let i=A.length-1;i>=B.length;i--)A[i].remove();
 }
 // while typing in « Envie », the form holding the field stays in place and only the rest of the page is redrawn:
 // recreating the field on every letter made the iPhone keyboard lose letters, autocorrect and dictation
@@ -1204,12 +1296,12 @@ function viewSauces(){
   if(st.scat)list=list.filter(r=>sauceUse(r).k===st.scat);
   if(st.senv)list=list.filter(r=>sauceEnvOk(r,st.senv));
   const q=(st.sq||"").trim();
-  if(q){const n=norm(q);list=list.filter(r=>norm([r.titre,(r._raw||r).titre,r.livre,r.origine?.titre,...arr(r.themes),...arr(r.ingredients).flatMap(g=>arr(g.items).map(i=>i.nom))].join(" ")).includes(n))}
-  list=[...list].sort((a,b)=>(a.titre||"").localeCompare(b.titre||"",LANG));
+  if(q)list=searchRecipes(list,q);
+  else list=[...list].sort((a,b)=>(a.titre||"").localeCompare(b.titre||"",LANG));
   const groups=usesP.map(u=>[u,grouped(list.filter(r=>sauceUse(r).k===u.k))]).filter(g=>g[1].length);
   const filtering=!!(q||st.scat||st.senv);
   const nS=pool.filter(r=>r.type!=="sucré").length,nD=pool.length-nS;
-  const head=`<div class="sauce-head"><span class="hand">${L("Juste la sauce","Just the sauce")}</span><h1 class="lux-title">${L("Sauces & bases","Sauces & bases")}</h1>
+  const head=`<button class="backlink" data-go="lib">${L("‹ Carnet","‹ Cookbook")}</button><div class="sauce-head"><span class="hand">${L("Juste la sauce","Just the sauce")}</span><h1 class="lux-title">${L("Sauces & bases","Sauces & bases")}</h1>
     <p class="lux-sub">${L("Toutes celles de tes livres, même cachées dans un plat.","Every one in your books, even those hidden inside a dish.")}</p>
     <label class="ssearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="sq" type="search" autocomplete="off" placeholder="${L("Mayonnaise, pesto, caramel…","Mayonnaise, pesto, caramel…")}" value="${esc(st.sq||"")}" aria-label="${L("Chercher une sauce","Search for a sauce")}"></label></div>`;
   if(!loaded&&db)return head+`<div class="status" style="margin-top:1rem"><span class="spin"></span>${L("Chargement du carnet…","Loading your cookbook…")}</div>`;
@@ -1359,6 +1451,7 @@ function viewAccount(){
     <div class="field"><label for="pfPrenom">Prénom</label><input id="pfPrenom" autocomplete="given-name" value="${esc(p.prenom||"")}" placeholder="Ton prénom"></div>
     <div class="field"><label for="pfTel">Téléphone</label><input id="pfTel" type="tel" autocomplete="tel" inputmode="tel" value="${esc(p.tel||"")}" placeholder="06 12 34 56 78"></div>
   </section>
+  ${famAccHTML()}
   <section class="acc"><h2>${L("Mes goûts","My tastes")}</h2>
     <p class="note" style="margin:0 0 .3rem">${L("Le menu du jour et les idées de Claude en tiennent compte.","Your daily menu and Claude's ideas follow them.")}</p>
     <div class="eyebrow">${L("Je mange","I eat")}</div>
@@ -1447,7 +1540,7 @@ async function exportCarnet(){
   st.bk=L("Préparation…","Preparing…");st.bkLink="";render();
   try{
     const pack=list=>list.map(({id,...d})=>({id,d}));
-    const docs={recettes:pack(recRaw),albums:pack(st.album.list),liens:pack(liens),reglages:[]};
+    const docs={recettes:pack(recRaw),albums:pack(st.album.list),liens:pack(liens),proches:pack(Object.entries(proches).map(([id,d])=>({id,...d}))),reglages:[]};
     for(const k of ["gouts","tuto"]){try{const g=await db.collection("reglages").doc(k).get();if(g.exists)docs.reglages.push({id:k,d:g.data()})}catch{}}
     const ids=new Set();JSON.stringify(docs,(k,v)=>{if(typeof v==="string"&&ASSET_RX.test(v))ids.add(v);return v});
     const blobs={};let n=0;
@@ -1476,7 +1569,7 @@ async function importCarnet(file){
   }
   const docs=JSON.parse(JSON.stringify(data.docs).replace(/"([0-9a-f]{32})"/g,(m,id)=>map[id]?`"${map[id]}"`:m));
   let c=0;
-  for(const col of ["recettes","albums","liens","reglages"])for(const x of arr(docs[col])){if(!x?.id||!x.d)continue;try{await db.collection(col).doc(String(x.id)).set(x.d);if(col==="recettes")c++}catch{}}
+  for(const col of ["recettes","albums","liens","proches","reglages"])for(const x of arr(docs[col])){if(!x?.id||!x.d)continue;try{await db.collection(col).doc(String(x.id)).set(x.d);if(col==="recettes")c++}catch{}}
   st.bk="";render();
   toast(L(`${c} recettes importées`,`${c} recipes imported`));
 }
@@ -1640,6 +1733,7 @@ function homeView(){
     const title=goal?goal.label:st.cat?st.cat:st.quick?"Prêt en 30 minutes":st.livre?st.livre+(authorOf(st.livre)&&!st.livre.includes(authorOf(st.livre))?L(" de "," by ")+authorOf(st.livre):""):"Tout le carnet";
     return `${top}<button class="backlink" data-act="reset">‹ Accueil</button>
     <h1 class="lux-title">${esc(title)}</h1><p class="lux-sub">${nRes} recette${nRes>1?"s":""}${goal?` · ${esc(goal.hint)}`:""}</p>
+    ${st.livre&&!goal&&!st.cat&&db&&isPersoBook(st.livre)?portraitHTML(st.livre):""}
     <div class="stack">
       <div class="seg" role="group" aria-label="Type">${[["tout","Tout"],["salé","Salé"],["sucré","Sucré"]].map(([k,l])=>`<button data-t="${k}" data-act="type" aria-pressed="${st.type===k}">${l}</button>`).join("")}</div>
       ${present.length>1?`<div class="chips">${present.map(c=>`<button class="chip" data-act="cat" data-c="${esc(c)}" aria-pressed="${st.cat===c}">${esc(c)}</button>`).join("")}</div>`:""}
@@ -1650,7 +1744,7 @@ function homeView(){
   }
   const a=st.ask,q=st.q.trim(),words=q?q.split(/\s+/).length:0;
   let local=[];
-  if(q&&words<=3){const n=norm(q);local=grouped(plats.filter(r=>norm([r.titre,r.categorie,r.livre,...arr(r.themes),...arr(r.envies),...arr(r.ingredients).flatMap(g=>arr(g.items).map(i=>i.nom))].join(" ")).includes(n)))}
+  if(q&&words<=4)local=grouped(searchRecipes(plats,q));
   const asked=a.q&&(a.busy||a.res||a.err)&&a.q===st.q;
   const envie=`
   <h1 class="lux-hello">${esc(greeting("."))}<span>${esc(question())}</span></h1>
@@ -1667,7 +1761,7 @@ function homeView(){
       ${a.busy?`<div class="status"><span class="spin"></span>Claude feuillette tes livres…<button class="iconbtn" data-act="stop" style="margin-left:auto">Arrêter</button></div>`:""}
       ${a.err?`<div class="err">${esc(a.err)}</div>`:""}${a.res?resultsHTML(a.res,false):""}</section>`
     :""}
-    ${words<=3?`<section class="lux-sec"><div class="lux-h"><h2>Dans ton carnet</h2><span class="lux-n">${local.length}</span></div>
+    ${words<=4?`<section class="lux-sec"><div class="lux-h"><h2>Dans ton carnet</h2><span class="lux-n">${local.length}</span></div>
       ${local.length?`<div class="list">${local.map(cardHTML).join("")}</div>`:`<p class="muted">Aucune recette ne contient « ${esc(q)} ».</p>`}</section>`:""}
     ${!asked&&sample?`<button class="askclaude" data-act="askq" style="margin-top:16px">${emo("✨")}<span><b>Laisser Claude trouver</b><small>Il comprend « ${esc(q)} » comme une envie</small></span></button>`:""}`;
   }
@@ -1682,26 +1776,60 @@ function homeView(){
   const inMenu=menu.map(m=>m.r).filter(Boolean),pool=forMe(seasonal.length>=4?seasonal:plats),rest=daily(pool.filter(r=>!inMenu.includes(r)),6,1);
   const fams=[...CATS["salé"],...CATS["sucré"]].map(c=>[c,plats.filter(r=>r.categorie===c).length]).filter(c=>c[1]);
   const goals=[["quick","⏱️","Rapide",plats.filter(quickOk).length],...GOALS.map(g=>[g.k,GOAL_EMO[g.k],GOAL_SHORT[g.k],plats.filter(r=>fits(r,g.k)).length])].filter(g=>g[3]>0);
+  const main=menu.find(m=>m.r),others=menu.filter(m=>m!==main),nSauce=recettes.filter(isBase).length;
+  const small=m=>m.r?`<button class="mcard" data-open="${esc(m.r.id)}"><span class="mart ${fam(m.r)}">${m.r.photo?`<img src="${pic(m.r.photo)}" alt="" loading="lazy">`:icoOf(m.r)}</span><span class="mbody"><span class="kicker">${esc(slotLabel(m))}</span><b>${esc(m.r.titre)}</b><small>${esc(m.why||[total(m.r)?mins(total(m.r)):"",m.r.difficulte||""].filter(Boolean).join(" · "))}</small></span></button>`:"";
   return `${top}${noDbNote()}${envie}
+  ${typeof demandesHTML==="function"?demandesHTML():""}
   ${shelfHTML(plats)}
-  <section class="lux-sec"><div class="lux-h"><h2>${L("Ton menu du jour","Your menu today")}</h2><span class="lux-n">${esc(WD[new Date().getDay()])}</span></div>
-    ${DAYGROUPS.map(([g,gl])=>`<div class="daygrp"><span class="daylbl">${esc(gl)}</span><div class="rail pills">${DAYTAGS.filter(t=>t[3]===g).map(([k,e,l])=>`<button class="qf" data-day="${k}" aria-pressed="${ds.tags.includes(k)}">${emo(e)}${esc(l)}</button>`).join("")}</div></div>`).join("")}
-    ${ds.fromHabit?`<p class="note" style="margin:.4rem 0 0">Pré-rempli d'après tes habitudes du ${esc(WD[new Date().getDay()])}.</p>`:""}
-    <div style="margin-top:14px">${menuHTML(menu,ds.tags)}</div></section>
-  ${rest.length?`<section class="lux-sec"><div class="lux-h"><h2>De saison</h2><span class="lux-n">${esc(season)}</span></div><div class="shelf">${rest.map(tileHTML).join("")}</div></section>`:""}
-  <section class="lux-sec"><div class="lux-h"><h2>Par famille</h2></div>
-    <div class="rail">${fams.map(([c,n])=>`<button class="fam" data-act="cat" data-c="${esc(c)}"><span class="disc">${emo(EMO[c]||"🍽️")}</span><span class="fl">${esc(c)}</span></button>`).join("")}</div></section>
-  ${goals.length?`<section class="lux-sec"><div class="lux-h"><h2>Selon ta séance</h2></div>
-    <div class="rail pills">${goals.map(([k,e,l])=>`<button class="qf" ${k==="quick"?'data-act="quick"':`data-goal="${esc(k)}"`}>${emo(e)}${esc(l)}</button>`).join("")}</div></section>`:""}
+  ${typeof famShelfHTML==="function"?famShelfHTML():""}
+  <section class="lux-sec"><div class="lux-h"><h2>${L("L'idée du jour","Today's idea")}</h2><span class="lux-n">${esc(WD[new Date().getDay()])}</span></div>
+    ${main?featureHTML(main.r,main.why,slotLabel(main)):sample?`<button class="mcard ask" data-mood="${esc(slotAsk(menu[0],ds.tags))}"><span class="mart">${emo("✨")}</span><span class="mbody"><span class="kicker">${esc(slotLabel(menu[0]))}</span><b>${L("Rien qui colle dans ton carnet","Nothing fits in your book")}</b><small>${L("Demande une idée à Claude","Ask Claude for an idea")}</small></span></button>`:""}
+    <div class="ideabar"><button class="linkbtn reroll" data-act="reroll">${emo("🔄")} ${L("Une autre idée","Another idea")}</button>
+      <button class="linkbtn morebtn" data-act="more" aria-expanded="${!!st.more}">${st.more?L("Moins d'options","Fewer options"):L("Selon ta journée","Tailor to your day")} <span aria-hidden="true">${st.more?"⌃":"⌄"}</span></button></div>
+    ${ds.tags.length&&!st.more?`<p class="note" style="margin:.2rem 0 0">${esc(ds.tags.map(k=>(DAYTAGS.find(t=>t[0]===k)||[])[2]).filter(Boolean).map(tr).join(" · "))}</p>`:""}
+  </section>
+  ${st.more?`<div class="more">
+    <section class="lux-sec" style="margin-top:18px">${DAYGROUPS.map(([g,gl])=>`<div class="daygrp"><span class="daylbl">${esc(gl)}</span><div class="rail pills">${DAYTAGS.filter(t=>t[3]===g).map(([k,e,l])=>`<button class="qf" data-day="${k}" aria-pressed="${ds.tags.includes(k)}">${emo(e)}${esc(l)}</button>`).join("")}</div></div>`).join("")}
+      ${ds.fromHabit?`<p class="note" style="margin:.4rem 0 0">Pré-rempli d'après tes habitudes du ${esc(WD[new Date().getDay()])}.</p>`:""}
+      ${others.some(m=>m.r)?`<div class="mlist" style="margin-top:12px">${others.map(small).join("")}</div>`:""}</section>
+    ${rest.length?`<section class="lux-sec"><div class="lux-h"><h2>De saison</h2><span class="lux-n">${esc(season)}</span></div><div class="shelf">${rest.map(tileHTML).join("")}</div></section>`:""}
+    <section class="lux-sec"><div class="lux-h"><h2>Par famille</h2></div>
+      <div class="rail">${fams.map(([c,n])=>`<button class="fam" data-act="cat" data-c="${esc(c)}"><span class="disc">${emo(EMO[c]||"🍽️")}</span><span class="fl">${esc(c)}</span></button>`).join("")}</div></section>
+    ${goals.length?`<section class="lux-sec"><div class="lux-h"><h2>Selon ta séance</h2></div>
+      <div class="rail pills">${goals.map(([k,e,l])=>`<button class="qf" ${k==="quick"?'data-act="quick"':`data-goal="${esc(k)}"`}>${emo(e)}${esc(l)}</button>`).join("")}</div></section>`:""}
+  </div>`:""}
+  <div class="shortcuts">
+    <button data-go="sauces"><span class="disc">${emo("🥣")}</span><span><b>${L("Sauces & bases","Sauces & bases")}</b><small>${nSauce?L(`${nSauce} prêtes à faire seules`,`${nSauce} to make on their own`):L("Mayos, crèmes, pâtes…","Mayos, creams, doughs…")}</small></span></button>
+    <button data-go="fridge"><span class="disc">${emo("🥕")}</span><span><b>${L("Mon frigo","My fridge")}</b><small>${L("Une photo, une idée","One photo, one idea")}</small></span></button>
+  </div>
   <button class="alllink" data-act="all">Tout le carnet <span>${plats.length} recettes →</span></button>`;
 }
 const pic=id=>"/_blob/"+encodeURIComponent(id);
+/* ---------- portrait d'un proche : sa photo et un mot sur lui ou elle, en tête de ses recettes et dans le livre ---------- */
+const procheKey=n=>"p"+hstr(norm(String(n||"").trim()));
+const procheOf=n=>n?proches[procheKey(n)]||null:null;
+const isPersoBook=n=>!!n&&recettes.some(r=>!isBase(r)&&r.livre===n&&isPerso(r)&&provOf(r)!=="claude");
+function portraitHTML(n){
+  const p=procheOf(n)||{},ini=String(n).trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  return `<div class="portrait"><label class="pph" aria-label="${L(`Photo de ${esc(n)}`,`Photo of ${esc(n)}`)}">${p.photo?`<img src="${pic(p.photo)}" alt="">`:`<span>${esc(ini)}</span>`}<i>${emo("📷")}</i><input type="file" accept="image/*" id="prPhoto" hidden></label>
+    <div class="pbody"><span class="hand">${L("Un mot sur","A few words about")} ${esc(n)}</span><textarea id="prMot" rows="2" placeholder="${L("Qui c'est pour toi, ses plats signature, son odeur de cuisine…","Who they are to you, their signature dishes…")}">${esc(p.mot||"")}</textarea></div></div>`;
+}
+async function saveProche(n,data){
+  if(!db)return;const k=procheKey(n),cur=procheOf(n)||{};const d={...cur,nom:n,...data,maj:Date.now()};proches[k]=d;
+  try{await db.collection("proches").doc(k).set(d)}catch{toast(L("Impossible d'enregistrer","Could not save"))}
+}
+function bindPortrait(root){
+  const n=st.livre;if(!n||!root.querySelector(".portrait"))return;
+  const m=root.querySelector("#prMot");if(m){let h;const sv=()=>{clearTimeout(h);const v=m.value.trim();if(v!==((procheOf(n)||{}).mot||""))saveProche(n,{mot:v}).then(()=>toast(L("Gardé","Saved")))};m.oninput=()=>{clearTimeout(h);h=setTimeout(sv,1500)};m.onblur=sv}
+  const ph=root.querySelector("#prPhoto");if(ph)ph.onchange=async()=>{const f=ph.files&&ph.files[0];if(!f||!assets)return;toast(L("Envoi de la photo…","Uploading photo…"));
+    try{const b=await cropBlob(f,[0,0,1,1])||f;const id=(await assets.upload(b,{type:b.type||"image/jpeg"})).id;await saveProche(n,{photo:id});render()}catch{toast(L("La photo n'a pas pu être envoyée","The photo could not be uploaded"))}};
+}
 // the heart of the app: the user's cookbooks and family recipes, as a shelf of covers
 function shelfHTML(plats){
   const hue=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))%360;return h};
   const group=list=>{const m=new Map();for(const r of list){if(!r.livre)continue;const b=m.get(r.livre)||{n:r.livre,c:0,photo:null,last:0,vid:false};b.c++;b.vid=b.vid||provOf(r)==="famille";if(!b.photo&&r.photo)b.photo=r.photo;b.last=Math.max(b.last,r.ajoute||0);m.set(r.livre,b)}return [...m.values()].sort((a,b)=>b.last-a.last)};
-  const card=(b,ico)=>{const a=authorOf(b.n);return `<button class="book" data-book="${esc(b.n)}" style="--h:${hue(b.n)}">${b.photo?`<img src="${pic(b.photo)}" alt="" loading="lazy">`:""}<span class="cov"><span class="bk">${emo(ico)}</span><b>${esc(b.n)}</b>${a&&!b.n.includes(a)?`<small>${esc(a)}</small>`:""}</span><span class="cnt">${b.c} ${b.c>1?L("recettes","recipes"):L("recette","recipe")}</span></button>`};
-  const famR=plats.filter(r=>isPerso(r)&&provOf(r)!=="claude"),fams=group(famR);
+  const card=(b,ico)=>{const a=authorOf(b.n);return `<button class="book${b.face?" face":""}" data-book="${esc(b.n)}" style="--h:${hue(b.n)}">${b.photo?`<img src="${pic(b.photo)}" alt="" loading="lazy">`:""}<span class="cov"><span class="bk">${emo(ico)}</span><b>${esc(b.n)}</b>${a&&!b.n.includes(a)?`<small>${esc(a)}</small>`:""}</span><span class="cnt">${b.c} ${b.c>1?L("recettes","recipes"):L("recette","recipe")}</span></button>`};
+  const famR=plats.filter(r=>isPerso(r)&&provOf(r)!=="claude"),fams=group(famR).map(b=>{const p=procheOf(b.n);return p&&p.photo?{...b,photo:p.photo,face:true}:b});
   const books=group(plats.filter(r=>["livre","pdf"].includes(provOf(r))&&!isPerso(r)));
   return `<section class="lux-sec famsec"><div class="lux-h"><h2>${L("Recettes de cœur","Heart recipes")}</h2><span class="lux-n">${famR.length}</span></div>
     <p class="note" style="margin:-.3rem 0 .7rem">${L("Famille, amis, toi : les recettes de ceux que tu aimes. Celles-là, tu peux en faire un vrai livre.","Your family's recipes and your own: these can become a real book.")}</p>
@@ -1729,6 +1857,39 @@ function cardHTML(g){
   <div class="s">${esc(sub)}</div></div><div class="min">${total(r)?mins(total(r)):""}</div></button>`;
 }
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+/* ---------- recherche qui pardonne : fautes de frappe, accents, pluriels, plusieurs mots dans le désordre ---------- */
+const Q_STOP=new Set(["de","du","des","la","le","les","au","aux","a","et","en","avec","l","d","un","une","pour","sans","the","and","with","of"]);
+const fzWords=t=>norm(String(t||"").replace(/œ/gi,"oe").replace(/æ/gi,"ae")).replace(/[^a-z0-9]+/g," ").split(" ").filter(Boolean);
+const fzStem=w=>w.length>3?w.replace(/(es|s|x)$/,""):w;
+function lev(a,b,max){
+  if(Math.abs(a.length-b.length)>max)return max+1;
+  let prev=Array.from({length:b.length+1},(_,j)=>j);
+  for(let i=1;i<=a.length;i++){const cur=[i];let best=i;
+    for(let j=1;j<=b.length;j++){cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])cur[j]=Math.min(cur[j],prev[j-2]+1);best=Math.min(best,cur[j])}
+    if(best>max)return max+1;prev=cur}
+  return prev[b.length];
+}
+// 3 = exact word, 2 = start of a word, 1 = with a typo, 0 = absent
+function fzHit(q,words){
+  const qs=fzStem(q),tol=q.length>=7?2:q.length>=4?1:0;let best=0;
+  for(const w of words){
+    const ws=fzStem(w);
+    if(ws===qs)return 3;
+    if(w.startsWith(q)||(q.length>=4&&ws.includes(qs))){best=Math.max(best,2);continue}
+    if(tol&&best<1&&(lev(qs,ws,tol)<=tol||(w.length>q.length&&lev(q,w.slice(0,q.length),tol)<=tol)))best=1;
+  }
+  return best;
+}
+const RW=new WeakMap(),recWords=r=>{if(RW.has(r))return RW.get(r);const raw=r._raw||r,x={t:fzWords([r.titre,raw.titre].join(" ")),o:fzWords([r.categorie,r.livre,r.auteur,r.origine?.titre,...arr(r.themes),...arr(r.envies).map(tr),...arr(r.ingredients).flatMap(g=>arr(g.items).map(i=>i.nom))].join(" "))};RW.set(r,x);return x};
+// recipes matching every word of the query, best first (title matches weigh more)
+function searchRecipes(list,q){
+  const qw=fzWords(q).filter(w=>!Q_STOP.has(w));if(!qw.length)return [];
+  const out=[];
+  for(const r of list){const W=recWords(r);let sc=0,ok=true;
+    for(const w of qw){const t=fzHit(w,W.t),o=t===3?0:fzHit(w,W.o);if(!t&&!o){ok=false;break}sc+=t*3+o}
+    if(ok)out.push([sc,r])}
+  return out.sort((a,b)=>b[0]-a[0]).map(x=>x[1]);
+}
 
 const isBatch=s=>s.files.length>batchSize();
 function batchHTML(s){
@@ -1905,6 +2066,8 @@ function viewScan(){
       <input id="scanfile" type="file" accept="image/*" multiple hidden>
     </div>
     <button class="famvid" data-act="famvid"><span class="emo">🎥</span><span><b>${L("Cuisiner avec eux","Cooking with them")}</b><small>${L("Mamie, ta meilleure amie, papa… Tu filmes, Claude écrit la recette.","She cooks, you film: Claude watches and writes her recipe.")}</small></span><span class="muted">›</span></button>
+    ${s.fam&&ONLINE()?`<button class="famvid" data-act="askproche"><span class="emo">📩</span><span><b>${L("Lui demander par message","Ask them by message")}</b><small>${L("Tu lui envoies un lien : photo, texte ou sa voix, sans rien installer. Ça arrive sur ton accueil.","Send a link: photo, text or voice, nothing to install. It lands on your home screen.")}</small></span><span class="muted">›</span></button>`:""}
+    ${s.fam&&ONLINE()?`<button class="famvid" data-act="famvoice"><span class="emo">🎙️</span><span><b>${L("Elle me la raconte","They tell it to me")}</b><small>${L("Elle raconte sa recette à voix haute : Claude l'écrit, et sa voix reste avec la recette.","They tell the recipe out loud: Claude writes it, and their voice stays with it.")}</small></span><span class="muted">›</span></button>`:""}
     ${isBatch(s)?batchHTML(s):thumbsHTML(s.files,"scan")+(s.burst?"":dishHTML(s,max))}
     ${s.burst&&s.files.length&&!s.busy?burstHTML(s):""}`}
     ${s.fam&&!s.pdf&&mode!=="pdf"?`<div class="field"><label for="famWho">${L("De qui est la recette ?","Whose recipe is it?")}</label><input id="famWho" placeholder="${L("ex. Mamie Rose","e.g. Grandma Rose")}" value="${esc(s.famWho||"")}"></div>`:`<div class="two">
@@ -1950,7 +2113,7 @@ function viewAsk(){
   const a=st.ask;
   const ideas=["J'ai envie de pâtes","Un truc réconfortant","Dessert au chocolat","Rapide, moins de 30 min","Pour recevoir 6 personnes","Quelque chose de léger"];
   return `
-  <div class="pagehead"><button class="iconbtn" data-go="lib" style="margin-bottom:.6rem">‹ Recettes</button><span class="emo pemo" aria-hidden="true">🤤</span><div class="hand">Demander à Claude</div><h1>J'ai envie de…</h1><p>Décris ton envie avec tes mots, Claude choisit dans tes livres.</p></div>
+  <div class="pagehead"><button class="iconbtn" data-go="lib" style="margin-bottom:.6rem">${L("‹ Carnet","‹ Cookbook")}</button><span class="emo pemo" aria-hidden="true">🤤</span><div class="hand">Demander à Claude</div><h1>J'ai envie de…</h1><p>Décris ton envie avec tes mots, Claude choisit dans tes livres.</p></div>
   ${noAiNote()}
   <div class="stack">
     <textarea id="askIn" placeholder="ex. j'ai envie de pâtes crémeuses, pas trop long">${esc(a.q)}</textarea>
@@ -1965,7 +2128,7 @@ function viewAsk(){
 function viewFridge(){
   const f=st.fridge, max=imgLimits?.maxCount||4;
   return `
-  <div class="pagehead"><span class="emo pemo" aria-hidden="true">🥕</span><div class="hand">Avec ce qu'il y a</div><h1>Mon frigo</h1><p>Une photo du frigo, et tu sais quoi cuisiner, ou ce qu'il te manque.</p></div>
+  <div class="pagehead"><button class="iconbtn" data-go="lib" style="margin-bottom:.6rem">${L("‹ Carnet","‹ Cookbook")}</button><span class="emo pemo" aria-hidden="true">🥕</span><div class="hand">Avec ce qu'il y a</div><h1>Mon frigo</h1><p>Une photo du frigo, et tu sais quoi cuisiner, ou ce qu'il te manque.</p></div>
   ${noAiNote()}
   <div class="stack">
     <div class="drop">
@@ -2007,7 +2170,7 @@ const newAlbum=()=>({id:null,titre:L("Nos recettes de famille","Our family recip
 const albumTheme=a=>{const t=ALBUM_THEMES.find(t=>t[0]===a.theme)||ALBUM_THEMES[0],c=a.theme==="perso"&&/^#[0-9a-f]{6}$/i.test(a.color||"")?a.color:t[2];return [t[0],t[1],c,/^#[0-9a-f]{6}$/i.test(a.bgc||"")?a.bgc:(c===t[2]?t[3]:tint(c,.06))]};
 function viewAlbum(){
   const A=st.album,a=A.cur,plats=recettes.filter(r=>!isBase(r)&&isPerso(r));
-  const head=`<button class="backlink" data-alb="back">‹ ${a?L("Mes livres","My books"):L("Accueil","Home")}</button>
+  const head=`${a?`<button class="backlink" data-alb="back">‹ ${L("Mes livres","My books")}</button>`:""}
     <div class="pagehead"><span class="emo pemo" aria-hidden="true">🎁</span><div class="hand">${L("À offrir ou à garder","To give or to keep")}</div><h1>${L("Mon livre de recettes","My recipe book")}</h1>
     <p>${L("Choisis tes recettes, ajoute un mot, et Mijonote en fait un beau livre en PDF : à imprimer, à faire relier ou à offrir.","Pick your recipes, add a note, and Mijonote turns them into a beautiful PDF book: to print, bind or give.")}</p></div>`;
   if(!a){
@@ -2015,7 +2178,8 @@ function viewAlbum(){
     ${A.list.length?`<section class="lux-sec"><div class="lux-h"><h2>${L("Mes livres créés","Books I made")}</h2></div><div class="stack">${A.list.map(x=>`<button class="albrow" data-alb="open" data-id="${esc(x.id)}" style="--ac:${albumTheme(x)[2]}"><span class="albcov">${emo("📕")}</span><span><b>${esc(x.titre)}</b><small>${arr(x.recettes).length} ${L("recettes","recipes")}${x.par?" · "+esc(x.par):""}</small></span><span class="muted">›</span></button>`).join("")}</div></section>`:""}`;
   }
   const sel=new Set(a.recettes),q=norm(A.q.trim());
-  const list=plats.filter(r=>!q||norm([r.titre,r.livre,r.auteur].join(" ")).includes(q)).sort((x,y)=>(x.livre||"").localeCompare(y.livre||"","fr")||x.titre.localeCompare(y.titre,"fr"));
+  const hits=q?new Set(searchRecipes(plats,A.q)):null;
+  const list=plats.filter(r=>!hits||hits.has(r)).sort((x,y)=>(x.livre||"").localeCompare(y.livre||"","fr")||x.titre.localeCompare(y.titre,"fr"));
   const livres=[...new Set(plats.map(r=>r.livre).filter(Boolean))];
   const chosen=a.recettes.map(id=>recettes.find(r=>r.id===id)).filter(r=>r&&isPerso(r));
   return `${head}
@@ -2039,6 +2203,8 @@ function viewAlbum(){
   </section>
   ${chosen.length?`<section class="block albsec"><h2>4. ${L("L'ordre et ton mot sur chaque recette","Order and your note on each recipe")}</h2>
     <p class="note" style="margin-top:0">${L("Un souvenir, une astuce de mamie, pour qui c'était le plat préféré… Il apparaîtra écrit à la main sous la recette.","A memory, a grandma tip, whose favourite it was… It will appear handwritten under the recipe.")}</p>
+    <label class="albchk"><input type="checkbox" id="alPo" ${a.portraits!==false?"checked":""}><span><b>${L("Une page portrait par proche","A portrait page for each person")}</b><small>${L("Sa photo et ton mot sur lui ou elle, avant ses recettes. Ajoute-les en touchant son nom sur l'accueil.","Their photo and your words about them, before their recipes. Add them by tapping their name on the home screen.")}</small></span></label>
+    ${chosen.some(r=>arr((r._raw||r).voix).length)?(ONLINE()?`<label class="albchk"><input type="checkbox" id="alQr" ${a.qrOk?"checked":""}><span><b>${emo("🎙️")} ${L("Un QR code pour réécouter leur voix","A QR code to hear their voice")}</b><small>${L("Sous chaque recette enregistrée. Toute personne qui scanne le code peut l'écouter : demande-leur leur accord avant d'imprimer.","Under each recorded recipe. Anyone who scans it can listen: ask them first.")}</small></span></label>`:`<p class="note">${emo("🎙️")} ${L("Le QR code pour réécouter leur voix se crée depuis l'appli Mijonote en ligne.","The voice QR code is made from the online Mijonote app.")}</p>`):""}
     <label class="albchk"><input type="checkbox" id="alF" ${a.pleine?"checked":""}><span><b>${L("Photos en pleine page","Full-page photos")}</b><small>${L("Comme dans un vrai livre : la photo du plat en grand, en face de la recette.","Like a real cookbook: the dish photo full size, facing the recipe.")}</small></span></label>
     <ol class="albord">${chosen.map((r,i)=>`<li><div class="row" style="gap:.4rem;align-items:center"><b style="flex:1">${esc(r.titre)}</b><button class="iconbtn" data-alb="up" data-i="${i}" ${i?"":"disabled"} aria-label="${L("Monter","Up")}">↑</button><button class="iconbtn" data-alb="down" data-i="${i}" ${i<chosen.length-1?"":"disabled"} aria-label="${L("Descendre","Down")}">↓</button><button class="iconbtn" data-alb="rm" data-i="${i}" aria-label="${L("Retirer","Remove")}">✕</button></div>
       <div class="albph"><span class="th">${r.photo?`<img src="${pic(r.photo)}" alt="">`:icoOf(r)}</span>
@@ -2069,6 +2235,8 @@ function bindAlbum(root){
   const A=st.album,a=A.cur;
   const inp=(id,k)=>{const el=root.querySelector("#"+id);if(el)el.oninput=()=>{a[k]=el.value;albumDirty()}};
   const fl=root.querySelector("#alF");if(fl)fl.onchange=()=>{a.pleine=fl.checked;albumDirty()};
+  const po=root.querySelector("#alPo");if(po)po.onchange=()=>{a.portraits=po.checked;albumDirty()};
+  const qo=root.querySelector("#alQr");if(qo)qo.onchange=()=>{a.qrOk=qo.checked;albumDirty()};
   root.querySelectorAll("[data-alphoto]").forEach(inp=>inp.onchange=()=>albumPhoto(inp.dataset.alphoto,inp));
   root.querySelectorAll("[data-alillu]").forEach(b=>b.onclick=()=>albumIllu(b.dataset.alillu,b));
   const bl=root.querySelector("#alB");if(bl)bl.onchange=()=>{a.imprimeur=bl.checked;albumDirty()};
@@ -2101,8 +2269,8 @@ function bindAlbum(root){
     else if(k==="pdf"){albumPdf();return}
     else if(k==="preview"){albumPreview();return}
     else if(k==="set"){a[b.dataset.f]=b.dataset.v;albumDirty()}
-    else if(k==="reset"){if(!confirm(L("Remettre tous les textes et les positions comme au début ?","Reset all texts and positions?")))return;a.edits={};a.pos={};a.sty={};albumDirty()}
-    else if(k==="del"){if(!confirm(L("Supprimer ce livre ? Tes recettes restent dans le carnet.","Delete this book? Your recipes stay in the notebook.")))return;try{await db.collection("albums").doc(a.id).delete()}catch{}A.cur=null}
+    else if(k==="reset"){const was={edits:a.edits,pos:a.pos,sty:a.sty};a.edits={};a.pos={};a.sty={};albumDirty();toast(L("Retouches annulées","Edits undone"),{fn:()=>{Object.assign(a,was);albumDirty();render()}})}
+    else if(k==="del"){await albumSave();const {id,...data}=JSON.parse(JSON.stringify(A.list.find(x=>x.id===a.id)||a));try{await delWithUndo("albums",a.id,data,L("Livre supprimé, tes recettes restent","Book deleted, your recipes stay"))}catch{}A.cur=null}
     render();if(["new","open"].includes(k))window.scrollTo(0,0);
   });
 }
@@ -2185,7 +2353,7 @@ let albumT=null;
 function albumDirty(){clearTimeout(albumT);albumT=setTimeout(albumSave,1200)}
 async function albumSave(){
   clearTimeout(albumT);const a=st.album.cur;if(!a||!db)return;
-  const data={titre:a.titre,sous:a.sous,par:a.par,dedicace:a.dedicace,theme:a.theme,imprimeur:!!a.imprimeur,pleine:!!a.pleine,format:a.format||"a5",tfont:a.tfont||"serif",bfont:a.bfont||"moderne",bulle:a.bulle||"bulle",clay:a.clay||"haut",frame:a.frame||"aucun",pforme:a.pforme||"arrondie",ing:a.ing||"deux",color:a.color||"",bgc:a.bgc||"",cover:a.cover||"",photos:Object.fromEntries(Object.entries(a.photos||{}).filter(([id,l])=>arr(l).length&&a.recettes.includes(id))),bulles:Object.fromEntries(Object.entries(a.bulles||{}).filter(([id,l])=>arr(l).length&&a.recettes.includes(id))),sty:a.sty||{},edits:a.edits||{},pos:a.pos||{},recettes:a.recettes,notes:Object.fromEntries(Object.entries(a.notes).filter(([id,t])=>t&&a.recettes.includes(id))),maj:Date.now()};
+  const data={titre:a.titre,sous:a.sous,par:a.par,dedicace:a.dedicace,theme:a.theme,imprimeur:!!a.imprimeur,pleine:!!a.pleine,portraits:a.portraits!==false,format:a.format||"a5",tfont:a.tfont||"serif",bfont:a.bfont||"moderne",bulle:a.bulle||"bulle",clay:a.clay||"haut",frame:a.frame||"aucun",pforme:a.pforme||"arrondie",ing:a.ing||"deux",color:a.color||"",bgc:a.bgc||"",cover:a.cover||"",photos:Object.fromEntries(Object.entries(a.photos||{}).filter(([id,l])=>arr(l).length&&a.recettes.includes(id))),bulles:Object.fromEntries(Object.entries(a.bulles||{}).filter(([id,l])=>arr(l).length&&a.recettes.includes(id))),sty:a.sty||{},edits:a.edits||{},pos:a.pos||{},recettes:a.recettes,notes:Object.fromEntries(Object.entries(a.notes).filter(([id,t])=>t&&a.recettes.includes(id))),maj:Date.now()};
   try{if(!a.id&&a.recettes.length)a.id=db.collection("albums").doc().id;if(a.id)await db.collection("albums").doc(a.id).set(data)}catch{}
 }
 let pdfLibs=null;
@@ -2238,7 +2406,12 @@ function albumPages(a){
   if(String(E("dd",a.dedicace)).trim())P("ded",tx("dd",a.dedicace,"p","",1,1));
   const tocAt=pages.length;P("toc","");
   const titles=[];
+  const seenP=new Set();
   for(const r of rs){
+    const pp=a.portraits!==false&&r.livre&&!seenP.has(r.livre)?procheOf(r.livre):null;
+    if(r.livre)seenP.add(r.livre);
+    if(pp&&(pp.photo||pp.mot)){const pk=procheKey(r.livre),nb=rs.filter(x=>x.livre===r.livre).length;
+      P("portrait",`<div class="aport" ${mv("pp_"+pk)}>${pp.photo?`<div class="aporph"><img src="${pic(pp.photo)}" crossorigin="anonymous" alt=""></div>`:""}${tx("pn_"+pk,r.livre,"h2")}${tx("pm_"+pk,pp.mot||"","p","apmot",1)}<p class="apn">${L(`${nb} recette${nb>1?"s":""} de ${esc(r.livre)}`,`${nb} recipe${nb>1?"s":""} from ${esc(r.livre)}`)}</p></div>`)}
     const id=r.id,K=x=>`r_${id}_${x}`,blocks=[],x=srcOf(r),titre=E(K("t"),r.titre);titles.push(titre);
     blocks.push(`<div class="arh" ${mv(K("hd"))}>${tx(K("t"),r.titre,"h2")}${tx(K("m"),[x?x[1]:"",r.portions?L(`Pour ${r.portions} personnes`,`Serves ${r.portions}`):"",total(r)?mins(total(r)):""].filter(Boolean).join(" · "),"p")}</div>`);
     const who=secretWho(r),secs=arr(r.secrets);
@@ -2260,6 +2433,7 @@ function albumPages(a){
     const tips=arr(r.astuces).filter(t=>!/^À vérifier/.test(t)).join(" ");
     if(String(E(K("tip"),tips)).trim())blocks.push(`<p class="atip" ${mv(K("tipb"))}><b>${L("Astuce","Tip")} :</b> <span data-ek="${K("tip")}">${esc(E(K("tip"),tips))}</span></p>`);
     if((a.notes[id]||"").trim())blocks.push(`<div class="anote" ${mv(`n_${id}`)}><span data-ek="n_${id}">${esc(a.notes[id]).replace(/\n/g,"<br>")}</span></div>`);
+    if(QRS[id]){const vq=arr((r._raw||r).voix)[0]||{},qn=vq.qui||r.livre||"";blocks.push(`<div class="aqr" ${mv(K("qr"))}><img src="${QRS[id]}" alt=""><span data-ek="${K("qrt")}">${esc(E(K("qrt"),qn?L(`Scanne-moi pour écouter ${qn} raconter sa recette`,`Scan me to hear ${qn} tell this recipe`):L("Scanne-moi pour écouter sa voix","Scan me to hear their voice")))}</span></div>`)}
     pages.push({blocks,titre});
   }
   return {pages,tocAt,rs,titles,sty};
@@ -2269,6 +2443,7 @@ async function albumLayout(a,host){
   let dyn=document.getElementById("albDyn");if(!dyn){dyn=document.createElement("style");dyn.id="albDyn";document.body.appendChild(dyn)}
   dyn.textContent=albCss(a);
   try{await Promise.all([albOpt(ALB_TFONT,a.tfont)[2],albOpt(ALB_BFONT,a.bfont)[2],'"Caveat"'].map(f=>document.fonts.load("20px "+f.split(",")[0])));await document.fonts.ready}catch{}
+  await albumQr(a,a.recettes.map(id=>recettes.find(r=>r.id===id)).filter(r=>r&&isPerso(r)));
   const {pages,tocAt,titles,sty}=albumPages(a);
   const flat=[];
   const fits=html=>{host.innerHTML=html;const pg=host.firstElementChild,body=pg.querySelector(".abody");return !body||body.scrollHeight<=body.clientHeight+1};
@@ -2345,7 +2520,7 @@ async function albumPreview(at){
       else if(t==="bg")setSty(o=>{o.bg=b.dataset.c});
       else if(t==="clr"){const [k]=target();delete a.sty[k];dyn();albumDirty();drawTb()}
       else if(t==="r-"||t==="r+")setPos(q=>{q.r=(q.r!=null?q.r:(+sel.dataset.rot||0))+(t==="r+"?4:-4)});
-      else if(t==="hide"){if(confirm(L("Cacher cet élément ? (« Annuler mes retouches » le fait revenir)","Hide this element? (“Undo my preview edits” brings it back)")))setPos(q=>{q.h=1})}}});
+      else if(t==="hide"){const el=sel,k=el.dataset.mv;setPos(q=>{q.h=1});toast(L("Élément caché","Element hidden"),{fn:()=>{const q={...(a.pos[k]||{})};delete q.h;a.pos[k]=q;el.style.display="";el.style.transform=tr(el,q);albumDirty()}})}}});
   }
   function pick(el){
     if(sel===el)return;rail.querySelectorAll(".mvh").forEach(h=>h.remove());if(sel)sel.classList.remove("sel");sel=el;
@@ -2384,6 +2559,8 @@ async function albumPdf(){
 }
 function bind(root){
   if(st.view==="compte")bindAccount(root);
+  if(st.view==="lib")bindPortrait(root);
+  if(st.view==="lib"||st.view==="compte")bindFam(root);
   if(st.view==="album")bindAlbum(root);
   root.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>act(b.dataset.act,b));
   root.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openRecipe(b.dataset.open));
@@ -2399,7 +2576,7 @@ function bind(root){
   const q=root.querySelector("#q");if(q&&!q.oninput){let tq;const later=()=>{clearTimeout(tq);tq=setTimeout(()=>{if(document.getElementById("q")===q)render()},200)};q.oninput=e=>{st.q=q.value;const go=q.form?.querySelector(".envie-go");if(go)go.disabled=!q.value.trim();if(!e.isComposing)later()};q.oncompositionend=()=>{st.q=q.value;later()}}
   const ef=root.querySelector("#envieForm");if(ef)ef.onsubmit=e=>{e.preventDefault();if(!st.q.trim())return;
     const w=st.q.trim().split(/\s+/).length;
-    if(sample&&(w>3||!recettes.some(r=>norm(r.titre+" "+arr(r.ingredients).flatMap(g=>arr(g.items).map(i=>i.nom)).join(" ")).includes(norm(st.q.trim()))))){st.ask.q=st.q;ask()}
+    if(sample&&(w>4||!searchRecipes(recettes,st.q).length)){st.ask.q=st.q;ask()}
     q?.blur()};
   root.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>toggleDayTag(b.dataset.day));
   root.querySelectorAll(".daygrp .rail").forEach(rl=>{const on=rl.querySelector('[aria-pressed="true"]');if(on&&on.offsetLeft+on.offsetWidth>rl.clientWidth)rl.scrollLeft=on.offsetLeft-16});
@@ -2555,7 +2732,11 @@ function addFiles(input,bucket){
   if(bucket===st.scan&&isBatch(bucket))setDish(null);
   bucket.err="";render();
 }
-document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>go(b.dataset.v));
+// a tab takes you back where you were in it; tapping the tab you are on goes back to its start
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{const v=b.dataset.v;
+  if(v==="lib"&&(TAB_OF[st.view]||st.view)==="lib"){if(st.view!=="lib")go("lib");else act("reset");return}
+  if(v==="album"&&st.view==="album"&&st.album.cur){albumSave();st.album.cur=null;st.album.link="";render();window.scrollTo(0,0);return}
+  go(v)});
 function go(v){st.view=v;render();window.scrollTo(0,0)}
 
 async function act(a,b){
@@ -2563,7 +2744,8 @@ async function act(a,b){
   else if(a==="rafale")openCam();
   else if(a==="burstdone"){st.scan.burst=false;render();setTimeout(()=>$("[data-act='extract']")?.scrollIntoView({block:"center",behavior:"smooth"}),50)}
   else if(a==="draftgo")resumeDraft();
-  else if(a==="draftno"){if(confirm(L("Effacer ces photos ?","Delete these photos?"))){dropDraft();render()}}
+  else if(a==="draftno"){const keep=draftInfo;draftInfo=null;render();
+    toast(L("Photos effacées","Photos deleted"),{fn:()=>{draftInfo=keep;render()}});setTimeout(()=>{if(!draftInfo&&keep&&!st.scan.files.length){draftInfo=keep;dropDraft()}},6500)}
   else if(a==="clearshots"){dropDraft();const s=st.scan;s.burst=false;s.next="";s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.found=null;s.report="";s.saved=null;render()}
   else if(a==="type"){st.type=b.dataset.t;ls.set("type",st.type);st.cat=null;render()}
   else if(a==="stype"){st.stype=b.dataset.t;st.scat=null;render()}
@@ -2575,6 +2757,7 @@ async function act(a,b){
   else if(a==="quick"){st.quick=!st.quick;render()}
   else if(a==="all"){st.all=true;render();document.querySelector(".reshead")?.scrollIntoView({block:"start"})}
   else if(a==="askq"){st.ask.q=st.q;ask()}
+  else if(a==="more"){st.more=!st.more;ls.set("homemore",st.more);render()}
   else if(a==="reroll"){const R=ls.get("reroll",{}),k=todayKey();ls.set("reroll",{[k]:(R[k]||0)+1});render()}
   else if(a==="stop"){ctl?.abort()}
   else if(a==="extract")(st.scan.pdf?extractPdf():isBatch(st.scan)?extractPdf("photos"):extract());
@@ -2587,6 +2770,8 @@ async function act(a,b){
   else if(a==="rmvid"){clearFrames();render()}
   else if(a==="kind"){st.scan.fam=b.dataset.k==="fam";render()}
   else if(a==="addfam"){const s=st.scan;s.fam=true;s.social.fam=false;s.mode="photo";ls.set("scanmode","photo");go("scan")}
+  else if(a==="famvoice"){extractVoice()}
+  else if(a==="askproche"){askProche()}
   else if(a==="famvid"){st.scan.mode="social";st.scan.social.fam=true;render();window.scrollTo(0,0)}
   else if(a==="famoff"){st.scan.social.fam=false;st.scan.mode="photo";render()}
   else if(a==="rmshot"){const S=st.scan.social,[f]=S.shots.splice(+b.dataset.i,1);if(f)URL.revokeObjectURL(f.url);render()}
@@ -2891,6 +3076,7 @@ async function withPhoto(r,extra){
   const {_preview,...rest}=r;
   const doc={lang:LANG,...rest,...extra};
   if(r._photo&&assets){try{doc.photo=(await assets.upload(r._photo,{type:"image/jpeg"})).id}catch{}}
+  if(r._voice&&assets){try{const t=audioType(r._voice.blob);doc.voix=[{id:(await assets.upload(r._voice.blob,{type:t})).id,qui:doc.livre||"",dur:Math.round((r._voice.dur||0)*10)/10,type:t,ajoute:Date.now()}]}catch{}}
   if(assets&&arr(r.etapes).some(e=>e._img)){
     doc.etapes=[];
     for(const e of r.etapes){
@@ -3129,7 +3315,7 @@ async function saveFound(i,btn){
   try{
     await saveOne(r);
     const k=s.found?s.found.indexOf(r):-1;if(k>=0)s.found.splice(k,1);
-    if(s.found&&!s.found.length){dropDraft();s.found=null;s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.page="";s.url="";s.text=""}
+    if(s.found&&!s.found.length){dropDraft();s.found=null;s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.page="";s.url="";s.text="";envoiDone()}
     render();toast("Recette ajoutée au carnet");
   }catch(e){btn.disabled=false;btn.textContent="Enregistrer";s.err="Enregistrement impossible : "+(e?.message||e?.code||"erreur")+". Réessaie.";render()}
 }
@@ -3139,7 +3325,7 @@ async function saveAll(btn){
   while(s.found&&s.found.length){
     try{await saveOne(s.found[0]);s.found.shift();n++}catch(e){s.err="Certaines recettes n'ont pas pu être enregistrées. Réessaie.";break}
   }
-  if(s.found&&!s.found.length){dropDraft();s.found=null;s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.page="";s.url="";s.text=""}
+  if(s.found&&!s.found.length){dropDraft();s.found=null;s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.page="";s.url="";s.text="";envoiDone()}
   render();toast(n+" recette"+(n>1?"s":"")+" ajoutée"+(n>1?"s":""));
 }
 async function ask(){
@@ -3210,7 +3396,7 @@ function showRecipe(r,opt={}){
   sh.innerHTML=`
   <div class="cover ${fam(r)}"><div class="inner">
     <div class="bar"><button class="iconbtn" id="closeSh">‹ Retour</button>
-      ${opt.temp?(opt.idea&&db?`<button class="btn" id="saveIdea" style="padding:.5rem 1rem">Ajouter au carnet</button>`:"<span></span>"):`<button class="iconbtn" id="editR">Modifier</button>`}</div>
+      ${opt.temp?((opt.idea||opt.fam)&&db?`<button class="btn" id="saveIdea" style="padding:.5rem 1rem">Ajouter au carnet</button>`:"<span></span>"):`<button class="iconbtn" id="editR">Modifier</button>`}</div>
     ${r.photo||r._preview?`<div class="coverphoto"><img src="${r.photo?pic(r.photo):r._preview}" alt="${esc(r.titre)}"></div>`:`<div class="bigart">${icoOf(r)}</div>`}
     ${!opt.temp&&db&&assets?`<div class="row coverbtns"><label class="stepadd">${emo("📷")} ${r.photo?L("Changer la photo","Change photo"):L("Ajouter une photo","Add a photo")}<input type="file" accept="image/*" id="coverIn" hidden></label>${!r.photo&&sample?`<button class="stepadd tip" id="coverIllu">${emo("🎨")} ${L("Illustration par Claude","Illustration by Claude")}</button>`:""}</div>`:""}
     <div class="hero">
@@ -3264,8 +3450,10 @@ function showRecipe(r,opt={}){
     </section>
 
     ${arr(r.secrets).length||r.histoire||!opt.temp?secretHTML(r):""}
+    ${!opt.temp&&db&&isPerso(r)?voixHTML(r):""}
     ${arr(r.astuces).length||(!opt.temp&&db)?`<section class="block"><h2>Astuces</h2>${arr(r.astuces).length?`<ul class="tips">${r.astuces.map((a,ti)=>`<li ${!opt.temp&&db?`data-tip="${ti}"`:""}>${esc(a)}</li>`).join("")}</ul>`:`<p class="note" style="margin:0">${L("Un geste du chef, le truc de mamie, ce que tu changerais la prochaine fois…","A chef's trick, grandma's secret, what you'd change next time…")}</p>`}${!opt.temp&&db?`<button class="btn soft tipadd" data-tip="new">${emo("💡")} ${L("Ajouter une astuce","Add a tip")}</button>`:""}</section>`:""}
 
+    ${!opt.temp&&db?journalHTML(r):""}
     <div id="editZone"></div>
     <div class="cookbar"><button class="btn block" id="cookGo" ${!arr(r.etapes).length?"disabled":""}>${r.videoAsset?L("▶ La recette en vidéo, étape par étape","▶ Step-by-step video recipe"):"Lancer le mode cuisine"}</button></div>
   </div>`;
@@ -3297,10 +3485,12 @@ function showRecipe(r,opt={}){
   const ab=$("#albAdd");if(ab)ab.onclick=async()=>{ab.disabled=true;await albumAddRecipe(r.id);showRecipe(full,{...opt,refresh:true})};
   const ag=$("#albGo");if(ag)ag.onclick=()=>{closeSheet();st.album.cur=null;go("album")};
   const ce=$("#chkEdit");if(ce)ce.onclick=()=>editForm(r);
+  bindJournal(r);if(!opt.temp&&db&&isPerso(r))bindVoix(r);
   sh.querySelectorAll("[data-variant]").forEach(b=>b.onclick=()=>proteinVersion(r,b,b.dataset.variant));
   const ds=$("#drawSteps");if(ds)ds.onclick=()=>drawSchemas(r,ds);
   sh.querySelectorAll("[data-stepimg]").forEach(inp=>inp.onchange=()=>stepPhoto(r,+inp.dataset.stepimg,inp));
   const si=$("#saveIdea");if(si)si.onclick=async()=>{si.disabled=true;si.textContent="Ajout…";
+    if(opt.fam){try{await saveFamRecipe(r,opt.fam);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"))}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
     try{const ref=await db.collection("recettes").add({lang:LANG,...clean(r),...(r.photo?{photo:r.photo}:{}),livre:r.livre||L("Idée de Claude","Claude's idea"),page:"",...(r.livre?{}:{provenance:"claude"}),ajoute:Date.now()});closeSheet();toast("Ajoutée au carnet")}
     catch(e){si.disabled=false;si.textContent="Réessayer"}};
 }
@@ -3608,12 +3798,334 @@ function editForm(r){
     if(r._raw){const k="tr_"+LANG,o={...(r._raw[k]||{})};o.titre=upd.titre;o.themes=upd.themes;delete upd.titre;delete upd.themes;upd[k]=o}
     try{await db.collection("recettes").doc(r.id).update(upd);toast("Modifications enregistrées")}catch(e){$("#e-save").disabled=false;toast("Échec de l'enregistrement")}
   };
-  $("#e-del").onclick=()=>{$("#delZone").innerHTML=`<div class="confirm"><strong>Supprimer « ${esc(r.titre)} » du carnet ?</strong><span class="muted" style="font-size:.9rem">Elle restera dans le livre, mais il faudra la rescanner.</span>
-    <div class="row"><button class="btn danger" id="d-yes">Oui, supprimer</button><button class="btn ghost" id="d-no">Garder</button></div></div>`;
-    $("#d-no").onclick=()=>editForm(r);
-    $("#d-yes").onclick=async()=>{try{await db.collection("recettes").doc(r.id).delete();closeSheet();toast("Recette supprimée")}catch(e){toast("Suppression impossible")}};
+  $("#e-del").onclick=async()=>{
+    const raw=recRaw.find(x=>x.id===r.id);if(!raw)return;const {id,...data}=raw;
+    try{await delWithUndo("recettes",r.id,data,L("Recette supprimée","Recipe deleted"),()=>{let k=0;const t=setInterval(()=>{if(recettes.some(x=>x.id===r.id)||++k>20){clearInterval(t);openRecipe(r.id)}},150)});closeSheet()}catch(e){toast("Suppression impossible")}
   };
 }
+
+/* ---------- mon carnet : les fois où je l'ai faite, et ma note pour la prochaine fois ---------- */
+const DAY=864e5,sameDay=(a,b)=>new Date(a).toDateString()===new Date(b).toDateString();
+function whenTxt(t){
+  const d=Math.round((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/DAY);
+  if(d<=0)return L("aujourd'hui","today");if(d===1)return L("hier","yesterday");
+  const date=new Date(t).toLocaleDateString(EN()?"en-GB":"fr-FR",{day:"numeric",month:"long",...(new Date(t).getFullYear()!==new Date().getFullYear()?{year:"numeric"}:{})});
+  return d<7?L(`il y a ${d} jours`,`${d} days ago`):L(`le ${date}`,`on ${date}`);
+}
+function journalHTML(r){
+  const raw=r._raw||r,F=arr(raw.faite).filter(Number.isFinite).sort((a,b)=>b-a),n=F.length,today=n&&sameDay(F[0],Date.now());
+  return `<section class="block journal"><div class="jh"><h2>${L("Mon carnet","My notes")}</h2><span class="hand">${n?L(`faite ${n} fois`,`made ${n} time${n>1?"s":""}`):L("pas encore faite","not made yet")}</span></div>
+    ${n?`<p class="jlast">${emo("🍽️")} ${L("La dernière fois","Last time")} : ${esc(whenTxt(F[0]))}${n>1?` <span class="muted">· ${L("avant","before that")} ${esc(whenTxt(F[1]))}</span>`:""}</p>`:""}
+    <textarea id="maNote" rows="2" placeholder="${L("Pour la prochaine fois : un peu moins de sucre, 5 min de cuisson en plus…","For next time: a little less sugar, 5 more minutes in the oven…")}">${esc(raw.maNote||"")}</textarea>
+    <div class="row" style="gap:.5rem">${today?`<span class="jdone">${emo("✓")} ${L("Faite aujourd'hui","Made today")}</span><button class="linkbtn" id="faiteUndo">${L("Retirer","Remove")}</button>`:`<button class="btn soft" id="faite">${emo("✓")} ${L("Je l'ai faite aujourd'hui","I made it today")}</button>`}</div>
+  </section>`;
+}
+async function markMade(r,on){
+  const raw=recRaw.find(x=>x.id===r.id);if(!raw||!db)return false;
+  let F=arr(raw.faite).filter(Number.isFinite);
+  if(on){if(F.some(t=>sameDay(t,Date.now())))return true;F=[...F,Date.now()]}else F=F.filter(t=>!sameDay(t,Date.now()));
+  try{await db.collection("recettes").doc(r.id).update({faite:F});raw.faite=F;return true}catch{return false}
+}
+function bindJournal(r){
+  const t=$("#maNote");if(t){let h;const save=()=>{clearTimeout(h);const v=t.value.trim(),raw=recRaw.find(x=>x.id===r.id);if(!raw||(raw.maNote||"")===v)return;raw.maNote=v;db.collection("recettes").doc(r.id).update({maNote:v}).then(()=>toast(L("Note gardée","Note saved"))).catch(()=>toast(L("Impossible d'enregistrer","Could not save")))};
+    t.oninput=()=>{clearTimeout(h);h=setTimeout(save,1500)};t.onblur=save}
+  const f=$("#faite");if(f)f.onclick=async()=>{f.disabled=true;if(await markMade(r,true)){toast(L("C'est noté dans ton carnet","Noted in your cookbook"));showRecipe(cur.r,{...cur.opt,refresh:true})}else f.disabled=false};
+  const u=$("#faiteUndo");if(u)u.onclick=async()=>{if(await markMade(r,false))showRecipe(cur.r,{...cur.opt,refresh:true})};
+}
+
+/* ---------- la voix d'un proche : enregistrée, gardée avec la recette, réécoutée par QR code dans le livre ---------- */
+const SUPA={url:"https://vvxkkqcmjrwytagbxdfg.supabase.co",key:"sb_publishable_A-kJQIoJXxdXmjHF8iM40g_RP6myhMo"};
+const MJ_FN=SUPA.url+"/functions/v1/mijonote";
+const SB=()=>window.Account&&window.Account.user?window.Account.sb:null;
+const UID=()=>window.Account&&window.Account.user?window.Account.user.id:null;
+const MJ_SRV=false; // passe à true quand les tables et la fonction « mijonote » sont en ligne
+const ONLINE=()=>!!(MJ_SRV&&window.MJ_PWA&&SB());
+const durTxt=s=>{s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const b64Of=b=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=()=>ko(r.error);r.readAsDataURL(b)});
+const audioType=b=>String(b&&b.type||"audio/mp4").split(";")[0]||"audio/mp4";
+const audioExt=t=>/webm/.test(t)?"webm":/ogg/.test(t)?"ogg":/mpeg|mp3/.test(t)?"mp3":/wav/.test(t)?"wav":"m4a";
+function parseJ(t){t=String(t||"").trim().replace(/^```(?:json)?\s*/i,"").replace(/```\s*$/,"");try{return JSON.parse(t)}catch{}const s=t.search(/[\[{]/),e=Math.max(t.lastIndexOf("}"),t.lastIndexOf("]"));if(s<0||e<s)throw {code:"invalid_json"};try{return JSON.parse(t.slice(s,e+1))}catch{throw {code:"invalid_json"}}}
+async function mjCall(body,signal){
+  let tok="";try{tok=(await SB()?.auth.getSession())?.data?.session?.access_token||""}catch{}
+  let r;try{r=await fetch(MJ_FN,{method:"POST",signal,headers:{"content-type":"application/json",apikey:SUPA.key,...(tok?{authorization:"Bearer "+tok}:{})},body:JSON.stringify(body)})}
+  catch(e){if(signal&&signal.aborted)throw {code:"cancelled"};throw {code:"network",mjText:L("Pas de connexion. Vérifie internet et réessaie.","No connection. Check the internet and try again.")}}
+  const out=await r.json().catch(()=>({}));
+  if(!r.ok)throw {code:r.status===429?"rate_limited":"api_error",mjText:out.error?L("Ça n'a pas marché : ","It didn't work: ")+out.error:undefined};
+  return out;
+}
+// an audio + a prompt, read on the server (Claude here cannot listen): returns the JSON answer
+async function readAudio(blob,prompt,signal){
+  if(blob.size>20*1024*1024)throw {code:"too_big",mjText:L("L'enregistrement est trop long (20 Mo max). Fais-en un plus court.","The recording is too long (20 MB max).")};
+  const out=await mjCall({action:"audio",prompt,audio:{mime:audioType(blob),data:await b64Of(blob)}},signal);
+  return parseJ(out.text);
+}
+/* the recorder: a full-screen sheet with one big button; resolves {blob,dur} or null */
+function recorder(who){
+  return new Promise(res=>{
+    const o=document.createElement("div");o.className="recov";o.setAttribute("role","dialog");
+    let rec=null,stream=null,parts=[],t0=0,tick=null,blob=null,dur=0,url="",au=null;
+    const end=v=>{clearInterval(tick);try{rec&&rec.state!=="inactive"&&rec.stop()}catch{}stream?.getTracks().forEach(t=>t.stop());au?.pause();o.remove();document.body.style.overflow=document.getElementById("sheet").hidden?"":"hidden";res(v)};
+    const draw=state=>{
+      o.innerHTML=`<div class="recbox"><button class="iconbtn recx" data-r="x">${L("Fermer","Close")}</button>
+        <span class="hand">${who?L(`La voix de ${esc(who)}`,`${esc(who)}'s voice`):L("Sa voix","Their voice")}</span>
+        <h2>${state==="done"?L("C'est enregistré","Recorded"):state==="rec"?L("J'écoute…","Listening…"):L("Fais-lui raconter sa recette","Let them tell their recipe")}</h2>
+        <p class="muted">${state==="idle"?L("Les ingrédients, les gestes, un souvenir… Pose le téléphone près de lui ou d'elle. Jusqu'à 10 minutes.","Ingredients, moves, a memory… Put the phone close by. Up to 10 minutes."):state==="rec"?L("Touche le bouton pour arrêter.","Tap the button to stop."):L("Écoute-la avant de la garder.","Listen before keeping it.")}</p>
+        <div class="rectime">${durTxt(state==="rec"?(Date.now()-t0)/1000:dur)}</div>
+        ${state==="done"?`<div class="row" style="justify-content:center;gap:.6rem"><button class="btn ghost" data-r="play">${emo("▶️")} ${L("Écouter","Listen")}</button><button class="btn ghost" data-r="again">${L("Recommencer","Record again")}</button></div>
+          <button class="btn block" data-r="keep">${emo("✓")} ${L("Garder cet enregistrement","Keep this recording")}</button>`
+          :`<button class="recbtn${state==="rec"?" on":""}" data-r="${state==="rec"?"stop":"go"}" aria-label="${state==="rec"?L("Arrêter","Stop"):L("Enregistrer","Record")}"><span></span></button>
+          ${state==="idle"?`<label class="linkbtn recfile">${L("ou choisir un fichier audio","or pick an audio file")}<input type="file" accept="audio/*" hidden></label>`:""}`}
+      </div>`;
+      o.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>act(b.dataset.r));
+      const fi=o.querySelector("input[type=file]");if(fi)fi.onchange=()=>{const f=fi.files&&fi.files[0];if(!f)return;blob=f;url=URL.createObjectURL(f);const a=new Audio(url);a.onloadedmetadata=()=>{dur=isFinite(a.duration)?a.duration:0;draw("done")};a.onerror=()=>{dur=0;draw("done")}};
+    };
+    const act=async k=>{
+      if(k==="x")return end(null);
+      if(k==="keep")return end({blob,dur});
+      if(k==="play"){if(!au){au=new Audio(url)}au.currentTime=0;au.play().catch(()=>{});return}
+      if(k==="again"){au?.pause();au=null;blob=null;return draw("idle")}
+      if(k==="go"){
+        try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})}
+        catch{toast(L("Micro indisponible ici : choisis un fichier audio (Dictaphone)","Microphone unavailable here: pick an audio file"));return}
+        const type=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg"].find(t=>window.MediaRecorder?.isTypeSupported?.(t))||"";
+        try{rec=new MediaRecorder(stream,{...(type?{mimeType:type}:{}),audioBitsPerSecond:48000})}catch{rec=new MediaRecorder(stream)}
+        parts=[];rec.ondataavailable=e=>e.data.size&&parts.push(e.data);
+        rec.onstop=()=>{stream.getTracks().forEach(t=>t.stop());blob=new Blob(parts,{type:(rec.mimeType||type||"audio/mp4").split(";")[0]});url=URL.createObjectURL(blob);dur=(Date.now()-t0)/1000;draw("done")};
+        rec.start(1000);t0=Date.now();draw("rec");
+        tick=setInterval(()=>{const el=o.querySelector(".rectime");const s=(Date.now()-t0)/1000;if(el)el.textContent=durTxt(s);if(s>=600)act("stop")},500);
+        return}
+      if(k==="stop"){clearInterval(tick);try{rec.stop()}catch{}}
+    };
+    document.body.appendChild(o);document.body.style.overflow="hidden";draw("idle");
+  });
+}
+// one player for the whole app
+let voixAu=null,voixOn=null;
+function playVoix(id,btn){
+  if(voixOn===id&&voixAu&&!voixAu.paused){voixAu.pause();return}
+  voixAu?.pause();voixAu=new Audio(pic(id));voixOn=id;
+  const set=p=>{document.querySelectorAll(`[data-vplay="${CSS.escape(id)}"]`).forEach(b=>{b.classList.toggle("on",p);b.innerHTML=p?"❚❚":"▶"})};
+  voixAu.onplay=()=>set(true);voixAu.onpause=voixAu.onended=()=>set(false);
+  voixAu.ontimeupdate=()=>{const d=voixAu.duration||1;document.querySelectorAll(`[data-vbar="${CSS.escape(id)}"]`).forEach(x=>x.style.width=Math.min(100,voixAu.currentTime/d*100)+"%")};
+  voixAu.play().catch(()=>toast(L("Lecture impossible","Can't play it")));
+}
+function voixHTML(r){
+  const raw=r._raw||r,V=arr(raw.voix),who=r.livre||"";
+  return `<section class="block voix"><div class="jh"><h2>${L("Sa voix","Their voice")}</h2><span class="hand">${L("à garder pour toujours","to keep forever")}</span></div>
+    ${V.map((v,i)=>`<div class="vrow"><button class="vplay" data-vplay="${esc(v.id)}" aria-label="${L("Écouter","Listen")}">▶</button><span class="vbody"><b>${esc(v.qui||who||L("Un proche","A loved one"))}</b><small>${durTxt(v.dur)}${v.ajoute?" · "+esc(new Date(v.ajoute).toLocaleDateString(EN()?"en-GB":"fr-FR",{day:"numeric",month:"short",year:"numeric"})):""}</small><span class="vtrack"><i data-vbar="${esc(v.id)}"></i></span></span><button class="iconbtn" data-vdel="${i}" aria-label="${L("Retirer","Remove")}">✕</button></div>`).join("")}
+    <button class="btn soft" id="vAdd">${emo("🎙️")} ${V.length?L("Ajouter un enregistrement","Add a recording"):who?L(`Enregistrer la voix de ${esc(who)}`,`Record ${esc(who)}'s voice`):L("Enregistrer sa voix","Record their voice")}</button>
+    ${V.length?"":`<p class="note" style="margin:0">${L("Qu'elle raconte la recette, un souvenir, sa façon de dire « une noix de beurre »… Dans le livre imprimé, un QR code permet de la réécouter.","Let them tell the recipe, a memory… In the printed book, a QR code plays it back.")}</p>`}
+  </section>`;
+}
+function bindVoix(r){
+  const sh=$("#sheet");
+  sh.querySelectorAll("[data-vplay]").forEach(b=>b.onclick=()=>playVoix(b.dataset.vplay,b));
+  const add=$("#vAdd");if(add)add.onclick=async()=>{
+    const got=await recorder(r.livre);if(!got||!assets||!db)return;
+    toast(L("J'enregistre…","Saving…"));
+    try{const type=audioType(got.blob),id=(await assets.upload(got.blob,{type})).id,raw=recRaw.find(x=>x.id===r.id);
+      const V=[...arr(raw?.voix),{id,qui:r.livre||"",dur:Math.round(got.dur*10)/10,type,ajoute:Date.now()}];
+      await db.collection("recettes").doc(r.id).update({voix:V});if(raw)raw.voix=V;toast(L("Sa voix est gardée","Their voice is saved"));showRecipe(loc(raw||r),{refresh:true})}
+    catch{toast(L("L'enregistrement n'a pas pu être gardé","The recording could not be saved"))}};
+  sh.querySelectorAll("[data-vdel]").forEach(b=>b.onclick=async()=>{
+    const raw=recRaw.find(x=>x.id===r.id);if(!raw)return;const old=arr(raw.voix),V=old.filter((_,i)=>i!==+b.dataset.vdel);
+    try{voixAu?.pause();await db.collection("recettes").doc(r.id).update({voix:V});raw.voix=V;showRecipe(loc(raw),{refresh:true});
+      toast(L("Enregistrement retiré","Recording removed"),{fn:async()=>{await db.collection("recettes").doc(r.id).update({voix:old});raw.voix=old;showRecipe(loc(raw),{refresh:true})}})}catch{toast(L("Impossible d'enregistrer","Could not save"))}});
+}
+/* « Elle me la raconte » : la recette dictée à voix haute devient une recette écrite, avec sa voix */
+async function extractVoice(pre){
+  const s=st.scan,who=(s.famWho||"").trim(),got=pre||await recorder(who);if(!got)return;
+  s.busy=true;s.err="";s.found=null;s.report="";s.saved=null;render();
+  ctl=new AbortController();
+  const prompt=`Tu es un chef qui aide une famille à garder ses recettes. L'audio est l'enregistrement de ${who||"un proche"} qui raconte une recette de famille à voix haute, souvent « à l'œil » et dans le désordre, parfois avec quelqu'un qui lui pose des questions.
+Écoute tout l'enregistrement et écris la recette. Traduis les mesures de grand-mère en grammes ou ml en gardant l'original entre parenthèses (ex. « 150 g de sucre (un grand verre) »). Si une quantité n'est pas dite, estime-la d'après la recette classique et ajoute une astuce « À vérifier : … ».
+Tout ce que ${who||"la personne"} dit de personnel (ses secrets, ses gestes à elle, « chez nous on fait comme ça ») va dans "secrets" avec ses propres mots, et ce qu'elle raconte (souvenirs, d'où vient la recette, pour qui elle la faisait) va dans "histoire".
+${RULES}
+
+Réponds UNIQUEMENT avec ce JSON : {"recettes":[ RECETTE ]} où RECETTE suit ce schéma :
+${SCHEMA}
+${L("Tout en français.","Free text in English; fixed-list values stay in French exactly as listed.")}`;
+  try{
+    const out=await readAudio(got.blob,prompt,ctl.signal),list=[];
+    for(const raw of arr(out?.recettes)){const r={...clean(raw),page:""};if(!r.ingredients.length&&!r.etapes.length)continue;hide(r,"_voice",got);list.push(r)}
+    if(!list.length)s.err=L("Je n'ai pas trouvé de recette dans cet enregistrement. Réessaie en parlant près du téléphone.","No recipe found in this recording. Try again closer to the phone.");else s.found=list;
+  }catch(e){s.err=errText(e)}
+  s.busy=false;render();
+}
+/* QR codes in the printed book: the voice is put online (public link) only when the book asks for it */
+let qrLib=null;const QRS={};
+const qrLoad=()=>qrLib||(qrLib=loadScript(window.MJ_PWA?"vendor/qrcode.js":"https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js").catch(e=>{qrLib=null;throw e}));
+const ecouteUrl=(v,who,titre)=>APP_URL+"ecoute.html?v="+encodeURIComponent(v.pub)+"&n="+encodeURIComponent(who||"")+"&t="+encodeURIComponent(titre||"");
+async function voixPublic(r,v){
+  if(v.pub)return v.pub;const sb=SB(),uid=UID();if(!sb||!uid)return null;
+  const b=await (await fetch(pic(v.id))).blob(),type=v.type||audioType(b),path=`${uid}/${hstr(v.id+Date.now())}${Math.random().toString(36).slice(2,10)}.${audioExt(type)}`;
+  const up=await sb.storage.from("mj-public").upload(path,b,{contentType:type,upsert:false});if(up.error)throw up.error;
+  const raw=recRaw.find(x=>x.id===r.id);if(raw){const V=arr(raw.voix).map(x=>x.id===v.id?{...x,pub:path}:x);await db.collection("recettes").doc(r.id).update({voix:V});raw.voix=V}
+  return path;
+}
+async function albumQr(a,rs){
+  if(!a.qrOk){for(const k in QRS)delete QRS[k];return}const todo=rs.filter(r=>arr((r._raw||r).voix).length);if(!todo.length)return;
+  try{await qrLoad()}catch{toast(L("Les QR codes n'ont pas pu être créés (pas de connexion)","QR codes could not be made (no connection)"));return}
+  for(const r of todo){const v=arr((r._raw||r).voix)[0];
+    try{const pub=v.pub||(ONLINE()&&a.qrOk?await voixPublic(r,v):null);if(!pub){delete QRS[r.id];continue}
+      const qr=window.qrcode(0,"M");qr.addData(ecouteUrl({pub},v.qui||r.livre,r.titre));qr.make();QRS[r.id]=qr.createDataURL(6,2)}catch{delete QRS[r.id]}}
+}
+
+/* ---------- demander une recette à un proche + carnet de famille (appli en ligne uniquement) ---------- */
+let envois=[],famille=null,famRecs=[],famBusy=false,famSyncT=null,famLast=0;const famPhotos={};
+const prenomMoi=()=>(profile().prenom||"").trim();
+async function shareLink(url,title,text){
+  if(navigator.share){try{await navigator.share({title,text,url});return}catch(e){if(e&&e.name==="AbortError")return}}
+  try{await navigator.clipboard.writeText(text+"\n"+url);toast(L("Message et lien copiés : colle-les où tu veux","Message and link copied: paste them anywhere"))}catch{prompt(L("Copie ce lien :","Copy this link:"),url)}
+}
+const audioDur=b=>new Promise(ok=>{const a=new Audio(URL.createObjectURL(b));a.onloadedmetadata=()=>ok(isFinite(a.duration)?a.duration:0);a.onerror=()=>ok(0);setTimeout(()=>ok(0),4000)});
+/* 📩 Demander à un proche : un lien, il envoie photos, texte ou voix sans rien installer */
+async function askProche(){
+  const sb=SB();if(!sb)return;
+  const qui=prompt(L("À qui demandes-tu une recette ? (ex. Mamie Rose)","Who are you asking? (e.g. Grandma Rose)"),st.scan.famWho||"");if(qui===null||!qui.trim())return;
+  const {data,error}=await sb.from("mj_demandes").insert({owner:UID(),qui:qui.trim().slice(0,60),de:prenomMoi().slice(0,40)}).select("token").single();
+  if(error||!data){toast(L("Le lien n'a pas pu être créé. Réessaie.","Could not create the link. Try again."));return}
+  const me=prenomMoi();
+  await shareLink(APP_URL+"proche.html#"+data.token,L("Ta recette pour mon carnet","Your recipe for my cookbook"),
+    L(`${qui.trim()}, tu veux bien m'envoyer ta recette ? Une photo de ta fiche, un petit texte ou même ta voix : c'est tout simple, il n'y a rien à installer.${me?" "+me:""}`,`${qui.trim()}, would you send me your recipe? A photo, a few lines or even your voice: nothing to install.${me?" "+me:""}`));
+}
+async function loadEnvois(){
+  const sb=SB();if(!sb)return;
+  const {data,error}=await sb.from("mj_envois").select("*").order("cree",{ascending:false});if(error)return;
+  if(JSON.stringify(data||[])!==JSON.stringify(envois)){envois=data||[];if(st.view==="lib")render()}
+}
+function demandesHTML(){
+  if(!envois.length)return "";
+  const what=e=>{const F=arr(e.fichiers),n=F.filter(f=>/^image/.test(f.type)).length,v=F.some(f=>/^(audio|video)/.test(f.type));
+    return [e.titre,n?n+" photo"+(n>1?"s":""):"",v?L("sa voix","their voice"):"",e.texte&&!n&&!v?L("un texte","a text"):""].filter(Boolean).join(" · ")};
+  return `<section class="envois">${envois.map(e=>`<div class="envoi"><span class="ee">${emo("📩")}</span><span class="et"><b>${L(`${esc(e.qui)} t'a envoyé sa recette`,`${esc(e.qui)} sent you a recipe`)}</b><small>${esc(what(e))}</small>
+    ${e.texte&&arr(e.fichiers).length?`<span class="emsg">« ${esc(String(e.texte).slice(0,160))}${String(e.texte).length>160?"…":""} »</span>`:""}
+    <span class="row" style="gap:.4rem;margin-top:.45rem"><button class="btn" data-envoi="${esc(e.id)}" ${!sample?"disabled":""}>${L("Lire et ranger","Read and file")}</button><button class="linkbtn" data-envoix="${esc(e.id)}">${L("Supprimer","Delete")}</button></span></span></div>`).join("")}</section>`;
+}
+async function envoiDrop(id,undo){
+  const e=envois.find(x=>x.id===id),sb=SB();if(!e||!sb)return;
+  envois=envois.filter(x=>x!==e);render();
+  const kill=async()=>{await sb.storage.from("mj-envois").remove(arr(e.fichiers).map(f=>f.path)).catch(()=>{});await sb.from("mj_envois").delete().eq("id",id)};
+  if(!undo)return kill();
+  let back=false;toast(L("Envoi supprimé","Deleted"),{fn:()=>{back=true;envois=[e,...envois];render()}});
+  setTimeout(()=>{if(!back)kill()},6500);
+}
+function envoiDone(){const s=st.scan,id=s.envoi;if(!id)return;s.envoi=null;envoiDrop(id,false)}
+async function openEnvoi(id,btn){
+  const e=envois.find(x=>x.id===id),sb=SB();if(!e||!sb)return;
+  if(btn){btn.disabled=true;btn.textContent=L("Ouverture…","Opening…")}
+  const files=[];
+  for(const f of arr(e.fichiers)){const {data}=await sb.storage.from("mj-envois").download(f.path);if(data)files.push(new File([data],f.path.split("/").pop(),{type:f.type||data.type}))}
+  const s=st.scan;dropDraft();s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.found=null;s.err="";s.report="";s.saved=null;s.pdf=null;s.burst=false;
+  s.fam=true;s.social.fam=false;s.famWho=e.qui;s.envoi=e.id;
+  const imgs=files.filter(f=>/^image\//.test(f.type)),aud=files.find(f=>/^(audio|video)\//.test(f.type));
+  if(imgs.length){
+    s.mode="photo";imgs.slice(0,MAX_SHOTS).forEach(f=>s.files.push({file:f,url:URL.createObjectURL(f)}));go("scan");
+    await shrinkAll(s);await (isBatch(s)?extractPdf("photos"):extract());
+    if(aud&&s.found){const v={blob:aud,dur:await audioDur(aud)};s.found.forEach(r=>hide(r,"_voice",v))}
+    if(e.texte&&s.found&&s.found.length===1&&!s.found[0].histoire)s.found[0].histoire=String(e.texte).slice(0,600);
+    render();
+  }else if(aud){go("scan");await extractVoice({blob:aud,dur:await audioDur(aud)})}
+  else if(e.texte){s.mode="texte";s.text=(e.titre?e.titre+"\n":"")+e.texte;s.source=e.qui;go("scan");await extractLink()}
+  else{toast(L("Cet envoi est vide","This is empty"));envoiDrop(e.id,false)}
+}
+/* 👪 le carnet de famille : chacun garde son carnet, et voit les recettes de cœur des autres */
+async function famLoad(force){
+  const sb=SB(),uid=UID();if(!sb||!uid)return;
+  if(!force&&Date.now()-famLast<60000)return;famLast=Date.now();
+  const {data:m,error}=await sb.from("mj_membres").select("famille,prenom,partage").eq("membre",uid).limit(1).maybeSingle();if(error)return;
+  if(!m){famille=null;famRecs=[]}
+  else{
+    const [{data:f},{data:mem},{data:ps}]=await Promise.all([sb.from("mj_familles").select("id,nom,code").eq("id",m.famille).maybeSingle(),sb.from("mj_membres").select("membre,prenom,partage").eq("famille",m.famille),sb.from("mj_partages").select("*").eq("famille",m.famille).neq("auteur",uid).order("maj",{ascending:false})]);
+    famille={id:m.famille,nom:f?.nom||L("Ma famille","My family"),code:f?.code||"",partage:m.partage!==false,prenom:m.prenom||"",membres:mem||[]};famRecs=ps||[];
+    const paths=famRecs.map(p=>p.photo).filter(p=>p&&!famPhotos[p]);
+    if(paths.length){const {data:su}=await sb.storage.from("mj-famille").createSignedUrls(paths,60*60*12);arr(su).forEach(x=>{if(x.signedUrl&&x.path)famPhotos[x.path]=x.signedUrl})}
+  }
+  if(st.view==="lib"||st.view==="compte")render();
+  famSync();
+}
+function famSyncSoon(){if(!famille)return;clearTimeout(famSyncT);famSyncT=setTimeout(famSync,4000)}
+const famOk=r=>isPerso(r)&&!["claude","suggestion"].includes(provOf(r))&&!r.partageePar;
+async function famSync(){
+  const sb=SB(),uid=UID();if(!sb||!uid||!famille||famBusy||!loaded)return;famBusy=true;
+  const key="famsync."+famille.id,cache=ls.get(key,{})||{},seen=new Set();
+  try{
+    for(const r of famille.partage?recRaw.filter(famOk):[]){
+      seen.add(r.id);
+      const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,...rec}=r;
+      rec.etapes=arr(rec.etapes).map(({image,...e})=>e);
+      const h=hstr(JSON.stringify(rec)+"|"+(photo||"")+"|"+prenomMoi());if(cache[id]===h)continue;
+      let ph=null;
+      if(photo){try{const b=await (await fetch(pic(photo))).blob();ph=`${famille.id}/${uid}/${id}.jpg`;const up=await sb.storage.from("mj-famille").upload(ph,b,{contentType:b.type||"image/jpeg",upsert:true});if(up.error)ph=null}catch{ph=null}}
+      const {error}=await sb.from("mj_partages").upsert({famille:famille.id,auteur:uid,id,auteur_nom:prenomMoi()||famille.prenom||"",recette:rec,photo:ph,maj:new Date().toISOString()});
+      if(!error)cache[id]=h;
+    }
+    const gone=Object.keys(cache).filter(id=>!seen.has(id));
+    if(gone.length){const {error}=await sb.from("mj_partages").delete().eq("famille",famille.id).eq("auteur",uid).in("id",gone);
+      if(!error){await sb.storage.from("mj-famille").remove(gone.map(id=>`${famille.id}/${uid}/${id}.jpg`)).catch(()=>{});gone.forEach(id=>delete cache[id])}}
+  }catch{}finally{ls.set(key,cache);famBusy=false}
+}
+function famShelfHTML(){
+  if(!famille||!famRecs.length)return "";
+  return `<section class="lux-sec"><div class="lux-h"><h2>${L("Le carnet de famille","The family cookbook")}</h2><span class="lux-n">${famRecs.length}</span></div>
+    <p class="note" style="margin:-.3rem 0 .7rem">${esc(famille.nom)} · ${L("les recettes de cœur partagées par les tiens","the heart recipes your family shares")}</p>
+    <div class="famrail">${famRecs.map(p=>{const r=p.recette||{},u=p.photo&&famPhotos[p.photo];return `<button class="famcard" data-famr="${esc(p.auteur+"|"+p.id)}">${u?`<img src="${esc(u)}" alt="" loading="lazy">`:`<span class="fi">${icoOf(r)}</span>`}<b>${esc(r.titre||"")}</b><small>${esc([r.livre,p.auteur_nom&&p.auteur_nom!==r.livre?L("par ","from ")+p.auteur_nom:""].filter(Boolean).join(" · "))}</small></button>`}).join("")}</div></section>`;
+}
+function openFamRecipe(k){
+  const p=famRecs.find(x=>x.auteur+"|"+x.id===k);if(!p)return;
+  const r={...p.recette,id:"fam_"+p.id,...(p.photo&&famPhotos[p.photo]?{_preview:famPhotos[p.photo]}:{})};
+  showRecipe(r,{temp:true,fam:p});
+}
+async function saveFamRecipe(r,p){
+  let ph=null;if(r._preview&&assets){try{ph=(await assets.upload(await (await fetch(r._preview)).blob(),{type:"image/jpeg"})).id}catch{}}
+  await db.collection("recettes").add({lang:LANG,...clean(r),...(ph?{photo:ph}:{}),livre:r.livre||p.auteur_nom||L("Ma famille","My family"),page:"",provenance:["manuscrit","famille","texte"].includes(r.provenance)?r.provenance:"famille",perso:true,partageePar:p.auteur_nom||"",ajoute:Date.now()});
+}
+function famAccHTML(){
+  if(!ONLINE())return "";
+  if(!famille)return `<section class="acc"><h2>${L("Le carnet de famille","The family cookbook")}</h2>
+    <p class="note" style="margin:0 0 .6rem">${L("Réunissez vos recettes de cœur : chacun garde son carnet, et retrouve celles des autres sur son accueil.","Gather your heart recipes: everyone keeps their own cookbook and sees the others' on their home screen.")}</p>
+    <div class="row" style="gap:.5rem"><button class="btn" data-fam="creer">${L("Créer le nôtre","Create ours")}</button><button class="btn ghost" data-fam="rejoindre">${L("J'ai un code","I have a code")}</button></div></section>`;
+  return `<section class="acc"><h2>${L("Le carnet de famille","The family cookbook")}</h2>
+    <div class="kv"><span>${L("Nom","Name")}</span><b>${esc(famille.nom)}</b></div>
+    <div class="kv"><span>${L("Code","Code")}</span><b style="letter-spacing:.12em">${esc(famille.code)}</b></div>
+    <div class="kv"><span>${L("Membres","Members")}</span><b>${esc(famille.membres.map(m=>m.prenom||"?").join(", "))}</b></div>
+    <label class="albchk"><input type="checkbox" id="famPart" ${famille.partage?"checked":""}><span><b>${L("Partager mes recettes de cœur","Share my heart recipes")}</b><small>${L("Celles de tes proches et les tiennes, jamais celles des livres de chefs. Tes notes, ton journal et les voix restent à toi.","Your family's and your own, never cookbook ones. Your notes, journal and voices stay private.")}</small></span></label>
+    <button class="btn block" data-fam="inviter">${emo("📲")} ${L("Inviter quelqu'un","Invite someone")}</button>
+    <button class="linkbtn" data-fam="quitter" style="margin-top:.4rem">${L("Quitter le carnet de famille","Leave the family cookbook")}</button></section>`;
+}
+async function famAct(k){
+  const sb=SB();if(!sb)return;
+  const nomMoi=()=>{let p=prenomMoi();if(!p){p=(prompt(L("Ton prénom (les autres le verront)","Your first name (others will see it)"))||"").trim();if(p){const pr=profile();pr.prenom=p;ls.set("profil",pr)}}return p};
+  if(k==="creer"){const n=prompt(L("Le nom de votre carnet (ex. Famille Disegni)","Your cookbook's name"),"");if(!n||!n.trim())return;const p=nomMoi();if(!p)return;
+    const {error}=await sb.rpc("mj_creer_famille",{p_nom:n.trim().slice(0,60),p_prenom:p.slice(0,40)});if(error){toast(L("Création impossible. Réessaie.","Could not create it."));return}
+    await famLoad(true);toast(L("Carnet de famille créé : invite les tiens","Family cookbook created: invite your family"))}
+  else if(k==="rejoindre"){const c=prompt(L("Le code à 6 lettres qu'on t'a envoyé","The 6-letter code you got"),"");if(!c||!c.trim())return;famJoin(c)}
+  else if(k==="inviter"&&famille)shareLink(APP_URL+"?famille="+famille.code,L("Notre carnet de famille","Our family cookbook"),L(`Rejoins « ${famille.nom} » sur Mijonote : on y met toutes nos recettes de famille. Code : ${famille.code}`,`Join “${famille.nom}” on Mijonote, our family recipes. Code: ${famille.code}`));
+  else if(k==="quitter"&&famille){if(!confirm(L("Quitter le carnet de famille ? Tes recettes partagées en seront retirées (elles restent dans ton carnet).","Leave? Your shared recipes are removed from it (they stay in your cookbook).")))return;
+    famille.partage=false;await famSync();await sb.from("mj_membres").delete().eq("famille",famille.id).eq("membre",UID());famille=null;famRecs=[];render();toast(L("Tu as quitté le carnet de famille","You left the family cookbook"))}
+}
+async function famJoin(code){
+  const sb=SB();if(!sb)return;const p=prenomMoi()||(prompt(L("Ton prénom (les autres le verront)","Your first name (others will see it)"))||"").trim();if(!p)return;
+  if(!prenomMoi()){const pr=profile();pr.prenom=p;ls.set("profil",pr)}
+  const {data,error}=await sb.rpc("mj_rejoindre",{p_code:String(code).trim().toUpperCase(),p_prenom:p.slice(0,40)});
+  if(error||!data){toast(L("Code inconnu. Vérifie-le avec la personne qui t'a invité.","Unknown code."));return}
+  await famLoad(true);toast(L("Bienvenue dans le carnet de famille !","Welcome to the family cookbook!"));
+}
+function bindFam(root){
+  root.querySelectorAll("[data-envoi]").forEach(b=>b.onclick=()=>openEnvoi(b.dataset.envoi,b));
+  root.querySelectorAll("[data-envoix]").forEach(b=>b.onclick=()=>envoiDrop(b.dataset.envoix,true));
+  root.querySelectorAll("[data-famr]").forEach(b=>b.onclick=()=>openFamRecipe(b.dataset.famr));
+  root.querySelectorAll("[data-fam]").forEach(b=>b.onclick=()=>famAct(b.dataset.fam));
+  const fp=root.querySelector("#famPart");if(fp)fp.onchange=async()=>{const sb=SB();if(!sb||!famille)return;famille.partage=fp.checked;
+    await sb.from("mj_membres").update({partage:fp.checked}).eq("famille",famille.id).eq("membre",UID());famSync();toast(fp.checked?L("Tes recettes de cœur sont partagées","Your heart recipes are shared"):L("Tes recettes ne sont plus partagées","Your recipes are no longer shared"))};
+}
+if(MJ_SRV&&window.MJ_PWA&&window.Account)window.Account.ready.then(async u=>{
+  if(!u)return;
+  const code=new URLSearchParams(location.search).get("famille");
+  await famLoad(true);loadEnvois();
+  if(code){history.replaceState(null,"",location.pathname+location.hash);if(!famille||famille.code!==code.toUpperCase()){if(famille)toast(L("Tu es déjà dans un carnet de famille","You're already in a family cookbook"));else if(confirm(L("Rejoindre le carnet de famille auquel on t'a invité ?","Join the family cookbook you were invited to?")))famJoin(code)}}
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){loadEnvois();famLoad()}});
+}).catch(()=>{});
 
 /* ---------- cook mode ---------- */
 let ck={r:null,i:0,t:null,left:0,run:false};
@@ -3652,6 +4164,7 @@ function drawCook(){
       <h2>${esc(e.titre)}</h2>
       ${vSeg(r,ck.i)?`<div class="vstep"><video id="ckV" src="${pic(r.videoAsset)}" playsinline muted autoplay preload="auto"></video><button id="ckRe">${L("↺ Revoir","↺ Replay")}</button></div>`
         :stepSrc(e)?`<img class="stepimg big" src="${stepSrc(e)}" alt="Illustration : ${esc(e.titre)}">`:""}
+      ${ck.i===0&&(recRaw.find(x=>x.id===r.id)||{}).maNote?`<div class="cknote">${emo("✍️")} <span><b>${L("Ta note","Your note")} :</b> ${esc(recRaw.find(x=>x.id===r.id).maNote)}</span></div>`:""}
       <div class="txt">${esc(scaleText(e.texte,ck.f))}</div>
       ${arr(e.ingredients).length?`<div class="use">${e.ingredients.map(x=>`<span>${esc(scaleText(x,ck.f))}</span>`).join("")}</div>`:""}
       ${arr(e.astuces).length?`<div class="steptips">${e.astuces.map(t=>`<p>${emo("💡")} ${esc(t)}</p>`).join("")}</div>`:""}
@@ -3660,7 +4173,7 @@ function drawCook(){
     <div class="nav"><button class="prev" id="ckP" ${ck.i===0?"disabled":""}>Précédente</button><button id="ckN">${ck.i===n-1?"Terminé":"Suivante"}</button></div>`;
   $("#ckX").onclick=stopCook;
   $("#ckP").onclick=()=>{if(ck.i>0){ck.i--;drawCook()}};
-  $("#ckN").onclick=()=>{if(ck.i<n-1){ck.i++;drawCook()}else{stopCook();toast("Bon appétit !")}};
+  $("#ckN").onclick=async()=>{if(ck.i<n-1){ck.i++;drawCook()}else{stopCook();const ok=await markMade(r,true);toast(ok?L("Bon appétit ! C'est noté dans ton carnet","Enjoy! Noted in your cookbook"):"Bon appétit !");if(ok&&cur&&cur.r.id===r.id)showRecipe(cur.r,{...cur.opt,refresh:true})}};
   const tb=$("#tmBtn");if(tb)tb.onclick=()=>toggleTimer(e.duree_min);
   const vv=$("#ckV"),seg=vSeg(r,ck.i);
   if(vv&&seg){
@@ -3697,20 +4210,15 @@ function ring(){
 const hasPlats=()=>recettes.some(r=>!isBase(r));
 const TOUR_MAIN=[
   {tab:"lib",sel:null,k:["Bienvenue sur Mijonote","Welcome to Mijonote"],t:["Le carnet de tes livres et de tes proches","The notebook of your books and your family"],d:["Photographie tes livres de cuisine et les recettes de tes proches (famille, amis), écrites à la main ou filmées : Claude les lit, les range, et tu en fais un vrai livre à offrir. Réseaux, idée du jour, courses : c'est le bonus. On fait le tour en 1 minute ?","Photograph your cookbooks and your family's handwritten recipes: Claude reads and files them, and you turn them into a real family book to give. Social media, today's idea, shopping: that's the bonus. Shall we take a 1-minute tour?"],go:["C'est parti","Let's go"]},
-  {tab:"lib",sel:"#tabs [data-v='lib']",k:["Recettes","Recipes"],t:["L'accueil","Home"],d:["Tout ton carnet est ici. Les onglets du bas mènent au reste.","Your whole cookbook lives here. The tabs below lead to the rest."]},
+  {tab:"lib",sel:"#tabs [data-v='lib']",k:["Recettes","Recipes"],t:["L'accueil","Home"],d:["Tout ton carnet est ici : tes recettes de cœur, tes livres de cuisine et l'idée du jour.","Your whole cookbook lives here: family recipes, cookbooks and today's idea."]},
   {tab:"lib",sel:".envie",k:["Recettes","Recipes"],t:["Ta barre « Envie »","Your “Craving” bar"],d:["Un mot cherche dans tes recettes. Une phrase, et Claude devine ce qui te ferait plaisir.","One word searches your recipes. A sentence, and Claude guesses what you'd enjoy."]},
   {tab:"lib",sel:".empty",when:()=>!hasPlats(),k:["Recettes","Recipes"],t:["Ton carnet est vide","Your cookbook is empty"],d:["Normal pour un début : on le remplit dans l'onglet Ajouter, à la fin du tour.","That's normal at first: you'll fill it from the Add tab, at the end of the tour."]},
-  {tab:"lib",when:hasPlats,sel:"[data-day]",up:1,k:["Recettes","Recipes"],t:["Ta journée","Your day"],d:["Sport, grosse journée, froid… Dis-le, l'idée du jour s'adapte.","Workout, busy day, cold… Tell it, and today's idea adapts."]},
-  {tab:"lib",when:hasPlats,sel:".feature",k:["Recettes","Recipes"],t:["L'idée du jour","Today's idea"],d:["Choisie pour toi selon ta journée, la saison et tes habitudes.","Picked for you from your day, the season and your habits."]},
-  {tab:"lib",when:hasPlats,sel:".fam",up:1,k:["Recettes","Recipes"],t:["Par famille","By family"],d:["Entrées, plats, desserts : parcours ton carnet comme un livre.","Starters, mains, desserts: browse your cookbook like a book."]},
-  {tab:"lib",when:hasPlats,sel:"[data-goal],[data-act='quick']",up:1,k:["Recettes","Recipes"],t:["Selon ta séance","For your workout"],d:["Protéiné, léger, récup : triés d'après les repères santé officiels.","High-protein, light, recovery: sorted using official health benchmarks."]},
+  {tab:"lib",when:hasPlats,sel:".feature",k:["Recettes","Recipes"],t:["L'idée du jour","Today's idea"],d:["Choisie pour toi selon la saison, le jour et tes habitudes. « Selon ta journée » l'affine : sport, grosse journée, froid…","Picked for you from the season, the day and your habits. “Tailor to your day” refines it: workout, busy day, cold…"]},
+  {tab:"lib",sel:".shortcuts",k:["Recettes","Recipes"],t:["Sauces et frigo","Sauces and fridge"],d:["Les sauces, crèmes et pâtes de tes livres, à faire seules. Et une photo du frigo pour savoir quoi cuisiner.","The sauces, creams and doughs from your books, to make on their own. And a fridge photo to know what to cook."]},
   {tab:"lib",sel:".avatar",k:["Recettes","Recipes"],t:["Ton compte","Your account"],d:["Ton adresse et ton magasin, pour faire les courses en un geste.","Your address and store, for one-tap groceries."]},
   {tab:"lib",sel:".langbtn",k:["Recettes","Recipes"],t:["Français ou anglais","French or English"],d:["Toute l'appli change de langue, recettes comprises.","The whole app switches language, recipes included."]},
   {tab:"lib",sel:"#themeBtn",k:["Recettes","Recipes"],t:["Clair ou sombre","Light or dark"],d:["Le mode sombre, pour cuisiner le soir.","Dark mode, for cooking in the evening."]},
-  {tab:"sauces",sel:"#tabs [data-v='sauces']",k:["Sauces","Sauces"],t:["Sauces & bases","Sauces & bases"],d:["Toutes les sauces, crèmes et pâtes de tes livres, même celles cachées dans un plat.","Every sauce, cream and dough in your books, even the ones hidden inside a dish."]},
-  {tab:"sauces",sel:".suse",up:1,when:()=>recettes.filter(isBase).length>2,k:["Sauces","Sauces"],t:["Par usage, puis par envie","By use, then by craving"],d:["Mayos, crèmes, caramels… Touche une famille ou une envie pour filtrer.","Mayos, creams, caramels… Tap a family or a craving to filter."]},
-  {tab:"fridge",sel:"#tabs [data-v='fridge']",k:["Frigo","Fridge"],t:["Ton frigo","Your fridge"],d:["Une photo du frigo, et Claude te dit quoi cuisiner.","One photo of your fridge, and Claude tells you what to cook."]},
-  {tab:"fridge",sel:"label[for='frfile']",k:["Frigo","Fridge"],t:["Prends la photo ici","Take the photo here"],d:["Porte ouverte, étagères visibles. Il te dit aussi ce qu'il manque.","Door open, shelves visible. It also tells you what's missing."]},
+  {tab:"album",sel:"#tabs [data-v='album']",k:["Livre","Book"],t:["Ton livre à offrir","Your book to give"],d:["Tes recettes de cœur, mises en page comme un vrai livre : en PDF ou imprimé et relié.","Your family recipes, laid out like a real book: as a PDF or printed and bound."]},
   {tab:"scan",sel:"#tabs [data-v='scan']",k:["Ajouter","Add"],t:["Ajoute tes recettes","Add your recipes"],d:["C'est ici que ton carnet se remplit.","This is where your cookbook fills up."]},
   {tab:"scan",sel:()=>document.querySelector("[data-act='mode']")?.parentElement,k:["Ajouter","Add"],t:["Photo, PDF, lien ou texte","Photo, PDF, link or text"],d:["Une page de livre, un site, un message : Claude lit et range tout.","A book page, a website, a message: Claude reads and files it all."]},
   {tab:"scan",when:()=>!!sample,sel:".coverbtn",k:["Ajouter","Add"],t:["La couverture du livre","The book cover"],d:["Prends-la en photo : le livre est reconnu, ses recettes sont rangées avec.","Snap it: the book is recognised and its recipes are filed together."]},
@@ -3796,10 +4304,19 @@ async function shareApp(){if(!isOwner())return;if(window.Gate){window.Gate.invit
   try{await navigator.clipboard.writeText(text+" "+APP_URL);toast(L("Lien copié : colle-le dans un message","Link copied: paste it in a message"))}
   catch{prompt(L("Copie ce lien :","Copy this link:"),APP_URL)}
 }
-function toast(m){
+// a short message; with an action (« Annuler ») it stays a little longer and the button runs it once
+function toast(m,act){
   let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";t.setAttribute("role","status");
-    t.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 78px);background:var(--ink);color:var(--bg);padding:.6rem 1.1rem;border-radius:999px;font-weight:600;z-index:60;font-size:.92rem;max-width:90vw";document.body.appendChild(t)}
-  t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2400);
+    t.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 104px);background:var(--ink);color:var(--bg);padding:.6rem 1.1rem;border-radius:999px;font-weight:600;z-index:60;font-size:.92rem;max-width:90vw;display:flex;align-items:center;gap:.9rem";document.body.appendChild(t)}
+  t.textContent=m;t.hidden=false;clearTimeout(t._h);
+  if(act){const b=document.createElement("button");b.textContent=act.label||L("Annuler","Undo");b.style.cssText="border:0;background:none;color:var(--glow-saffron,#ffd9b8);font:inherit;font-weight:800;padding:.1rem 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px";
+    b.onclick=()=>{t.hidden=true;clearTimeout(t._h);act.fn()};t.appendChild(b)}
+  t._h=setTimeout(()=>t.hidden=true,act?(act.ms||6000):2400);
+}
+// deletes a document and offers to bring it back for a few seconds
+async function delWithUndo(col,id,data,msg,after){
+  await db.collection(col).doc(id).delete();
+  toast(msg,{fn:async()=>{try{await db.collection(col).doc(id).set(data);toast(L("C'est revenu","It's back"));after&&after()}catch{toast(L("Impossible de le remettre","Couldn't bring it back"))}}});
 }
 render();
 </script>

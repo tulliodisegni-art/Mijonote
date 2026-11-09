@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#fbf4ea">
+<title>Écouter · Mijonote</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbf4ea;--ink:#2b211b;--muted:#7a6c62;--line:#eadfd2;--tomato:#c4492f}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:17px/1.5 "Figtree",system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center}
+main{max-width:460px;padding:32px 24px}
+.hand{font-family:"Caveat",cursive;font-size:1.7rem;color:var(--tomato)}
+h1{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:2rem;line-height:1.15;margin:.3rem 0 1.6rem}
+.play{width:104px;height:104px;border-radius:50%;border:0;background:var(--tomato);color:#fff;font-size:2rem;cursor:pointer;box-shadow:0 10px 30px rgba(196,73,47,.35)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin:1.6rem 0 .4rem;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--tomato)}
+.t{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.9rem}
+.foot{margin-top:2.4rem;color:var(--muted);font-size:.85rem}.foot b{font-family:"Fraunces",Georgia,serif;font-weight:400;color:var(--tomato)}
+</style>
+</head>
+<body>
+<main>
+  <span class="hand" id="who"></span>
+  <h1 id="title"></h1>
+  <button class="play" id="pb" aria-label="Écouter">▶</button>
+  <div class="bar"><i id="bar"></i></div><div class="t" id="t">0:00</div>
+  <p class="foot">Un souvenir gardé avec <b>Mijonote</b></p>
+</main>
+<script>
+const q=new URLSearchParams(location.search),v=(q.get("v")||"").replace(/[^\w\/.\-]/g,""),n=q.get("n")||"",ti=q.get("t")||"";
+document.getElementById("who").textContent=n?"La voix de "+n:"Une voix à garder";
+document.getElementById("title").textContent=ti||"Une recette de famille";
+const au=new Audio(v?"https://vvxkkqcmjrwytagbxdfg.supabase.co/storage/v1/object/public/mj-public/"+v:""),pb=document.getElementById("pb");
+const mm=s=>Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
+pb.onclick=()=>au.paused?au.play().catch(()=>{document.getElementById("t").textContent="Cet enregistrement n'est plus disponible."}):au.pause();
+au.onplay=()=>pb.textContent="❚❚";au.onpause=au.onended=()=>pb.textContent="▶";
+au.ontimeupdate=()=>{document.getElementById("bar").style.width=(au.currentTime/(au.duration||1)*100)+"%";document.getElementById("t").textContent=mm(au.currentTime)+(isFinite(au.duration)?" / "+mm(au.duration):"")};
+au.onerror=()=>{document.getElementById("t").textContent="Cet enregistrement n'est plus disponible."};
+</script>
+</body>
+</html>
