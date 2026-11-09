@@ -77,7 +77,7 @@ function draw(){
     <div class="thumbs">${st.photos.map((p,i)=>`<div><img src="${p.url}" alt=""><button data-rm="${i}" aria-label="Retirer">✕</button></div>`).join("")}</div></div>
   <div class="card"><h2>🎙️ À voix haute</h2><p class="sub">Raconte-la comme tu la ferais : les ingrédients, les gestes, un souvenir. Jusqu'à 10 minutes.</p>
     <div class="rec">${st.audio?`<div class="got"><span>✓ Enregistré · ${mmss(st.dur)}</span><button class="link" id="play">Écouter</button><button class="link" id="redo">Recommencer</button></div>`
-      :`<button class="recbtn${r?" on":""}" id="recb" aria-label="${r?"Arrêter":"Enregistrer"}"><span></span></button><span class="time" id="t">${r?"0:00":"Touche pour parler"}</span>${r?"":`<label class="link">ou choisir un fichier audio<input id="au" type="file" accept="audio/*" hidden></label>`}`}</div></div>
+      :`<button class="recbtn${r?" on":""}" id="recb" aria-label="${r?"Arrêter":"Enregistrer"}"><span></span></button><span class="${r?"time":"muted"}" id="t">${r?"0:00":"Touche pour parler"}</span>${r?"":`<label class="link">ou choisir un fichier audio<input id="au" type="file" accept="audio/*" hidden></label>`}`}</div></div>
   <div class="card"><h2>✍️ Par écrit</h2><p class="sub">Le nom du plat, puis la recette, avec tes mots.</p>
     <input id="ti" type="text" placeholder="Le nom de ta recette (ex. Le gâteau du dimanche)" maxlength="120" style="margin-bottom:.6rem">
     <textarea id="tx" placeholder="Les ingrédients, comment tu fais, tes petits secrets…" maxlength="8000"></textarea></div>
