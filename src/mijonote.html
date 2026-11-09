@@ -4024,6 +4024,7 @@ async function openEnvoi(id,btn){
     await shrinkAll(s);await (isBatch(s)?extractPdf("photos"):extract());
     if(aud&&s.found){const v={blob:aud,dur:await audioDur(aud)};s.found.forEach(r=>hide(r,"_voice",v))}
     if(e.texte&&s.found&&s.found.length===1&&!s.found[0].histoire)s.found[0].histoire=String(e.texte).slice(0,600);
+    if((!s.found||!s.found.length)&&String(e.texte||"").trim().length>20){s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];s.err="";s.mode="texte";s.text=(e.titre?e.titre+"\n":"")+e.texte;s.source=e.qui;await extractLink()}
     render();
   }else if(aud){go("scan");await extractVoice({blob:aud,dur:await audioDur(aud)})}
   else if(e.texte){s.mode="texte";s.text=(e.titre?e.titre+"\n":"")+e.texte;s.source=e.qui;go("scan");await extractLink()}
