@@ -151,6 +151,7 @@ textarea{resize:vertical;min-height:4.5rem}
 .envie-row input::-webkit-search-cancel-button{display:none}
 .envie-go{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--tomato);color:#fff;font-size:1.25rem;font-weight:700;cursor:pointer}
 .envie-go:disabled{background:var(--line);color:var(--muted)}
+.etype{display:flex;gap:.4rem;margin-top:.7rem}.etype button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:.32rem .85rem;font:inherit;font-size:.84rem;font-weight:600;cursor:pointer}.etype button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .envie-help{margin:.6rem 0 0;font-size:.84rem;color:var(--muted);line-height:1.45}
 .sugg{display:flex;flex-direction:column;align-items:flex-start;gap:.15rem;margin-top:12px;padding-inline:4px}
 .suggb{border:0;background:none;padding:.25rem 0;font-family:var(--hand);font-size:1.25rem;color:var(--hero-muted);cursor:pointer;text-align:left}
@@ -959,7 +960,7 @@ document.addEventListener("click",ev=>{if(!ev.target.closest("#themeBtn"))return
 
 let db=null, assets=null, downloads=null, sample=null, mcp=null, importing=false, imgLimits=null, ready={db:false,sample:false};
 let recettes=[], loaded=false, liens=[], proches={};
-const st={more:ls.get("homemore",false),view:"lib",type:"tout",cat:null,q:"",livre:"",goal:null,quick:false,all:false,stype:"tout",scat:null,sq:"",
+const st={etype:ls.get("etype","tout"),more:ls.get("homemore",false),view:"lib",type:"tout",cat:null,q:"",livre:"",goal:null,quick:false,all:false,stype:"tout",scat:null,sq:"",
   scan:{files:[],busy:false,err:"",found:null,social:{url:"",text:"",frames:[],shots:[],busyV:false,fam:false,who:"",said:""},livre:ls.get("livre",""),fam:false,famWho:ls.get("famwho",""),auteur:ls.get("auteur",""),auteurLivre:ls.get("auteurLivre",""),page:"",pdf:null,prog:null,auto:true,
     mode:(m=>["photo","social","lien","texte","pdf"].includes(m)?m:"photo")(ls.get("scanmode","photo")),url:"",text:"",source:ls.get("source","")},
   ask:{q:"",busy:false,err:"",res:null},
@@ -1076,17 +1077,18 @@ function compHTML(r){
   }).join("")}</div></section>`;
 }
 // the recipe list sent to Claude, kept under the size the AI accepts (the PWA's server takes 30 000 characters at most)
-function index(q="",max=1e9){
+function index(q="",max=1e9,t="tout"){
+  const RS=t==="tout"?recettes:recettes.filter(r=>r.type===t);
   const line=(r,n)=>[r.id,r.titre,isBase(r)?r.type+" (sauce/base)":r.type,r.categorie,arr(r.themes).slice(0,4).join(","),arr(r.envies).join(","),r.saison,total(r)+"min",r.nutrition?`${r.nutrition.proteines}g prot/${r.nutrition.kcal}kcal`:"",arr(r.sport).join(","),
     arr(r.ingredients).flatMap(g=>arr(g.items).map(i=>i.nom)).slice(0,n).join(", ")].join(" | ");
-  let out=recettes.map(r=>line(r,99)).join("\n");if(out.length<=max)return out;
+  let out=RS.map(r=>line(r,99)).join("\n");if(out.length<=max)return out;
   const qw=fzWords(q).filter(w=>!Q_STOP.has(w)&&w.length>2);
   const sc=r=>{let x=isBase(r)?-5:0;if(qw.length){const W=recWords(r);for(const w of qw){const t=fzHit(w,W.t),o=fzHit(w,W.o);x+=t*3+o}}return x+Math.random()};
-  const ranked=recettes.map(r=>[sc(r),r]).sort((a,b)=>b[0]-a[0]).map(x=>x[1]),lines=[];let len=0;
+  const ranked=RS.map(r=>[sc(r),r]).sort((a,b)=>b[0]-a[0]).map(x=>x[1]),lines=[];let len=0;
   for(const r of ranked){const l=line(r,8);if(len+l.length+1>max)continue;lines.push(l);len+=l.length+1}
   return lines.join("\n");
 }
-const fitIndex=(p,q)=>p.replace("§IDX§",()=>index(q,28500-p.length)||"(aucune recette enregistrée)");
+const fitIndex=(p,q,t)=>p.replace("§IDX§",()=>index(q,28500-p.length,t)||"(aucune recette enregistrée)");
 function errText(e){
   if(e?.mjText)return e.mjText;
   const c=e?.code;
@@ -1754,14 +1756,17 @@ function homeView(){
   }
   const a=st.ask,q=st.q.trim(),words=q?q.split(/\s+/).length:0;
   let local=[];
-  if(q&&words<=4)local=grouped(searchRecipes(plats,q));
-  const asked=a.q&&(a.busy||a.res||a.err)&&a.q===st.q;
+  if(q&&words<=4)local=grouped(searchRecipes(st.etype==="tout"?plats:plats.filter(r=>r.type===st.etype),q));
+  const asked=a.q&&(a.busy||a.res||a.err)&&a.q===st.q&&(a.t||"tout")===st.etype;
+  const localSec=list=>{if(st.etype!=="tout"||!list.length)return list.length?`<div class="list">${list.map(cardHTML).join("")}</div>`:`<p class="muted">${L(`Aucune recette ${st.etype==="tout"?"":st.etype==="salé"?"salée ":"sucrée "}ne contient « ${esc(q)} ».`,`No recipe contains “${esc(q)}”.`)}</p>`;
+    return ETYPES.slice(1).map(([k,f,e])=>{const g=list.filter(x=>(x[0]||x).type===k);return g.length?`<div class="group"><h3>${L(f,e)} <small>${g.length}</small></h3><div class="list">${g.map(cardHTML).join("")}</div></div>`:""}).join("")};
   const envie=`
   <h1 class="lux-hello">${esc(greeting("."))}<span>${esc(question())}</span></h1>
   <form class="envie" id="envieForm" role="search">
     <label class="envie-k" for="q">Envie</label>
     <div class="envie-row"><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Chocolat… ou une envie" value="${esc(st.q)}">
       <button type="submit" class="envie-go" aria-label="Trouver" ${!q?"disabled":""}>→</button></div>
+    <div class="etype" role="group" aria-label="${L("Salé ou sucré","Savoury or sweet")}">${ETYPES.map(([k,f,e])=>`<button type="button" data-act="etype" data-t="${k}" aria-pressed="${st.etype===k}">${L(f,e)}</button>`).join("")}</div>
     <p class="envie-help">Un mot pour chercher dans tes recettes. Une phrase, et Claude devine ce qui te ferait plaisir.</p>
   </form>
   ${!q&&sample?`<div class="sugg">${SUGG.map(t=>`<button class="suggb" data-envie="${esc(tr(t))}">« ${esc(t)} »</button>`).join("")}</div>`:""}`;
@@ -1769,10 +1774,10 @@ function homeView(){
     return `${top}${envie}
     ${asked?`<section class="lux-sec"><div class="lux-h"><h2>Claude te propose</h2><button class="linkbtn" data-act="reset">Effacer</button></div>
       ${a.busy?`<div class="status"><span class="spin"></span>Claude feuillette tes livres…<button class="iconbtn" data-act="stop" style="margin-left:auto">Arrêter</button></div>`:""}
-      ${a.err?`<div class="err">${esc(a.err)}</div>`:""}${a.res?resultsHTML(a.res,false):""}</section>`
+      ${a.err?`<div class="err">${esc(a.err)}</div>`:""}${a.res?resultsHTML(a.res,false,a.t||"tout"):""}</section>`
     :""}
     ${words<=4?`<section class="lux-sec"><div class="lux-h"><h2>Dans ton carnet</h2><span class="lux-n">${local.length}</span></div>
-      ${local.length?`<div class="list">${local.map(cardHTML).join("")}</div>`:`<p class="muted">Aucune recette ne contient « ${esc(q)} ».</p>`}</section>`:""}
+      ${localSec(local)}</section>`:""}
     ${!asked&&sample?`<button class="askclaude" data-act="askq" style="margin-top:16px">${emo("✨")}<span><b>Laisser Claude trouver</b><small>Il comprend « ${esc(q)} » comme une envie</small></span></button>`:""}`;
   }
   if(!loaded&&db)return `${top}${envie}<div class="status" style="margin-top:1rem"><span class="spin"></span>Chargement du carnet…</div>`;
@@ -2152,14 +2157,16 @@ function viewFridge(){
     ${f.res?resultsHTML(f.res,true):""}
   </div>`;
 }
-function resultsHTML(res,fridge){
+function resultsHTML(res,fridge,t){
   const byId=Object.fromEntries(recettes.map(r=>[r.id,r]));
-  const picks=arr(res.recettes).filter(p=>byId[p.id]);
+  let picks=arr(res.recettes).filter(p=>byId[p.id]&&(!t||t==="tout"||byId[p.id].type===t));
+  const split=t==="tout"&&new Set(picks.map(p=>byId[p.id].type)).size>1;
+  if(split)picks=[...picks.filter(p=>byId[p.id].type==="salé"),...picks.filter(p=>byId[p.id].type!=="salé")];
   return `<div class="stack" style="margin-top:.4rem">
     ${fridge&&arr(res.vus).length?`<div><div class="eyebrow" style="margin-bottom:.35rem">Vu dans ton frigo</div><div class="row" style="gap:.35rem">${res.vus.map(v=>`<span class="tag plain">${esc(v)}</span>`).join("")}</div></div>`:""}
     ${res.message?`<p class="answer" style="margin:.2rem 0">${esc(res.message)}</p>`:""}
-    ${picks.length?`<div class="eyebrow">Dans tes livres</div>`:""}
-    ${picks.map(p=>{const r=byId[p.id];const miss=arr(p.manquants);return `<button class="pick" data-open="${esc(r.id)}">
+    ${picks.length&&!split?`<div class="eyebrow">Dans tes livres</div>`:""}
+    ${picks.map((p,i)=>{const r=byId[p.id];const miss=arr(p.manquants);return `${split&&(i===0||byId[picks[i-1].id].type!==r.type)?`<div class="eyebrow">${r.type==="salé"?L("Salé","Savoury"):L("Sucré","Sweet")}</div>`:""}<button class="pick" data-open="${esc(r.id)}">
       <div class="row"><span class="tag ${esc(r.type)}">${esc(r.type)}</span><span class="muted" style="font-size:.85rem">${esc(r.livre?byLine({...r,auteur:r.auteur||authorOf(r.livre)}):"")}${r.page?" · p. "+esc(r.page):""}${total(r)?" · "+mins(total(r)):""}</span></div>
       <span class="t">${esc(r.titre)}</span><span>${esc(p.raison||"")}</span>
       ${fridge?(miss.length?`<span class="miss">Il te manque : ${esc(miss.join(", "))}</span>`:`<span class="ok">Tu as tout ce qu'il faut</span>`):""}
@@ -2763,6 +2770,7 @@ async function act(a,b){
   else if(a==="quick"){st.quick=!st.quick;render()}
   else if(a==="all"){st.all=true;render();document.querySelector(".reshead")?.scrollIntoView({block:"start"})}
   else if(a==="askq"){st.ask.q=st.q;ask()}
+  else if(a==="etype"){st.etype=b.dataset.t;ls.set("etype",st.etype);const A=st.ask;if(st.q.trim()&&A.q===st.q&&(A.res||A.err)&&!A.busy)ask();else render()}
   else if(a==="more"){st.more=!st.more;ls.set("homemore",st.more);render()}
   else if(a==="reroll"){const R=ls.get("reroll",{}),k=todayKey();ls.set("reroll",{[k]:(R[k]||0)+1});render()}
   else if(a==="stop"){ctl?.abort()}
@@ -3334,15 +3342,17 @@ async function saveAll(btn){
   if(s.found&&!s.found.length){dropDraft();s.found=null;s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.page="";s.url="";s.text="";envoiDone()}
   render();toast(n+" recette"+(n>1?"s":"")+" ajoutée"+(n>1?"s":""));
 }
+const ETYPES=[["tout","Les deux","Both"],["salé","Salé","Savoury"],["sucré","Sucré","Sweet"]];
 async function ask(){
-  const a=st.ask;if(!a.q.trim())return;a.busy=true;a.err="";a.res=null;render();
+  const a=st.ask;if(!a.q.trim())return;a.busy=true;a.err="";a.res=null;a.t=st.etype;render();
+  const typeLine=a.t==="tout"?"":`Il veut du ${a.t} : ne propose QUE des recettes de type « ${a.t} » (et une idée hors des livres ${a.t}e si besoin), jamais de ${a.t==="salé"?"sucré":"salé"}.\n`;
   ctl=new AbortController();
   const prompt=`Tu aides quelqu'un à choisir quoi cuisiner parmi les recettes de SES livres de cuisine.
 Voici ses recettes, une par ligne : id | titre | type | catégorie | thèmes | envies | saison | temps total | ingrédients
 §IDX§
 
 Sa demande : « ${a.q.trim()} »
-${goutsLine()?`Ses goûts (à respecter STRICTEMENT, une recette qui ne les respecte pas est exclue, même si elle colle à la demande) : ${goutsLine()}.
+${typeLine}${goutsLine()?`Ses goûts (à respecter STRICTEMENT, une recette qui ne les respecte pas est exclue, même si elle colle à la demande) : ${goutsLine()}.
 `:""}
 (nous sommes le ${new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}, tiens compte de la saison si c'est pertinent)
 
@@ -3354,7 +3364,7 @@ N'utilise QUE des id de la liste. Si rien ne correspond vraiment, ou s'il y a mo
 Réponds UNIQUEMENT en JSON :
 {"message": "1 à 2 phrases chaleureuses, tutoiement", "recettes":[{"id":"...","raison":"..."}], "idee": null | RECETTE}
 RECETTE suit ce schéma : ${SCHEMA}`;
-  try{const out=await sample.json(fitIndex(prompt,a.q),{signal:ctl.signal,cache:false});a.res=normRes(out)}
+  try{const out=await sample.json(fitIndex(prompt,a.q,a.t),{signal:ctl.signal,cache:false});a.res=normRes(out)}
   catch(e){a.err=errText(e)}
   a.busy=false;render();
 }
