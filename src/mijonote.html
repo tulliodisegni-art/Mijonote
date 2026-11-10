@@ -288,7 +288,7 @@ textarea{resize:vertical;min-height:4.5rem}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;pointer-events:none;
   padding:0 12px calc(env(safe-area-inset-bottom,0px) + 18px);
   background:linear-gradient(to top,var(--bg) 55%,transparent)}
-.tabs nav{pointer-events:auto;max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+.tabs nav{pointer-events:auto;max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;
   background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:7px;
   box-shadow:0 2px 6px rgba(60,40,20,.08),0 14px 34px rgba(60,40,20,.16)}
 .tabs button{border:0;background:transparent;min-height:60px;border-radius:20px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
@@ -660,6 +660,8 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 
 <div class="tabs"><nav id="tabs" aria-label="Navigation">
   <button data-v="lib" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5M12 6.5c2-1.5 5-2 8.5-1.5v13c-3.5-.5-6.5 0-8.5 1.5M12 6.5v13"/><path d="M6.5 9c1.2-.1 2.4.1 3 .4M6.5 12c1.2-.1 2.4.1 3 .4"/></svg>Carnet</button>
+  <button data-v="sauces"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 11h13v4.5a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 4 15.5z"/><path d="M4 11h13v4.5a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 4 15.5z"/><path d="M17 12.5h3.5"/><path d="M8 7.5c0-1 .8-1.3.8-2.3M11.5 7.5c0-1 .8-1.3.8-2.3"/></svg>Sauces</button>
+  <button data-v="fridge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="5.5" y="2.5" width="13" height="19" rx="3"/><rect x="5.5" y="2.5" width="13" height="19" rx="3"/><path d="M5.5 9.5h13M8.5 5.5v1.5M8.5 12.5v3"/><path d="M9 21.5v.8M15 21.5v.8"/></svg>Frigo</button>
   <button data-v="album"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M5.5 3.5h11a2 2 0 0 1 2 2v15h-11a2 2 0 0 1-2-2z"/><path d="M5.5 18.5v-13a2 2 0 0 1 2-2h11v15h-11a2 2 0 0 0 0 4h11"/><path d="M12 13.2c-1.6-1-2.6-2-2.6-3.1 0-.9.7-1.5 1.4-1.5.6 0 1 .3 1.2.8.2-.5.6-.8 1.2-.8.7 0 1.4.6 1.4 1.5 0 1.1-1 2.1-2.6 3.1z"/></svg>Livre</button>
   <button data-v="scan" class="add"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="disc" cx="12" cy="12" r="10"/><path class="plus" d="M12 7.5v9M7.5 12h9"/></svg>Ajouter</button>
 </nav></div>
@@ -1073,10 +1075,18 @@ function compHTML(r){
     return `<div class="linkcard"><span class="ico">${emo("🥣")}</span><span><small>${L("Fait maison","Homemade")}</small>${esc(c.nom)}</span></div>`;
   }).join("")}</div></section>`;
 }
-function index(){
-  return recettes.map(r=>[r.id,r.titre,isBase(r)?r.type+" (sauce/base)":r.type,r.categorie,arr(r.themes).join(","),arr(r.envies).join(","),r.saison,total(r)+"min",r.nutrition?`${r.nutrition.proteines}g prot/${r.nutrition.kcal}kcal par portion`:"",arr(r.sport).join(","),
-    arr(r.ingredients).flatMap(g=>arr(g.items).map(i=>i.nom)).join(", ")].join(" | ")).join("\n");
+// the recipe list sent to Claude, kept under the size the AI accepts (the PWA's server takes 30 000 characters at most)
+function index(q="",max=1e9){
+  const line=(r,n)=>[r.id,r.titre,isBase(r)?r.type+" (sauce/base)":r.type,r.categorie,arr(r.themes).slice(0,4).join(","),arr(r.envies).join(","),r.saison,total(r)+"min",r.nutrition?`${r.nutrition.proteines}g prot/${r.nutrition.kcal}kcal`:"",arr(r.sport).join(","),
+    arr(r.ingredients).flatMap(g=>arr(g.items).map(i=>i.nom)).slice(0,n).join(", ")].join(" | ");
+  let out=recettes.map(r=>line(r,99)).join("\n");if(out.length<=max)return out;
+  const qw=fzWords(q).filter(w=>!Q_STOP.has(w)&&w.length>2);
+  const sc=r=>{let x=isBase(r)?-5:0;if(qw.length){const W=recWords(r);for(const w of qw){const t=fzHit(w,W.t),o=fzHit(w,W.o);x+=t*3+o}}return x+Math.random()};
+  const ranked=recettes.map(r=>[sc(r),r]).sort((a,b)=>b[0]-a[0]).map(x=>x[1]),lines=[];let len=0;
+  for(const r of ranked){const l=line(r,8);if(len+l.length+1>max)continue;lines.push(l);len+=l.length+1}
+  return lines.join("\n");
 }
+const fitIndex=(p,q)=>p.replace("§IDX§",()=>index(q,28500-p.length)||"(aucune recette enregistrée)");
 function errText(e){
   if(e?.mjText)return e.mjText;
   const c=e?.code;
@@ -1090,7 +1100,7 @@ function errText(e){
 }
 
 /* ---------- views ---------- */
-const TAB_OF={sauces:"lib",fridge:"lib",ask:"lib",compte:"lib"};
+const TAB_OF={ask:"lib",compte:"lib"};
 let lastView=null;
 function render(){
   const tab=TAB_OF[st.view]||st.view;
@@ -1301,7 +1311,7 @@ function viewSauces(){
   const groups=usesP.map(u=>[u,grouped(list.filter(r=>sauceUse(r).k===u.k))]).filter(g=>g[1].length);
   const filtering=!!(q||st.scat||st.senv);
   const nS=pool.filter(r=>r.type!=="sucré").length,nD=pool.length-nS;
-  const head=`<button class="backlink" data-go="lib">${L("‹ Carnet","‹ Cookbook")}</button><div class="sauce-head"><span class="hand">${L("Juste la sauce","Just the sauce")}</span><h1 class="lux-title">${L("Sauces & bases","Sauces & bases")}</h1>
+  const head=`<div class="sauce-head"><span class="hand">${L("Juste la sauce","Just the sauce")}</span><h1 class="lux-title">${L("Sauces & bases","Sauces & bases")}</h1>
     <p class="lux-sub">${L("Toutes celles de tes livres, même cachées dans un plat.","Every one in your books, even those hidden inside a dish.")}</p>
     <label class="ssearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="sq" type="search" autocomplete="off" placeholder="${L("Mayonnaise, pesto, caramel…","Mayonnaise, pesto, caramel…")}" value="${esc(st.sq||"")}" aria-label="${L("Chercher une sauce","Search for a sauce")}"></label></div>`;
   if(!loaded&&db)return head+`<div class="status" style="margin-top:1rem"><span class="spin"></span>${L("Chargement du carnet…","Loading your cookbook…")}</div>`;
@@ -1798,10 +1808,6 @@ function homeView(){
     ${goals.length?`<section class="lux-sec"><div class="lux-h"><h2>Selon ta séance</h2></div>
       <div class="rail pills">${goals.map(([k,e,l])=>`<button class="qf" ${k==="quick"?'data-act="quick"':`data-goal="${esc(k)}"`}>${emo(e)}${esc(l)}</button>`).join("")}</div></section>`:""}
   </div>`:""}
-  <div class="shortcuts">
-    <button data-go="sauces"><span class="disc">${emo("🥣")}</span><span><b>${L("Sauces & bases","Sauces & bases")}</b><small>${nSauce?L(`${nSauce} prêtes à faire seules`,`${nSauce} to make on their own`):L("Mayos, crèmes, pâtes…","Mayos, creams, doughs…")}</small></span></button>
-    <button data-go="fridge"><span class="disc">${emo("🥕")}</span><span><b>${L("Mon frigo","My fridge")}</b><small>${L("Une photo, une idée","One photo, one idea")}</small></span></button>
-  </div>
   <button class="alllink" data-act="all">Tout le carnet <span>${plats.length} recettes →</span></button>`;
 }
 const pic=id=>"/_blob/"+encodeURIComponent(id);
@@ -2128,7 +2134,7 @@ function viewAsk(){
 function viewFridge(){
   const f=st.fridge, max=imgLimits?.maxCount||4;
   return `
-  <div class="pagehead"><button class="iconbtn" data-go="lib" style="margin-bottom:.6rem">${L("‹ Carnet","‹ Cookbook")}</button><span class="emo pemo" aria-hidden="true">🥕</span><div class="hand">Avec ce qu'il y a</div><h1>Mon frigo</h1><p>Une photo du frigo, et tu sais quoi cuisiner, ou ce qu'il te manque.</p></div>
+  <div class="pagehead"><span class="emo pemo" aria-hidden="true">🥕</span><div class="hand">Avec ce qu'il y a</div><h1>Mon frigo</h1><p>Une photo du frigo, et tu sais quoi cuisiner, ou ce qu'il te manque.</p></div>
   ${noAiNote()}
   <div class="stack">
     <div class="drop">
@@ -3333,7 +3339,7 @@ async function ask(){
   ctl=new AbortController();
   const prompt=`Tu aides quelqu'un à choisir quoi cuisiner parmi les recettes de SES livres de cuisine.
 Voici ses recettes, une par ligne : id | titre | type | catégorie | thèmes | envies | saison | temps total | ingrédients
-${index()||"(aucune recette enregistrée)"}
+§IDX§
 
 Sa demande : « ${a.q.trim()} »
 ${goutsLine()?`Ses goûts (à respecter STRICTEMENT, une recette qui ne les respecte pas est exclue, même si elle colle à la demande) : ${goutsLine()}.
@@ -3348,7 +3354,7 @@ N'utilise QUE des id de la liste. Si rien ne correspond vraiment, ou s'il y a mo
 Réponds UNIQUEMENT en JSON :
 {"message": "1 à 2 phrases chaleureuses, tutoiement", "recettes":[{"id":"...","raison":"..."}], "idee": null | RECETTE}
 RECETTE suit ce schéma : ${SCHEMA}`;
-  try{const out=await sample.json(prompt,{signal:ctl.signal,cache:false});a.res=normRes(out)}
+  try{const out=await sample.json(fitIndex(prompt,a.q),{signal:ctl.signal,cache:false});a.res=normRes(out)}
   catch(e){a.err=errText(e)}
   a.busy=false;render();
 }
@@ -3362,12 +3368,12 @@ ${f.extra.trim()?`La personne précise : « ${f.extra.trim()} »`:""}
 3. Propose toujours dans "idee" UNE recette hors des livres faisable avec ce qu'il y a (recette complète).
 
 Recettes (id | titre | type | catégorie | thèmes | envies | saison | temps total | ingrédients) :
-${index()||"(aucune recette enregistrée)"}
+§IDX§
 
 N'utilise QUE des id de la liste. Réponds UNIQUEMENT en JSON :
 {"vus":["..."], "message":"1 à 2 phrases", "recettes":[{"id":"...","raison":"...","manquants":["..."]}], "idee": RECETTE}
 RECETTE suit ce schéma : ${SCHEMA}`;
-  try{const out=await sample.json(prompt,{images:f.files.map(x=>x.file),signal:ctl.signal,cache:false});f.res=normRes(out)}
+  try{const out=await sample.json(fitIndex(prompt,f.extra),{images:f.files.map(x=>x.file),signal:ctl.signal,cache:false});f.res=normRes(out)}
   catch(e){f.err=errText(e)}
   f.busy=false;render();
 }
@@ -4215,10 +4221,13 @@ const TOUR_MAIN=[
   {tab:"lib",sel:".envie",k:["Recettes","Recipes"],t:["Ta barre « Envie »","Your “Craving” bar"],d:["Un mot cherche dans tes recettes. Une phrase, et Claude devine ce qui te ferait plaisir.","One word searches your recipes. A sentence, and Claude guesses what you'd enjoy."]},
   {tab:"lib",sel:".empty",when:()=>!hasPlats(),k:["Recettes","Recipes"],t:["Ton carnet est vide","Your cookbook is empty"],d:["Normal pour un début : on le remplit dans l'onglet Ajouter, à la fin du tour.","That's normal at first: you'll fill it from the Add tab, at the end of the tour."]},
   {tab:"lib",when:hasPlats,sel:".feature",k:["Recettes","Recipes"],t:["L'idée du jour","Today's idea"],d:["Choisie pour toi selon la saison, le jour et tes habitudes. « Selon ta journée » l'affine : sport, grosse journée, froid…","Picked for you from the season, the day and your habits. “Tailor to your day” refines it: workout, busy day, cold…"]},
-  {tab:"lib",sel:".shortcuts",k:["Recettes","Recipes"],t:["Sauces et frigo","Sauces and fridge"],d:["Les sauces, crèmes et pâtes de tes livres, à faire seules. Et une photo du frigo pour savoir quoi cuisiner.","The sauces, creams and doughs from your books, to make on their own. And a fridge photo to know what to cook."]},
   {tab:"lib",sel:".avatar",k:["Recettes","Recipes"],t:["Ton compte","Your account"],d:["Ton adresse et ton magasin, pour faire les courses en un geste.","Your address and store, for one-tap groceries."]},
   {tab:"lib",sel:".langbtn",k:["Recettes","Recipes"],t:["Français ou anglais","French or English"],d:["Toute l'appli change de langue, recettes comprises.","The whole app switches language, recipes included."]},
   {tab:"lib",sel:"#themeBtn",k:["Recettes","Recipes"],t:["Clair ou sombre","Light or dark"],d:["Le mode sombre, pour cuisiner le soir.","Dark mode, for cooking in the evening."]},
+  {tab:"sauces",sel:"#tabs [data-v='sauces']",k:["Sauces","Sauces"],t:["Sauces & bases","Sauces & bases"],d:["Toutes les sauces, crèmes et pâtes de tes livres, même celles cachées dans un plat.","Every sauce, cream and dough in your books, even the ones hidden inside a dish."]},
+  {tab:"sauces",sel:".suse",up:1,when:()=>recettes.filter(isBase).length>2,k:["Sauces","Sauces"],t:["Par usage, puis par envie","By use, then by craving"],d:["Mayos, crèmes, caramels… Touche une famille ou une envie pour filtrer.","Mayos, creams, caramels… Tap a family or a craving to filter."]},
+  {tab:"fridge",sel:"#tabs [data-v='fridge']",k:["Frigo","Fridge"],t:["Ton frigo","Your fridge"],d:["Une photo du frigo, et Claude te dit quoi cuisiner.","One photo of your fridge, and Claude tells you what to cook."]},
+  {tab:"fridge",sel:"label[for='frfile']",k:["Frigo","Fridge"],t:["Prends la photo ici","Take the photo here"],d:["Porte ouverte, étagères visibles. Il te dit aussi ce qu'il manque.","Door open, shelves visible. It also tells you what's missing."]},
   {tab:"album",sel:"#tabs [data-v='album']",k:["Livre","Book"],t:["Ton livre à offrir","Your book to give"],d:["Tes recettes de cœur, mises en page comme un vrai livre : en PDF ou imprimé et relié.","Your family recipes, laid out like a real book: as a PDF or printed and bound."]},
   {tab:"scan",sel:"#tabs [data-v='scan']",k:["Ajouter","Add"],t:["Ajoute tes recettes","Add your recipes"],d:["C'est ici que ton carnet se remplit.","This is where your cookbook fills up."]},
   {tab:"scan",sel:()=>document.querySelector("[data-act='mode']")?.parentElement,k:["Ajouter","Add"],t:["Photo, PDF, lien ou texte","Photo, PDF, link or text"],d:["Une page de livre, un site, un message : Claude lit et range tout.","A book page, a website, a message: Claude reads and files it all."]},
