@@ -76,6 +76,7 @@ textarea{resize:vertical;min-height:4.5rem}
 .mood:nth-child(3n){background:var(--basil-soft)}
 
 .avatar{font-family:var(--display);font-size:1.05rem;color:var(--tomato)}
+.sharewhat{display:flex;flex-direction:column;gap:.5rem}.swopt{display:flex;flex-direction:column;gap:.15rem;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:.75rem .9rem;font:inherit;color:var(--ink);cursor:pointer}.swopt b{font-weight:700}.swopt small{color:var(--muted);font-size:.82rem;line-height:1.35}.swopt:disabled{opacity:.5}
 .acc{margin-top:22px;background:var(--surface);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.75rem}
 .acc h2{font-size:1.15rem}
 .addrs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -1453,8 +1454,14 @@ function viewAccount(){
   return `<button class="backlink" data-go="lib">‹ Accueil</button>
   <h1 class="lux-title">Mon compte</h1><p class="lux-sub">Tes infos restent sur ce téléphone. Elles servent à préparer tes courses plus vite.</p>
   ${isOwner()?`<section class="acc"><h2>${L("Partager Mijonote","Share Mijonote")}</h2>
-    <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet. Toi seul peux partager l'appli.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook. Only you can share the app.")}</p>
-    <button class="btn block" data-acc="shareapp">${emo("📲")} ${L("Envoyer l'appli à quelqu'un","Send the app to someone")}</button>
+    <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet. Toi seul peux partager l'appli.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook.")}</p>
+    ${st.shareOpen?`<div class="sharewhat"><span class="eyebrow">${L("Avec quoi dedans ?","With what inside?")}</span>
+      <button class="swopt" data-acc="sharelink" ${st.bk?"disabled":""}><b>${emo("📲")} ${L("Juste l'appli","Just the app")}</b><small>${L("Son carnet démarre vide.","Their cookbook starts empty.")}</small></button>
+      <button class="swopt" data-acc="shareall" ${st.bk||!recRaw.length?"disabled":""}><b>${emo("📚")} ${L("L'appli + toutes mes recettes","The app + all my recipes")}</b><small>${L(`Tes ${recRaw.length} recettes et leurs photos. À réserver à tes proches : celles des livres de chefs restent pour un usage privé.`,`All ${recRaw.length} recipes and photos. Keep it to your family: cookbook recipes are for private use.`)}</small></button>
+      <button class="swopt" data-acc="sharecoeur" ${st.bk||!recRaw.filter(isPerso).length?"disabled":""}><b>${emo("✍️")} ${L("L'appli + mes recettes de cœur","The app + my heart recipes")}</b><small>${L(`Les ${recRaw.filter(isPerso).length} recettes de tes proches et les tiennes, avec leurs portraits.`,`Your family's and your own ${recRaw.filter(isPerso).length} recipes, with their portraits.`)}</small></button>
+      <p class="note" style="margin:0">${L("Tes notes perso et ton journal ne sont jamais envoyés. La personne ouvre l'appli, puis Mon compte → « Restaurer un carnet » avec le fichier reçu.","Your personal notes and journal are never sent. They open the app, then My account → “Restore a cookbook” with the file.")}</p>
+      ${st.bk?`<p class="note" style="margin:0">${esc(st.bk)}</p>`:""}</div>`
+    :`<button class="btn block" data-acc="shareapp">${emo("📲")} ${L("Envoyer l'appli à quelqu'un","Send the app to someone")}</button>`}
   </section>`:""}
   ${window.MJ&&window.MJ.account&&window.MJ.account()?`<section class="acc"><h2>${L("Mon compte en ligne","My online account")}</h2>
     <p class="note" style="margin:0 0 .5rem">${L("Connecté : ","Signed in: ")}<b>${esc(window.MJ.account())}</b>. ${L("Tes recettes, photos et goûts sont sauvegardés et se retrouvent sur tes autres appareils.","Your recipes, photos and tastes are backed up and show up on your other devices.")}</p>
@@ -1532,7 +1539,9 @@ function bindAccount(root){
     else if(a==="rmaddr"){const F=favs();F.splice(i,1);ls.set("shopfavs",F)}
     else if(a==="tuto"){tutoMark("tuto_recette",0);ls.set("tuto_v1",0);st.view="lib";render();startTour(TOUR_MAIN,"tuto_v1");return}
     else if(a==="export"){exportCarnet();return}
-    else if(a==="shareapp"){shareApp();return}
+    else if(a==="shareapp"){st.shareOpen=true}
+    else if(a==="sharelink"){st.shareOpen=false;render();shareApp();return}
+    else if(a==="shareall"||a==="sharecoeur"){shareWithRecipes(a==="sharecoeur");return}
     else if(a==="signout"){if(confirm(L("Te déconnecter ? Tes recettes restent sauvegardées sur ton compte.","Sign out? Your recipes stay saved in your account.")))window.MJ.signOut();return}
     else if(a==="ownercode"&&window.Gate){window.Gate.ownerLogin().then(ok=>{if(ok)render()});return}
     else if(a==="ownercode"){const c=prompt(L("Code propriétaire","Owner code"));if(c)ownerCode(c).then(ok=>{toast(ok?L("Mode propriétaire activé","Owner mode on"):L("Code incorrect","Wrong code"));if(ok)render()});return}
@@ -1547,20 +1556,42 @@ function bindAccount(root){
 /* ---------- sauvegarde : tout le carnet dans un fichier (photos comprises), pour changer d'appareil ou passer à l'appli ---------- */
 const ASSET_RX=/^[0-9a-f]{32}$/;
 const blobB64=b=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=()=>ko(r.error);r.readAsDataURL(b)});
+// the whole cookbook (or a gift copy) as one file: documents + photos
+async function packCarnet(gift){
+  const pack=list=>list.map(({id,...d})=>({id,d}));
+  let docs;
+  if(gift){const rs=(gift==="coeur"?recRaw.filter(isPerso):recRaw).map(({faite,maNote,partageePar,...r})=>r),who=new Set(rs.map(r=>r.livre).filter(Boolean));
+    docs={recettes:pack(rs),proches:pack(Object.entries(proches).filter(([id,d])=>who.has(d.nom)).map(([id,d])=>({id,...d})))}}
+  else{docs={recettes:pack(recRaw),albums:pack(st.album.list),liens:pack(liens),proches:pack(Object.entries(proches).map(([id,d])=>({id,...d}))),reglages:[]};
+    for(const k of ["gouts","tuto"]){try{const g=await db.collection("reglages").doc(k).get();if(g.exists)docs.reglages.push({id:k,d:g.data()})}catch{}}}
+  const ids=new Set();JSON.stringify(docs,(k,v)=>{if(typeof v==="string"&&ASSET_RX.test(v))ids.add(v);return v});
+  const blobs={};let n=0;
+  for(const id of ids){
+    try{const r=await fetch(pic(id));if(r.ok){const b=await r.blob();blobs[id]={type:b.type||"image/jpeg",data:await blobB64(b)}}}catch{}
+    n++;if(n%5===0||n===ids.size){st.bk=L(`Photos : ${n} sur ${ids.size}…`,`Photos: ${n} of ${ids.size}…`);render()}
+  }
+  return {docs,blobs,blob:new Blob([JSON.stringify({app:"mijonote",v:1,date:Date.now(),...(gift?{cadeau:gift}:{}),docs,blobs})],{type:"application/json"})};
+}
+async function shareWithRecipes(coeur){
+  if(!db){toast(L("Le carnet n'est pas encore chargé","Your cookbook isn't loaded yet"));return}
+  st.bk=L("Préparation de tes recettes…","Preparing your recipes…");render();
+  try{
+    const {docs,blob}=await packCarnet(coeur?"coeur":"tout"),nR=docs.recettes.length,me=prenomMoi();
+    const name=`mijonote-recettes${me?"-"+norm(me).replace(/[^a-z0-9]+/g,"-"):""}.json`,file=new File([blob],name,{type:"application/json"});
+    const text=L(`Je t'offre Mijonote avec ${nR} de mes recettes ! 1. Ouvre l'appli avec le lien que je t'envoie et ajoute-la à ton écran d'accueil. 2. Dans Mon compte, touche « Restaurer un carnet » et choisis ce fichier.`,`Here's Mijonote with ${nR} of my recipes! 1. Open the app with the link I'm sending you and add it to your home screen. 2. In My account, tap “Restore a cookbook” and pick this file.`);
+    let done=false,shared=false;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"Mijonote",text});done=shared=true}catch(e){if(e?.name==="AbortError"){st.bk="";render();return}}}
+    if(!done&&downloads){try{await downloads.save({filename:name,data:blob});done=true}catch(e){if(e?.code==="declined"){st.bk="";render();return}}}
+    if(!done){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();done=true}
+    st.bk="";st.shareOpen=false;render();
+    toast(shared?L(`Fichier envoyé (${nR} recettes). Envoie-lui aussi le lien :`,`File sent (${nR} recipes). Now send the link:`):L(`Fichier enregistré (${nR} recettes) : envoie-le, puis le lien :`,`File saved (${nR} recipes): send it, then the link:`),{label:L("Envoyer le lien","Send the link"),fn:()=>shareApp(),ms:20000});
+  }catch(e){st.bk="";render();toast(L("La préparation a échoué, réessaie","It failed, try again"))}
+}
 async function exportCarnet(){
   if(!db){toast(L("Le carnet n'est pas encore chargé","Your cookbook isn't loaded yet"));return}
   st.bk=L("Préparation…","Preparing…");st.bkLink="";render();
   try{
-    const pack=list=>list.map(({id,...d})=>({id,d}));
-    const docs={recettes:pack(recRaw),albums:pack(st.album.list),liens:pack(liens),proches:pack(Object.entries(proches).map(([id,d])=>({id,...d}))),reglages:[]};
-    for(const k of ["gouts","tuto"]){try{const g=await db.collection("reglages").doc(k).get();if(g.exists)docs.reglages.push({id:k,d:g.data()})}catch{}}
-    const ids=new Set();JSON.stringify(docs,(k,v)=>{if(typeof v==="string"&&ASSET_RX.test(v))ids.add(v);return v});
-    const blobs={};let n=0;
-    for(const id of ids){
-      try{const r=await fetch(pic(id));if(r.ok){const b=await r.blob();blobs[id]={type:b.type||"image/jpeg",data:await blobB64(b)}}}catch{}
-      n++;if(n%5===0||n===ids.size){st.bk=L(`Photos : ${n} sur ${ids.size}…`,`Photos: ${n} of ${ids.size}…`);render()}
-    }
-    const blob=new Blob([JSON.stringify({app:"mijonote",v:1,date:Date.now(),docs,blobs})],{type:"application/json"});
+    const {docs,blobs,blob}=await packCarnet();
     const name=`mijonote-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
     let saved=false;
     if(downloads){try{await downloads.save({filename:name,data:blob});saved=true}catch(e){if(e?.code==="declined"){st.bk="";render();return}}}
@@ -4318,8 +4349,8 @@ function isOwner(){return !window.MJ_PWA||ls.get("mj_owner",false)===true||!!(wi
 async function ownerCode(code){const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("owner:"+String(code||"").trim()));
   const h=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");if(h!==OWNER_H)return false;ls.set("mj_owner",true);return true}
 {const q=new URLSearchParams(location.search).get("proprio");if(q)ownerCode(q).finally(()=>{try{history.replaceState(null,"",location.pathname+location.hash)}catch{}})}
-async function shareApp(){if(!isOwner())return;if(window.Gate){window.Gate.invite();return}
-  const text=L("Mijonote, mon carnet de recettes : photographie tes livres et les recettes de tes proches, Claude les range pour toi. Ouvre le lien puis ajoute-le à ton écran d'accueil.","Mijonote, my recipe notebook: snap your cookbooks and family recipes, Claude files them for you. Open the link, then add it to your home screen.");
+async function shareApp(custom){if(!isOwner())return;if(window.Gate){window.Gate.invite();return}
+  const text=custom||L("Mijonote, mon carnet de recettes : photographie tes livres et les recettes de tes proches, Claude les range pour toi. Ouvre le lien puis ajoute-le à ton écran d'accueil.","Mijonote, my recipe notebook: snap your cookbooks and family recipes, Claude files them for you. Open the link, then add it to your home screen.");
   if(navigator.share){try{await navigator.share({title:"Mijonote",text,url:APP_URL});return}catch(e){if(e?.name==="AbortError")return}}
   try{await navigator.clipboard.writeText(text+" "+APP_URL);toast(L("Lien copié : colle-le dans un message","Link copied: paste it in a message"))}
   catch{prompt(L("Copie ce lien :","Copy this link:"),APP_URL)}
