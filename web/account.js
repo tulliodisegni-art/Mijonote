@@ -14,6 +14,19 @@
   const okey = () => "acct." + C.app + "." + (user ? user.id : "x") + ".outbox";
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
+  /* ---------- connexion avec Google / Apple ----------
+     Les boutons n'apparaissent que si le fournisseur est activé dans Supabase (Authentication › Providers) :
+     rien à republier le jour où on l'active. Pas dans l'appli iPhone / Android (Google refuse les connexions dans une appli emballée). */
+  const SOC_ICON = {
+    google: '<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
+    apple: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.5 1.3-.1 1.7-.8 3.3-.8 1.5 0 1.9.8 3.3.8 1.4 0 2.2-1.2 3-2.4 1-1.4 1.3-2.7 1.4-2.8-.1 0-2.6-1-2.4-4.2zM13.9 5c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>',
+  };
+  const SOC_NAME = { google: "Google", apple: "Apple" };
+  async function socialProviders(url, key) {
+    try { if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return []; } catch (e) {}
+    try { const r = await fetch(url + "/auth/v1/settings", { headers: { apikey: key } }); const j = await r.json(); return ["apple", "google"].filter((p) => j && j.external && j.external[p]); } catch (e) { return []; }
+  }
+
   /* ---------- envoi des modifications (avec file d'attente hors ligne) ---------- */
   let flushing = null;
   function push(key, val) {
@@ -66,6 +79,8 @@
 .ac-card button{font:inherit;font-weight:800;padding:14px;border-radius:14px;border:0;background:linear-gradient(135deg,#F2CB66,#E9B949 50%,#B98A2C);color:#0A1330;cursor:pointer}
 .ac-card button.ghost{background:none;border:1.5px solid #E2E0D8;font-weight:700}
 .ac-card button.link{background:none;border:0;padding:4px;font-weight:600;font-size:.85rem;color:#5C6584;text-decoration:underline}
+.ac-card button.soc{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1.5px solid #E2E0D8;color:#0A1330;font-weight:700}
+.ac-or{display:flex;align-items:center;gap:10px;color:#5C6584;font-size:.8rem;margin:2px 0}.ac-or::before,.ac-or::after{content:"";flex:1;height:1px;background:#E2E0D8}
 .ac-card .err{min-height:1.2em;font-size:.88rem;text-align:center;color:#C8352B} .ac-card .err.ok{color:#1E9C80}`;
   const st = document.createElement("style"); st.textContent = css; (document.head || document.documentElement).appendChild(st);
 
@@ -74,6 +89,7 @@
       const d = document.createElement("div"); d.className = "ac-ov";
       d.innerHTML = `<div class="ac-card">${C.logo ? `<img src="${esc(C.logo)}" alt="">` : ""}<h1>${esc(C.name)}</h1>
         <p>Connecte-toi pour retrouver tes données sur tous tes appareils. Le même compte marche pour toutes les applis.</p>
+        <div id="ac-soc" style="display:grid;gap:8px"></div>
         <label>E-mail<input id="ac-mail" type="email" autocomplete="username" inputmode="email" autocapitalize="off"></label>
         <label>Mot de passe<input id="ac-pass" type="password" autocomplete="current-password"></label>
         <div class="err" id="ac-err" role="alert"></div>
@@ -81,6 +97,16 @@
       document.body.appendChild(d);
       const $ = (s) => d.querySelector(s), err = $("#ac-err");
       const say = (t, ok) => { err.textContent = t; err.className = "err" + (ok ? " ok" : ""); };
+      socialProviders(C.url, C.key).then((ps) => {
+        if (!ps.length) return;
+        const box = $("#ac-soc");
+        box.innerHTML = ps.map((p) => `<button class="soc" data-p="${p}">${SOC_ICON[p]}Continuer avec ${SOC_NAME[p]}</button>`).join("") + '<div class="ac-or">ou avec ton e-mail</div>';
+        box.querySelectorAll("[data-p]").forEach((b) => (b.onclick = async () => {
+          say("Un instant…", true);
+          const r = await sb.auth.signInWithOAuth({ provider: b.dataset.p, options: { redirectTo: C.link } });
+          if (r.error) say(/network|fetch/i.test(r.error.message || "") ? "Pas de connexion. Réessaie avec du réseau." : "Connexion avec " + SOC_NAME[b.dataset.p] + " impossible pour l'instant.");
+        }));
+      });
       const creds = () => ({ email: $("#ac-mail").value.trim(), password: $("#ac-pass").value });
       const go = async (up) => {
         const { email, password } = creds();
