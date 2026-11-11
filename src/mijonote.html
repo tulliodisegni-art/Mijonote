@@ -1457,7 +1457,7 @@ function viewAccount(){
     <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet. Toi seul peux partager l'appli.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook.")}</p>
     ${st.shareOpen?`<div class="sharewhat"><span class="eyebrow">${L("Avec quoi dedans ?","With what inside?")}</span>
       <button class="swopt" data-acc="sharelink" ${st.bk?"disabled":""}><b>${emo("📲")} ${L("Juste l'appli","Just the app")}</b><small>${L("Son carnet démarre vide.","Their cookbook starts empty.")}</small></button>
-      <button class="swopt" data-acc="shareall" ${st.bk||!recRaw.length?"disabled":""}><b>${emo("📚")} ${L("L'appli + toutes mes recettes","The app + all my recipes")}</b><small>${L(`Tes ${recRaw.length} recettes et leurs photos. À réserver à tes proches : celles des livres de chefs restent pour un usage privé.`,`All ${recRaw.length} recipes and photos. Keep it to your family: cookbook recipes are for private use.`)}</small></button>
+      <button class="swopt" data-acc="shareall" ${st.bk||!recRaw.length?"disabled":""}><b>${emo("📚")} ${L("L'appli + 100 % de mes recettes","The app + 100% of my recipes")}</b><small>${L(`Tout ton carnet : livres de chefs, recettes de cœur, réseaux, sites… Les ${recRaw.length} recettes et leurs photos. À réserver à tes proches : celles des livres de chefs restent pour un usage privé.`,`All ${recRaw.length} recipes and photos. Keep it to your family: cookbook recipes are for private use.`)}</small></button>
       <button class="swopt" data-acc="sharecoeur" ${st.bk||!recRaw.filter(isPerso).length?"disabled":""}><b>${emo("✍️")} ${L("L'appli + mes recettes de cœur","The app + my heart recipes")}</b><small>${L(`Les ${recRaw.filter(isPerso).length} recettes de tes proches et les tiennes, avec leurs portraits.`,`Your family's and your own ${recRaw.filter(isPerso).length} recipes, with their portraits.`)}</small></button>
       <p class="note" style="margin:0">${L("Tes notes perso et ton journal ne sont jamais envoyés. La personne ouvre l'appli, puis Mon compte → « Restaurer un carnet » avec le fichier reçu.","Your personal notes and journal are never sent. They open the app, then My account → “Restore a cookbook” with the file.")}</p>
       ${st.bk?`<p class="note" style="margin:0">${esc(st.bk)}</p>`:""}</div>`
@@ -4093,7 +4093,8 @@ async function famLoad(force){
   famSync();
 }
 function famSyncSoon(){if(!famille)return;clearTimeout(famSyncT);famSyncT=setTimeout(famSync,4000)}
-const famOk=r=>isPerso(r)&&!["claude","suggestion"].includes(provOf(r))&&!r.partageePar;
+const famQuoi=()=>!famille||!famille.partage?"rien":ls.get("famquoi."+famille.id,"coeur");
+const famOk=r=>!r.partageePar&&(famQuoi()==="tout"||(isPerso(r)&&!["claude","suggestion"].includes(provOf(r))));
 async function famSync(){
   const sb=SB(),uid=UID();if(!sb||!uid||!famille||famBusy||!loaded)return;famBusy=true;
   const key="famsync."+famille.id,cache=ls.get(key,{})||{},seen=new Set();
@@ -4116,7 +4117,7 @@ async function famSync(){
 function famShelfHTML(){
   if(!famille||!famRecs.length)return "";
   return `<section class="lux-sec"><div class="lux-h"><h2>${L("Le carnet de famille","The family cookbook")}</h2><span class="lux-n">${famRecs.length}</span></div>
-    <p class="note" style="margin:-.3rem 0 .7rem">${esc(famille.nom)} · ${L("les recettes de cœur partagées par les tiens","the heart recipes your family shares")}</p>
+    <p class="note" style="margin:-.3rem 0 .7rem">${esc(famille.nom)} · ${L("les recettes partagées par les tiens","the recipes your family shares")}</p>
     <div class="famrail">${famRecs.map(p=>{const r=p.recette||{},u=p.photo&&famPhotos[p.photo];return `<button class="famcard" data-famr="${esc(p.auteur+"|"+p.id)}">${u?`<img src="${esc(u)}" alt="" loading="lazy">`:`<span class="fi">${icoOf(r)}</span>`}<b>${esc(r.titre||"")}</b><small>${esc([r.livre,p.auteur_nom&&p.auteur_nom!==r.livre?L("par ","from ")+p.auteur_nom:""].filter(Boolean).join(" · "))}</small></button>`}).join("")}</div></section>`;
 }
 function openFamRecipe(k){
@@ -4126,7 +4127,7 @@ function openFamRecipe(k){
 }
 async function saveFamRecipe(r,p){
   let ph=null;if(r._preview&&assets){try{ph=(await assets.upload(await (await fetch(r._preview)).blob(),{type:"image/jpeg"})).id}catch{}}
-  await db.collection("recettes").add({lang:LANG,...clean(r),...(ph?{photo:ph}:{}),livre:r.livre||p.auteur_nom||L("Ma famille","My family"),page:"",provenance:["manuscrit","famille","texte"].includes(r.provenance)?r.provenance:"famille",perso:true,partageePar:p.auteur_nom||"",ajoute:Date.now()});
+  await db.collection("recettes").add({lang:LANG,...clean(r),...(ph?{photo:ph}:{}),livre:r.livre||p.auteur_nom||L("Ma famille","My family"),page:r.page||"",...(r.auteur?{auteur:r.auteur}:{}),provenance:r.provenance||"famille",...(isPerso(r)?{perso:true}:{}),partageePar:p.auteur_nom||"",ajoute:Date.now()});
 }
 function famAccHTML(){
   if(!ONLINE())return "";
@@ -4137,7 +4138,9 @@ function famAccHTML(){
     <div class="kv"><span>${L("Nom","Name")}</span><b>${esc(famille.nom)}</b></div>
     <div class="kv"><span>${L("Code","Code")}</span><b style="letter-spacing:.12em">${esc(famille.code)}</b></div>
     <div class="kv"><span>${L("Membres","Members")}</span><b>${esc(famille.membres.map(m=>m.prenom||"?").join(", "))}</b></div>
-    <label class="albchk"><input type="checkbox" id="famPart" ${famille.partage?"checked":""}><span><b>${L("Partager mes recettes de cœur","Share my heart recipes")}</b><small>${L("Celles de tes proches et les tiennes, jamais celles des livres de chefs. Tes notes, ton journal et les voix restent à toi.","Your family's and your own, never cookbook ones. Your notes, journal and voices stay private.")}</small></span></label>
+    <div class="eyebrow">${L("Ce que je partage avec eux","What I share with them")}</div>
+    <div class="seg" role="group" style="grid-template-columns:repeat(3,1fr)">${[["rien",L("Rien","Nothing")],["coeur",L("Recettes de cœur","Heart recipes")],["tout",L("Tout mon carnet","Everything")]].map(([k,l])=>`<button data-famq="${k}" aria-pressed="${famQuoi()===k}">${l}</button>`).join("")}</div>
+    <p class="note" style="margin:0">${famQuoi()==="tout"?L("100 % de tes recettes : livres de chefs, réseaux, sites, famille… À garder en famille : les recettes de chefs sont pour un usage privé.","100% of your recipes, cookbooks included. Keep it in the family."):famQuoi()==="coeur"?L("Celles de tes proches et les tiennes, pas celles des livres de chefs.","Your family's and your own, not cookbook ones."):L("Tu vois leurs recettes, ils ne voient pas les tiennes.","You see theirs, they don't see yours.")} ${L("Tes notes, ton journal et les voix restent à toi.","Your notes, journal and voices stay private.")}</p>
     <button class="btn block" data-fam="inviter">${emo("📲")} ${L("Inviter quelqu'un","Invite someone")}</button>
     <button class="linkbtn" data-fam="quitter" style="margin-top:.4rem">${L("Quitter le carnet de famille","Leave the family cookbook")}</button></section>`;
 }
@@ -4164,8 +4167,9 @@ function bindFam(root){
   root.querySelectorAll("[data-envoix]").forEach(b=>b.onclick=()=>envoiDrop(b.dataset.envoix,true));
   root.querySelectorAll("[data-famr]").forEach(b=>b.onclick=()=>openFamRecipe(b.dataset.famr));
   root.querySelectorAll("[data-fam]").forEach(b=>b.onclick=()=>famAct(b.dataset.fam));
-  const fp=root.querySelector("#famPart");if(fp)fp.onchange=async()=>{const sb=SB();if(!sb||!famille)return;famille.partage=fp.checked;
-    await sb.from("mj_membres").update({partage:fp.checked}).eq("famille",famille.id).eq("membre",UID());famSync();toast(fp.checked?L("Tes recettes de cœur sont partagées","Your heart recipes are shared"):L("Tes recettes ne sont plus partagées","Your recipes are no longer shared"))};
+  root.querySelectorAll("[data-famq]").forEach(b=>b.onclick=async()=>{const sb=SB();if(!sb||!famille)return;const k=b.dataset.famq;ls.set("famquoi."+famille.id,k);famille.partage=k!=="rien";render();
+    await sb.from("mj_membres").update({partage:famille.partage}).eq("famille",famille.id).eq("membre",UID());famSync();
+    toast(k==="tout"?L("Tout ton carnet est partagé","Your whole cookbook is shared"):k==="coeur"?L("Tes recettes de cœur sont partagées","Your heart recipes are shared"):L("Tes recettes ne sont plus partagées","Your recipes are no longer shared"))});
 }
 if(MJ_SRV&&window.MJ_PWA&&window.Account)window.Account.ready.then(async u=>{
   if(!u)return;
