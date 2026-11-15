@@ -651,6 +651,8 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .envoi b{font-family:var(--display);font-weight:400;font-size:1.05rem}.envoi small{color:var(--muted);font-size:.82rem}
 .envoi .emsg{font-family:var(--hand,"Caveat",cursive);font-size:1.1rem;color:var(--tomato);margin-top:.2rem}
 .envoi .btn{padding:.5rem 1rem}
+.shbox{max-height:88vh;overflow:auto}.shbox .sharewhat{width:100%}.shq{width:100%;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);padding:.65rem .9rem;font:inherit;color:var(--ink)}
+.shlist{width:100%;max-height:44vh;overflow:auto;display:flex;flex-direction:column;gap:.3rem;text-align:left}.shrow{display:flex;gap:.7rem;align-items:center;background:var(--surface);border-radius:12px;padding:.55rem .75rem;cursor:pointer}.shrow input{width:20px;height:20px;flex:none;accent-color:var(--tomato)}.shrow span{display:flex;flex-direction:column;min-width:0}.shrow b{font-weight:600;font-size:.95rem}.shrow small{color:var(--muted);font-size:.78rem}.shph{width:100%;max-height:200px;object-fit:cover;border-radius:16px}
 .famrail{display:flex;gap:.75rem;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;scrollbar-width:none}.famrail::-webkit-scrollbar{display:none}
 .famcard{flex:none;width:150px;scroll-snap-align:start;display:flex;flex-direction:column;gap:.25rem;border:0;background:var(--surface);border-radius:18px;padding:0 0 .7rem;box-shadow:var(--shadow);text-align:left;font:inherit;color:var(--ink);cursor:pointer;overflow:hidden}
 .famcard img,.famcard .fi{width:100%;height:110px;object-fit:cover;display:grid;place-items:center;background:var(--bg);font-size:2.2rem}
@@ -1470,6 +1472,9 @@ function viewAccount(){
     <div class="field"><label for="pfPrenom">Prénom</label><input id="pfPrenom" autocomplete="given-name" value="${esc(p.prenom||"")}" placeholder="Ton prénom"></div>
     <div class="field"><label for="pfTel">Téléphone</label><input id="pfTel" type="tel" autocomplete="tel" inputmode="tel" value="${esc(p.tel||"")}" placeholder="06 12 34 56 78"></div>
   </section>
+  ${ONLINE()&&recRaw.length?`<section class="acc"><h2>${L("Partager mes recettes","Share my recipes")}</h2>
+    <p class="note" style="margin:0 0 .6rem">${L("Une, plusieurs ou toutes : par un lien (WhatsApp, SMS…) ou directement dans l'appli d'un proche du carnet de famille. Tes notes perso et ton journal ne partent jamais.","One, several or all: by link or straight into a family member's app. Your notes and journal never leave.")}</p>
+    <button class="btn block" data-sharepick>${emo("🔗")} ${L("Choisir les recettes à partager","Pick recipes to share")}</button></section>`:""}
   ${famAccHTML()}
   <section class="acc"><h2>${L("Mes goûts","My tastes")}</h2>
     <p class="note" style="margin:0 0 .3rem">${L("Le menu du jour et les idées de Claude en tiennent compte.","Your daily menu and Claude's ideas follow them.")}</p>
@@ -1812,7 +1817,7 @@ function homeView(){
     ${!asked&&sample?`<button class="askclaude" data-act="askq" style="margin-top:16px">${emo("✨")}<span><b>Laisser Claude trouver</b><small>Il comprend « ${esc(q)} » comme une envie</small></span></button>`:""}`;
   }
   if(!loaded&&db)return `${top}${envie}<div class="status" style="margin-top:1rem"><span class="spin"></span>Chargement du carnet…</div>`;
-  if(loaded&&!plats.length)return `${top}${noDbNote()}${envie}<div class="empty bookhero"><span class="emo">📚</span><h2>${L("Ton carnet commence par tes livres","Your notebook starts with your books")}</h2>
+  if(loaded&&!plats.length)return `${top}${noDbNote()}${envie}${typeof demandesHTML==="function"?demandesHTML()+recusHTML()+famShelfHTML():""}<div class="empty bookhero"><span class="emo">📚</span><h2>${L("Ton carnet commence par tes livres","Your notebook starts with your books")}</h2>
     <p>${L("Photographie tes livres de cuisine et les recettes écrites à la main de tes proches. Claude les lit, même l'écriture de mamie, et les range ici, en étapes claires.","Photograph your cookbooks and your family's handwritten recipes. Claude reads them, even grandma's handwriting, and files them here in clear steps.")}</p>
     <div class="row" style="gap:.5rem;justify-content:center"><button class="btn" data-act="addbook">${emo("📖")} ${L("Un livre de cuisine","A cookbook")}</button><button class="btn soft" data-act="addfam">${emo("✍️")} ${L("Une recette de cœur","A heart recipe")}</button></div>
     <div class="filrouge" style="margin-top:1rem"><span>📷 ${L("Tu photographies","You photograph")}</span><span>📚 ${L("Claude range","Claude files")}</span><span>🎁 ${L("Tu en fais un vrai livre","You make a real book")}</span></div>
@@ -1826,6 +1831,7 @@ function homeView(){
   const small=m=>m.r?`<button class="mcard" data-open="${esc(m.r.id)}"><span class="mart ${fam(m.r)}">${m.r.photo?`<img src="${pic(m.r.photo)}" alt="" loading="lazy">`:icoOf(m.r)}</span><span class="mbody"><span class="kicker">${esc(slotLabel(m))}</span><b>${esc(m.r.titre)}</b><small>${esc(m.why||[total(m.r)?mins(total(m.r)):"",m.r.difficulte||""].filter(Boolean).join(" · "))}</small></span></button>`:"";
   return `${top}${noDbNote()}${envie}
   ${typeof demandesHTML==="function"?demandesHTML():""}
+  ${typeof recusHTML==="function"?recusHTML():""}
   ${shelfHTML(plats)}
   ${typeof famShelfHTML==="function"?famShelfHTML():""}
   <section class="lux-sec"><div class="lux-h"><h2>${L("L'idée du jour","Today's idea")}</h2><span class="lux-n">${esc(WD[new Date().getDay()])}</span></div>
@@ -2604,7 +2610,7 @@ async function albumPdf(){
 function bind(root){
   if(st.view==="compte")bindAccount(root);
   if(st.view==="lib")bindPortrait(root);
-  if(st.view==="lib"||st.view==="compte")bindFam(root);
+  if(st.view==="lib"||st.view==="compte"){bindFam(root);bindShare(root)}
   if(st.view==="album")bindAlbum(root);
   root.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>act(b.dataset.act,b));
   root.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openRecipe(b.dataset.open));
@@ -3184,6 +3190,7 @@ async function fireImport(){
   importing=false;render();
 }
 async function extractLink(){
+  {const m=String((st.scan.mode==="lien"?st.scan.url:st.scan.text)||"").match(/recette\.html#([0-9a-f]{32})|[?&]recette=([0-9a-f]{32})/);if(m&&typeof openLien==="function"){openLien(m[1]||m[2]);return}}
   const s=st.scan,url=s.mode==="lien"?normUrl(s.url):"",site=host(url),text=s.text.trim(),fromMsg=s.mode==="texte";
   s.busy=true;s.err="";s.found=null;s.report="";s.saved=null;render();
   ctl=new AbortController();
@@ -3443,7 +3450,7 @@ function showRecipe(r,opt={}){
   sh.innerHTML=`
   <div class="cover ${fam(r)}"><div class="inner">
     <div class="bar"><button class="iconbtn" id="closeSh">‹ Retour</button>
-      ${opt.temp?((opt.idea||opt.fam)&&db?`<button class="btn" id="saveIdea" style="padding:.5rem 1rem">Ajouter au carnet</button>`:"<span></span>"):`<button class="iconbtn" id="editR">Modifier</button>`}</div>
+      ${opt.temp?((opt.idea||opt.fam||opt.lien)&&db?`<button class="btn" id="saveIdea" style="padding:.5rem 1rem">Ajouter au carnet</button>`:"<span></span>"):`<span class="row" style="gap:.4rem"><button class="iconbtn" id="shareR">${L("Partager","Share")}</button><button class="iconbtn" id="editR">Modifier</button></span>`}</div>
     ${r.photo||r._preview?`<div class="coverphoto"><img src="${r.photo?pic(r.photo):r._preview}" alt="${esc(r.titre)}"></div>`:`<div class="bigart">${icoOf(r)}</div>`}
     ${!opt.temp&&db&&assets?`<div class="row coverbtns"><label class="stepadd">${emo("📷")} ${r.photo?L("Changer la photo","Change photo"):L("Ajouter une photo","Add a photo")}<input type="file" accept="image/*" id="coverIn" hidden></label>${!r.photo&&sample?`<button class="stepadd tip" id="coverIllu">${emo("🎨")} ${L("Illustration par Claude","Illustration by Claude")}</button>`:""}</div>`:""}
     <div class="hero">
@@ -3520,6 +3527,7 @@ function showRecipe(r,opt={}){
   $("#plus").onclick=()=>{factor=(portions+1)/(r.portions||4);showRecipe(r,{...opt,refresh:true})};
   $("#cookGo").onclick=()=>startCook(R);
   const er=$("#editR");if(er)er.onclick=()=>editForm(r);
+  const shr=$("#shareR");if(shr)shr.onclick=()=>shareSheet([recRaw.find(x=>x.id===r.id)||r._raw||r]);
   const ff=$("#famFix");if(ff)ff.onclick=async()=>{
     const who=prompt(L("De qui est cette recette ? (ex. Mamie Rose)\n\nEn validant, tu confirmes qu'elle vient d'un proche (famille, ami) ou de toi, et pas d'un livre de chef.","Whose recipe is it?\n\nBy confirming, you state it comes from your family or yourself, not from a chef's book."),r.livre||"");if(who===null)return;
     const data={provenance:"manuscrit",perso:true,livre:who.trim()||L("Mes proches","My loved ones"),auteur:null,page:""};
@@ -3537,6 +3545,7 @@ function showRecipe(r,opt={}){
   const ds=$("#drawSteps");if(ds)ds.onclick=()=>drawSchemas(r,ds);
   sh.querySelectorAll("[data-stepimg]").forEach(inp=>inp.onchange=()=>stepPhoto(r,+inp.dataset.stepimg,inp));
   const si=$("#saveIdea");if(si)si.onclick=async()=>{si.disabled=true;si.textContent="Ajout…";
+    if(opt.lien){try{const L0=opt.lien;await addShared(arr(L0.d.recettes)[0],L0.d.de);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"));if(L0.recu)recuDrop(L0.tok,true)}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
     if(opt.fam){try{await saveFamRecipe(r,opt.fam);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"))}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
     try{const ref=await db.collection("recettes").add({lang:LANG,...clean(r),...(r.photo?{photo:r.photo}:{}),livre:r.livre||L("Idée de Claude","Claude's idea"),page:"",...(r.livre?{}:{provenance:"claude"}),ajoute:Date.now()});closeSheet();toast("Ajoutée au carnet")}
     catch(e){si.disabled=false;si.textContent="Réessayer"}};
@@ -4171,12 +4180,183 @@ function bindFam(root){
     await sb.from("mj_membres").update({partage:famille.partage}).eq("famille",famille.id).eq("membre",UID());famSync();
     toast(k==="tout"?L("Tout ton carnet est partagé","Your whole cookbook is shared"):k==="coeur"?L("Tes recettes de cœur sont partagées","Your heart recipes are shared"):L("Tes recettes ne sont plus partagées","Your recipes are no longer shared"))});
 }
+/* ---------- 🔗 partager des recettes : un lien à envoyer, ou directement dans l'appli d'un proche du carnet de famille ---------- */
+let recus=[];
+const pubUrl=p=>SUPA.url+"/storage/v1/object/public/mj-public/"+String(p).split("/").map(encodeURIComponent).join("/");
+const lienUrl=t=>APP_URL+"recette.html#"+t;
+const newToken=()=>{const a=new Uint8Array(16);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,"0")).join("")};
+// la recette telle qu'elle part : jamais les notes perso, le journal, les voix ni les vidéos
+function packShare(r){
+  const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,partageePar,ajoute,origine,_raw,_preview,...rec}=r;
+  rec.etapes=arr(rec.etapes).map(({image,...e})=>e);
+  return rec;
+}
+function recipeText(r){
+  const q=i=>[i.q!=null?String(i.q).replace(".",","):"",i.unite,i.nom,i.note?"("+i.note+")":""].filter(Boolean).join(" ");
+  return [r.titre.toUpperCase(),r.livre?L("De ","From ")+r.livre:"",r.portions?L(`Pour ${r.portions} personnes`,`Serves ${r.portions}`):"","",
+    L("Ingrédients","Ingredients"),...arr(r.ingredients).flatMap(g=>[g.groupe?"— "+g.groupe:"",...arr(g.items).map(i=>"• "+q(i))].filter(Boolean)),"",
+    L("Étapes","Steps"),...arr(r.etapes).map((e,i)=>(i+1)+". "+(e.titre?e.titre+" : ":"")+e.texte),
+    ...(arr(r.secrets).length?["",L("Ses secrets","Secrets"),...r.secrets.map(s=>"• "+s)]:[]),
+    ...(arr(r.astuces).length?["",L("Astuces","Tips"),...r.astuces.map(s=>"• "+s)]:[])].join("\n").replace(/\n{3,}/g,"\n\n").trim();
+}
+function overlay(html){
+  const o=document.createElement("div");o.className="recov shov";o.setAttribute("role","dialog");
+  o.innerHTML=`<div class="recbox shbox"><button class="iconbtn recx" data-x>${L("Fermer","Close")}</button>${html}</div>`;
+  const close=()=>{o.remove();document.body.style.overflow=document.getElementById("sheet").hidden?"":"hidden"};
+  o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-x]"))close()});
+  document.body.appendChild(o);document.body.style.overflow="hidden";return {o,close};
+}
+// le choix : un lien, un proche du carnet de famille, ou le texte
+function shareSheet(list){
+  list=list.filter(Boolean);if(!list.length)return;
+  const one=list.length===1,on=ONLINE(),me=UID(),proches=famille?famille.membres.filter(m=>m.membre!==me):[];
+  const {o,close}=overlay(`<span class="hand">${L("Partager","Share")}</span>
+    <h2>${one?"« "+esc(list[0].titre)+" »":L(`${list.length} recettes`,`${list.length} recipes`)}</h2>
+    <div class="sharewhat" style="width:100%">
+      ${on?`<button class="swopt" data-s="lien"><b>${emo("🔗")} ${L("Envoyer un lien","Send a link")}</b><small>${L("Par WhatsApp, SMS, mail… La personne voit la recette même sans l'appli, et l'ajoute à son carnet en un geste si elle a Mijonote.","By WhatsApp, text, email… They can read it without the app, and add it to their cookbook in one tap if they have Mijonote.")}</small></button>`:""}
+      ${proches.map(m=>`<button class="swopt" data-s="pour" data-m="${esc(m.membre)}"><b>${emo("📥")} ${L("Envoyer à ","Send to ")}${esc(m.prenom||"?")}</b><small>${L("Ça arrive directement dans son appli, sur son accueil.","It lands straight in their app, on their home screen.")}</small></button>`).join("")}
+      ${one?`<button class="swopt" data-s="texte"><b>${emo("📋")} ${L("Envoyer le texte","Send as text")}</b><small>${L("La recette écrite, à coller dans n'importe quel message.","The written recipe, to paste in any message.")}</small></button>`:""}
+      ${on&&!famille?`<button class="swopt" data-s="fam"><b>${emo("👪")} ${L("Me relier à mes proches","Connect with my loved ones")}</b><small>${L("Avec le carnet de famille, vous voyez automatiquement les recettes des uns et des autres, et vous pouvez vous en envoyer d'un bouton.","With the family cookbook you automatically see each other's recipes, and can send them with one tap.")}</small></button>`:""}
+      ${!on?`<p class="note" style="margin:0">${L("Le partage par lien marche dans l'appli installée (Mijonote sur ton écran d'accueil), connectée à ton compte.","Link sharing works in the installed app, signed in to your account.")}</p>`:""}
+    </div>
+    ${list.some(r=>!isPerso(r))?`<p class="note" style="margin:0">${L("Les recettes de livres de chefs sont pour un usage privé : partage-les seulement avec tes proches.","Cookbook recipes are for private use: only share them with your loved ones.")}</p>`:""}`);
+  o.querySelectorAll("[data-s]").forEach(b=>b.onclick=async()=>{
+    const k=b.dataset.s;
+    if(k==="texte"){close();const r=list[0];const t=recipeText(r);
+      if(navigator.share){try{await navigator.share({title:r.titre,text:t});return}catch(e){if(e&&e.name==="AbortError")return}}
+      try{await navigator.clipboard.writeText(t);toast(L("Recette copiée : colle-la où tu veux","Recipe copied: paste it anywhere"))}catch{toast(L("Copie impossible ici","Can't copy here"))}return}
+    if(k==="fam"){close();closeSheet();go("compte");setTimeout(()=>document.querySelector("[data-fam]")?.scrollIntoView({behavior:"smooth",block:"center"}),200);return}
+    o.querySelectorAll("button").forEach(x=>x.disabled=true);b.querySelector("small").textContent=L("Préparation…","Preparing…");
+    const m=k==="pour"?proches.find(x=>x.membre===b.dataset.m):null;
+    const tok=await sendRecipes(list,m?m.membre:null,t=>{const s=b.querySelector("small");if(s)s.textContent=t});
+    close();if(!tok)return;
+    if(m){toast(L(`Envoyé à ${m.prenom} : ça arrive dans son appli`,`Sent to ${m.prenom}`));return}
+    const de=prenomMoi();
+    await shareLink(lienUrl(tok),one?list[0].titre:L("Mes recettes","My recipes"),
+      one?L(`${de?de+" t'envoie":"Je t'envoie"} ma recette « ${list[0].titre} » 🍲`,`${de||"I"} sent you the recipe “${list[0].titre}”`):L(`${de?de+" t'envoie":"Je t'envoie"} ${list.length} recettes de ${de?"son":"mon"} carnet 🍲`,`${de||"I"} sent you ${list.length} recipes`));
+  });
+}
+// envoie les recettes en ligne (photos réduites dans un dossier à soi) ; renvoie le jeton du lien
+async function sendRecipes(list,pour,step){
+  const sb=SB(),uid=UID();if(!sb||!uid){toast(L("Connecte-toi à ton compte pour partager","Sign in to share"));return null}
+  const tok=newToken(),out=[];let i=0,done=0;
+  const withPh=list.filter(r=>r.photo).length;
+  const one=async r=>{
+    const rec=packShare(r);
+    if(r.photo){try{const f=await (await fetch(pic(r.photo))).blob(),sm=await shrinkPhoto(new File([f],"p.jpg",{type:f.type||"image/jpeg"}),1000);
+      const path=`${uid}/l/${tok}/${hstr(r.id||r.titre)}.jpg`;const up=await sb.storage.from("mj-public").upload(path,sm,{contentType:"image/jpeg",upsert:true});if(!up.error)rec._photo=path}catch{}
+      done++;step&&withPh>3&&step(L(`Photos ${done} / ${withPh}…`,`Photos ${done} / ${withPh}…`))}
+    return rec;
+  };
+  const q=[...list];const res=new Array(list.length);
+  await Promise.all(Array.from({length:4},async()=>{while(q.length){const k=i++,r=q.shift();res[k]=await one(r)}}));
+  out.push(...res);
+  const titre=list.length===1?list[0].titre:L(`${list.length} recettes`,`${list.length} recipes`);
+  const {error}=await sb.from("mj_liens").insert({token:tok,owner:uid,de:(prenomMoi()||famille?.prenom||"").slice(0,40),pour:pour||null,titre:titre.slice(0,140),recettes:out});
+  if(error){toast(L("Le partage n'a pas marché. Réessaie.","Sharing failed. Try again."));sb.storage.from("mj-public").list(`${uid}/l/${tok}`).then(({data})=>data&&sb.storage.from("mj-public").remove(data.map(f=>`${uid}/l/${tok}/${f.name}`))).catch(()=>{});return null}
+  return tok;
+}
+// choisir plusieurs recettes (ou toutes) à partager
+function sharePicker(){
+  const all=recRaw.slice().sort((a,b)=>String(a.titre).localeCompare(String(b.titre),"fr"));
+  const sel=new Set();let qy="";
+  const {o,close}=overlay(`<span class="hand">${L("Partager des recettes","Share recipes")}</span><h2>${L("Lesquelles ?","Which ones?")}</h2>
+    <div class="row" style="gap:.4rem;flex-wrap:wrap;justify-content:center"><button class="qf" data-q="tout">${L("Tout","All")} (${all.length})</button><button class="qf" data-q="coeur">${L("Recettes de cœur","Heart recipes")}</button><button class="qf" data-q="rien">${L("Aucune","None")}</button></div>
+    <input class="shq" type="search" placeholder="${L("Chercher une recette…","Search a recipe…")}">
+    <div class="shlist"></div>
+    <button class="btn block" data-pgo disabled>${L("Partager","Share")}</button>`);
+  const box=o.querySelector(".shlist"),gb=o.querySelector("[data-pgo]");
+  const draw=()=>{const n=norm(qy);box.innerHTML=all.filter(r=>!n||norm(r.titre+" "+(r.livre||"")).includes(n)).slice(0,400).map(r=>`<label class="shrow"><input type="checkbox" data-id="${esc(r.id)}" ${sel.has(r.id)?"checked":""}><span><b>${esc(r.titre)}</b><small>${esc(r.livre||"")}</small></span></label>`).join("")||`<p class="note">${L("Rien trouvé","Nothing found")}</p>`;
+    box.querySelectorAll("input").forEach(c=>c.onchange=()=>{c.checked?sel.add(c.dataset.id):sel.delete(c.dataset.id);cnt()})};
+  const cnt=()=>{gb.disabled=!sel.size;gb.textContent=sel.size?L(`Partager ${sel.size} recette${sel.size>1?"s":""}`,`Share ${sel.size} recipe${sel.size>1?"s":""}`):L("Partager","Share")};
+  o.querySelector(".shq").oninput=e=>{qy=e.target.value;draw()};
+  o.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{sel.clear();if(b.dataset.q==="tout")all.forEach(r=>sel.add(r.id));if(b.dataset.q==="coeur")all.filter(isPerso).forEach(r=>sel.add(r.id));draw();cnt()});
+  gb.onclick=()=>{const list=all.filter(r=>sel.has(r.id));close();shareSheet(list)};
+  draw();
+}
+// recevoir : par lien (?recette=…) ou dans l'appli (envoyé par un proche)
+async function lienFetch(tok){
+  const r=await fetch(SUPA.url+"/rest/v1/rpc/mj_lien",{method:"POST",headers:{"content-type":"application/json",apikey:SUPA.key},body:JSON.stringify({p_token:tok})});
+  if(!r.ok)throw new Error("http "+r.status);return await r.json();
+}
+const already=r=>recRaw.some(x=>norm(x.titre)===norm(r.titre)&&norm(x.livre||"")===norm(r.livre||""));
+async function openLien(tok,recu){
+  if(!/^[0-9a-f]{32}$/.test(tok||""))return;
+  let d=null;try{d=recu?{de:recu.de,titre:recu.titre,recettes:recu.recettes}:await lienFetch(tok)}catch{toast(L("Pas de connexion : réessaie dans un instant","No connection: try again"));return}
+  if(!d||!arr(d.recettes).length){toast(L("Ce lien a expiré ou n'existe plus","This link has expired"));return}
+  const R=arr(d.recettes),sel=new Set(R.map((r,i)=>i).filter(i=>!already(R[i])));
+  const {o,close}=overlay(`<span class="hand">${d.de?L(`De la part de ${esc(d.de)}`,`From ${esc(d.de)}`):L("On t'envoie","You got")}</span>
+    <h2>${R.length===1?"« "+esc(R[0].titre)+" »":L(`${R.length} recettes pour toi`,`${R.length} recipes for you`)}</h2>
+    ${R.length>1?`<div class="shlist">${R.map((r,i)=>`<label class="shrow"><input type="checkbox" data-i="${i}" ${sel.has(i)?"checked":""}><span><b>${esc(r.titre)}</b><small>${esc([r.livre,already(r)?L("déjà dans ton carnet","already in your cookbook"):""].filter(Boolean).join(" · "))}</small></span></label>`).join("")}</div>`
+      :`${R[0]._photo?`<img class="shph" src="${esc(pubUrl(R[0]._photo))}" alt="">`:""}<p class="muted">${esc(R[0].resume||R[0].livre||"")}</p>${already(R[0])?`<p class="note" style="margin:0">${L("Tu l'as déjà dans ton carnet.","Already in your cookbook.")}</p>`:""}`}
+    ${R.length===1?`<button class="btn ghost block" data-see>${L("Voir la recette","See the recipe")}</button>`:""}
+    <button class="btn block" data-add ${!db?"disabled":""}>${L("Ajouter à mon carnet","Add to my cookbook")}</button>
+    ${recu?`<button class="linkbtn" data-del>${L("Supprimer cet envoi","Delete")}</button>`:""}`);
+  const ab=o.querySelector("[data-add]");
+  const lbl=()=>{if(R.length>1)ab.textContent=sel.size?L(`Ajouter ${sel.size} recette${sel.size>1?"s":""} à mon carnet`,`Add ${sel.size} to my cookbook`):L("Rien de coché","Nothing ticked");ab.disabled=!sel.size||!db};
+  if(R.length===1)sel.add(0);lbl();
+  o.querySelectorAll("[data-i]").forEach(c=>c.onchange=()=>{c.checked?sel.add(+c.dataset.i):sel.delete(+c.dataset.i);lbl()});
+  const see=o.querySelector("[data-see]");if(see)see.onclick=()=>{close();const r=R[0];showRecipe({...clean(r),livre:r.livre||d.de,provenance:r.provenance,id:"lien_"+tok,...(r._photo?{_preview:pubUrl(r._photo)}:{})},{temp:true,lien:{tok,d,recu}})};
+  const del=o.querySelector("[data-del]");if(del)del.onclick=()=>{close();recuDrop(recu.token)};
+  ab.onclick=async()=>{ab.disabled=true;let n=0;const list=[...sel].map(i=>R[i]);
+    for(const r of list){ab.textContent=L(`Ajout… ${n+1} / ${list.length}`,`Adding… ${n+1} / ${list.length}`);try{await addShared(r,d.de);n++}catch{}}
+    close();toast(n?L(`${n} recette${n>1?"s":""} ajoutée${n>1?"s":""} à ton carnet`,`${n} added to your cookbook`):L("Rien n'a pu être ajouté","Nothing could be added"));
+    if(recu&&n)recuDrop(recu.token,true)};
+}
+async function addShared(r,de){
+  let ph=null;if(r._photo&&assets){try{ph=(await assets.upload(await (await fetch(pubUrl(r._photo))).blob(),{type:"image/jpeg"})).id}catch{}}
+  const {_photo,...x}=r;
+  await db.collection("recettes").add({lang:LANG,...clean(x),...(ph?{photo:ph}:{}),livre:x.livre||de||L("Un proche","A loved one"),page:x.page||"",...(x.auteur?{auteur:x.auteur}:{}),...(x.lien?{lien:x.lien}:{}),...(x.video?{video:x.video}:{}),provenance:x.provenance||"famille",...(isPerso(x)?{perso:true}:{}),partageePar:de||"",ajoute:Date.now()});
+}
+async function loadRecus(){
+  const sb=SB(),uid=UID();if(!sb||!uid)return;
+  const {data,error}=await sb.from("mj_liens").select("token,de,titre,recettes,cree").eq("pour",uid).gt("expire",new Date().toISOString()).order("cree",{ascending:false});if(error)return;
+  const k=JSON.stringify((data||[]).map(x=>x.token));if(k!==JSON.stringify(recus.map(x=>x.token))){recus=data||[];if(st.view==="lib")render()}
+}
+function recusHTML(){
+  const nudge=ONLINE()&&!famille&&recRaw.length&&!ls.get("famnudge",false)?`<section class="envois"><div class="envoi" style="border-left-color:var(--basil)"><span class="ee">${emo("👪")}</span><span class="et"><b>${L("Partage tes recettes avec tes proches","Share recipes with your loved ones")}</b><small>${L("Crée ton carnet de famille et invite ton frère, ta sœur, tes amis : vous voyez les recettes des uns et des autres, et vous vous en envoyez d'un bouton.","Create your family cookbook and invite your loved ones: you see each other's recipes and send them with one tap.")}</small>
+    <span class="row" style="gap:.4rem;margin-top:.45rem"><button class="btn" data-go="compte">${L("Commencer","Start")}</button><button class="linkbtn" data-famnudge>${L("Plus tard","Later")}</button></span></span></div></section>`:"";
+  if(!recus.length)return nudge;
+  return `<section class="envois">${recus.map(e=>{const n=arr(e.recettes).length;return `<div class="envoi"><span class="ee">${emo("📥")}</span><span class="et"><b>${esc(e.de||L("Un proche","A loved one"))} ${n>1?L(`t'envoie ${n} recettes`,`sent you ${n} recipes`):L("t'envoie une recette","sent you a recipe")}</b><small>${esc(n===1?arr(e.recettes)[0]?.titre||"":arr(e.recettes).slice(0,3).map(r=>r.titre).join(" · ")+(n>3?"…":""))}</small>
+    <span class="row" style="gap:.4rem;margin-top:.45rem"><button class="btn" data-recu="${esc(e.token)}">${L("Voir","See")}</button><button class="linkbtn" data-recux="${esc(e.token)}">${L("Supprimer","Delete")}</button></span></span></div>`}).join("")}</section>`;
+}
+async function recuDrop(tok,quiet){
+  const sb=SB();if(!sb)return;const e=recus.find(x=>x.token===tok);recus=recus.filter(x=>x.token!==tok);render();
+  if(quiet||!e)return void sb.from("mj_liens").delete().eq("token",tok).then(()=>{},()=>{});
+  let back=false;toast(L("Envoi supprimé","Deleted"),{fn:()=>{back=true;recus=[e,...recus];render()}});
+  setTimeout(()=>{if(!back)sb.from("mj_liens").delete().eq("token",tok).then(()=>{},()=>{})},6500);
+}
+// le ménage : les photos des liens expirés ou supprimés (par moi ou par le destinataire)
+async function cleanLiens(){
+  const sb=SB(),uid=UID();if(!sb||!uid)return;
+  try{
+    const {data:mine}=await sb.from("mj_liens").select("token,expire").eq("owner",uid);if(!mine)return;
+    const now=Date.now(),old=mine.filter(x=>new Date(x.expire).getTime()<now).map(x=>x.token);
+    if(old.length)await sb.from("mj_liens").delete().in("token",old);
+    const live=new Set(mine.filter(x=>!old.includes(x.token)).map(x=>x.token));
+    const {data:dirs}=await sb.storage.from("mj-public").list(uid+"/l",{limit:1000});
+    for(const d of arr(dirs)){if(!d.name||live.has(d.name))continue;
+      const {data:fs}=await sb.storage.from("mj-public").list(`${uid}/l/${d.name}`,{limit:1000});
+      if(arr(fs).length)await sb.storage.from("mj-public").remove(fs.map(f=>`${uid}/l/${d.name}/${f.name}`))}
+  }catch{}
+}
+function bindShare(root){
+  root.querySelectorAll("[data-recu]").forEach(b=>b.onclick=()=>{const e=recus.find(x=>x.token===b.dataset.recu);if(e)openLien(e.token,e)});
+  root.querySelectorAll("[data-recux]").forEach(b=>b.onclick=()=>recuDrop(b.dataset.recux));
+  root.querySelectorAll("[data-sharepick]").forEach(b=>b.onclick=()=>sharePicker());
+  root.querySelectorAll("[data-famnudge]").forEach(b=>b.onclick=()=>{ls.set("famnudge",true);render()});
+}
+// un lien ouvert dans l'appli : …/Mijonote/?recette=<jeton>
+(()=>{const tok=new URLSearchParams(location.search).get("recette");if(!tok)return;
+  history.replaceState(null,"",location.pathname+location.hash);
+  let n=0;const t=setInterval(()=>{if((loaded&&db)||++n>60){clearInterval(t);openLien(tok)}},500)})();
+
 if(MJ_SRV&&window.MJ_PWA&&window.Account)window.Account.ready.then(async u=>{
   if(!u)return;
   const code=new URLSearchParams(location.search).get("famille");
-  await famLoad(true);loadEnvois();
+  await famLoad(true);loadEnvois();loadRecus();setTimeout(cleanLiens,8000);
   if(code){history.replaceState(null,"",location.pathname+location.hash);if(!famille||famille.code!==code.toUpperCase()){if(famille)toast(L("Tu es déjà dans un carnet de famille","You're already in a family cookbook"));else if(confirm(L("Rejoindre le carnet de famille auquel on t'a invité ?","Join the family cookbook you were invited to?")))famJoin(code)}}
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){loadEnvois();famLoad()}});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){loadEnvois();loadRecus();famLoad()}});
 }).catch(()=>{});
 
 /* ---------- cook mode ---------- */
