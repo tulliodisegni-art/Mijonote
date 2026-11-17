@@ -76,6 +76,7 @@ textarea{resize:vertical;min-height:4.5rem}
 .mood:nth-child(3n){background:var(--basil-soft)}
 
 .avatar{font-family:var(--display);font-size:1.05rem;color:var(--tomato)}
+.swopt[aria-pressed=true]{border-color:var(--tomato);box-shadow:inset 0 0 0 1.5px var(--tomato);background:var(--surface)}
 .sharewhat{display:flex;flex-direction:column;gap:.5rem}.swopt{display:flex;flex-direction:column;gap:.15rem;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:.75rem .9rem;font:inherit;color:var(--ink);cursor:pointer}.swopt b{font-weight:700}.swopt small{color:var(--muted);font-size:.82rem;line-height:1.35}.swopt:disabled{opacity:.5}
 .acc{margin-top:22px;background:var(--surface);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.75rem}
 .acc h2{font-size:1.15rem}
@@ -1457,13 +1458,7 @@ function viewAccount(){
   <h1 class="lux-title">Mon compte</h1><p class="lux-sub">Tes infos restent sur ce téléphone. Elles servent à préparer tes courses plus vite.</p>
   ${isOwner()?`<section class="acc"><h2>${L("Partager Mijonote","Share Mijonote")}</h2>
     <p class="note" style="margin:0 0 .5rem">${L("Envoie l'appli à tes proches : ils l'ouvrent, l'ajoutent à leur écran d'accueil et ont leur propre carnet. Toi seul peux partager l'appli.","Send the app to your loved ones: they open it, add it to their home screen and get their own cookbook.")}</p>
-    ${st.shareOpen?`<div class="sharewhat"><span class="eyebrow">${L("Avec quoi dedans ?","With what inside?")}</span>
-      <button class="swopt" data-acc="sharelink" ${st.bk?"disabled":""}><b>${emo("📲")} ${L("Juste l'appli","Just the app")}</b><small>${L("Son carnet démarre vide.","Their cookbook starts empty.")}</small></button>
-      <button class="swopt" data-acc="shareall" ${st.bk||!recRaw.length?"disabled":""}><b>${emo("📚")} ${L("L'appli + 100 % de mes recettes","The app + 100% of my recipes")}</b><small>${L(`Tout ton carnet : livres de chefs, recettes de cœur, réseaux, sites… Les ${recRaw.length} recettes et leurs photos. À réserver à tes proches : celles des livres de chefs restent pour un usage privé.`,`All ${recRaw.length} recipes and photos. Keep it to your family: cookbook recipes are for private use.`)}</small></button>
-      <button class="swopt" data-acc="sharecoeur" ${st.bk||!recRaw.filter(isPerso).length?"disabled":""}><b>${emo("✍️")} ${L("L'appli + mes recettes de cœur","The app + my heart recipes")}</b><small>${L(`Les ${recRaw.filter(isPerso).length} recettes de tes proches et les tiennes, avec leurs portraits.`,`Your family's and your own ${recRaw.filter(isPerso).length} recipes, with their portraits.`)}</small></button>
-      <p class="note" style="margin:0">${L("Tes notes perso et ton journal ne sont jamais envoyés. La personne ouvre l'appli, puis Mon compte → « Restaurer un carnet » avec le fichier reçu.","Your personal notes and journal are never sent. They open the app, then My account → “Restore a cookbook” with the file.")}</p>
-      ${st.bk?`<p class="note" style="margin:0">${esc(st.bk)}</p>`:""}</div>`
-    :`<button class="btn block" data-acc="shareapp">${emo("📲")} ${L("Envoyer l'appli à quelqu'un","Send the app to someone")}</button>`}
+    ${`<button class="btn block" data-acc="shareapp">${emo("📲")} ${L("Envoyer l'appli à quelqu'un","Send the app to someone")}</button>`}
   </section>`:""}
   ${window.MJ&&window.MJ.account&&window.MJ.account()?`<section class="acc"><h2>${L("Mon compte en ligne","My online account")}</h2>
     <p class="note" style="margin:0 0 .5rem">${L("Connecté : ","Signed in: ")}<b>${esc(window.MJ.account())}</b>. ${L("Tes recettes, photos et goûts sont sauvegardés et se retrouvent sur tes autres appareils.","Your recipes, photos and tastes are backed up and show up on your other devices.")}</p>
@@ -1544,7 +1539,7 @@ function bindAccount(root){
     else if(a==="rmaddr"){const F=favs();F.splice(i,1);ls.set("shopfavs",F)}
     else if(a==="tuto"){tutoMark("tuto_recette",0);ls.set("tuto_v1",0);st.view="lib";render();startTour(TOUR_MAIN,"tuto_v1");return}
     else if(a==="export"){exportCarnet();return}
-    else if(a==="shareapp"){st.shareOpen=true}
+    else if(a==="shareapp"){inviteSheet();return}
     else if(a==="sharelink"){st.shareOpen=false;render();shareApp();return}
     else if(a==="shareall"||a==="sharecoeur"){shareWithRecipes(a==="sharecoeur");return}
     else if(a==="signout"){if(confirm(L("Te déconnecter ? Tes recettes restent sauvegardées sur ton compte.","Sign out? Your recipes stay saved in your account.")))window.MJ.signOut();return}
@@ -4237,7 +4232,7 @@ function shareSheet(list){
   });
 }
 // envoie les recettes en ligne (photos réduites dans un dossier à soi) ; renvoie le jeton du lien
-async function sendRecipes(list,pour,step){
+async function sendRecipes(list,pour,step,invite){
   const sb=SB(),uid=UID();if(!sb||!uid){toast(L("Connecte-toi à ton compte pour partager","Sign in to share"));return null}
   const tok=newToken(),out=[];let i=0,done=0;
   const withPh=list.filter(r=>r.photo).length;
@@ -4252,7 +4247,7 @@ async function sendRecipes(list,pour,step){
   await Promise.all(Array.from({length:4},async()=>{while(q.length){const k=i++,r=q.shift();res[k]=await one(r)}}));
   out.push(...res);
   const titre=list.length===1?list[0].titre:L(`${list.length} recettes`,`${list.length} recipes`);
-  const {error}=await sb.from("mj_liens").insert({token:tok,owner:uid,de:(prenomMoi()||famille?.prenom||"").slice(0,40),pour:pour||null,titre:titre.slice(0,140),recettes:out});
+  const {error}=await sb.from("mj_liens").insert({token:tok,owner:uid,de:(prenomMoi()||famille?.prenom||"").slice(0,40),pour:pour||null,titre:titre.slice(0,140),recettes:out,...(invite?{invite}:{})});
   if(error){toast(L("Le partage n'a pas marché. Réessaie.","Sharing failed. Try again."));sb.storage.from("mj-public").list(`${uid}/l/${tok}`).then(({data})=>data&&sb.storage.from("mj-public").remove(data.map(f=>`${uid}/l/${tok}/${f.name}`))).catch(()=>{});return null}
   return tok;
 }
@@ -4351,10 +4346,60 @@ function bindShare(root){
   history.replaceState(null,"",location.pathname+location.hash);
   let n=0;const t=setInterval(()=>{if((loaded&&db)||++n>60){clearInterval(t);openLien(tok)}},500)})();
 
+
+/* 📲 Envoyer l'appli : un prénom, une clé d'invitation, et (au choix) des recettes qui arrivent toutes seules quand la clé est entrée */
+function inviteSheet(){
+  if(!isOwner())return;
+  const nAll=recRaw.length,nC=recRaw.filter(isPerso).length;let quoi="app";
+  const {o,close}=overlay(`<span class="hand">${L("Envoyer l'appli","Send the app")}</span><h2>${L("À qui ?","To whom?")}</h2>
+    <input class="shq" id="invWho" placeholder="${L("Son prénom (ex. Paul)","Their first name")}" autocomplete="off">
+    <div class="sharewhat" style="width:100%"><span class="eyebrow">${L("Avec quoi dedans ?","With what inside?")}</span>
+      <button class="swopt" data-iq="app" aria-pressed="true"><b>${emo("📲")} ${L("Juste l'appli","Just the app")}</b><small>${L("Son carnet démarre vide.","Their cookbook starts empty.")}</small></button>
+      ${nAll?`<button class="swopt" data-iq="tout" aria-pressed="false"><b>${emo("📚")} ${L(`L'appli + toutes mes recettes (${nAll})`,`The app + all my recipes (${nAll})`)}</b><small>${L("Elles arrivent dans son carnet dès qu'il entre sa clé. Tes notes perso et ton journal ne partent jamais.","They land in their cookbook as soon as they enter the key. Your notes never leave.")}</small></button>`:""}
+      ${nC?`<button class="swopt" data-iq="coeur" aria-pressed="false"><b>${emo("✍️")} ${L(`L'appli + mes recettes de cœur (${nC})`,`The app + my heart recipes (${nC})`)}</b><small>${L("Celles de tes proches et les tiennes, pas les livres de chefs.","Your family's and your own, not cookbooks.")}</small></button>`:""}
+    </div>
+    <button class="btn block" id="invGo">${L("Créer le lien et envoyer","Create the link and send")}</button>
+    <p class="note" id="invMsg" style="margin:0"></p>`);
+  const msg=o.querySelector("#invMsg"),go=o.querySelector("#invGo"),who=o.querySelector("#invWho");
+  setTimeout(()=>who.focus(),150);
+  o.querySelectorAll("[data-iq]").forEach(b=>b.onclick=()=>{quoi=b.dataset.iq;o.querySelectorAll("[data-iq]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  go.onclick=async()=>{
+    const qui=who.value.trim();if(!qui){who.focus();msg.textContent=L("Écris son prénom.","Write their name.");return}
+    go.disabled=true;msg.textContent=L("Création de la clé…","Creating the key…");
+    let code=null;
+    try{code=window.Gate&&window.Gate.createInvite?await window.Gate.createInvite(qui):null}catch(e){go.disabled=false;msg.textContent=/autoris/i.test(e&&e.message||"")?L("Clé propriétaire refusée.","Owner key refused."):L("Pas de connexion. Réessaie avec du réseau.","No connection.");return}
+    if(!code){go.disabled=false;msg.textContent="";return}
+    let n=0;
+    if(quoi!=="app"){
+      const list=quoi==="coeur"?recRaw.filter(isPerso):recRaw.slice();
+      msg.textContent=L("Préparation de tes recettes…","Preparing your recipes…");
+      const tok=await sendRecipes(list,null,t=>{msg.textContent=t},code);
+      if(!tok){go.disabled=false;msg.textContent=L(`La clé ${code} est créée, mais les recettes n'ont pas pu partir. Réessaie.`,`Key ${code} created, but the recipes failed. Try again.`);return}
+      n=list.length;
+    }
+    const url=APP_URL+"?invite="+encodeURIComponent(code),me=prenomMoi();
+    const text=L(`${qui}, je t'invite sur Mijonote, mon carnet de recettes 🍲${n?` Avec ${n} de mes recettes dedans !`:""}
+1. Ouvre le lien dans Safari (Chrome sur Android), puis Partager › « Sur l'écran d'accueil ».
+2. Ouvre Mijonote depuis ton écran d'accueil, entre ta clé : ${code}, puis crée ton compte.${n?"\n3. Mes recettes arrivent toutes seules : touche « Ajouter à mon carnet ».":""}${me?"\n"+me:""}`,
+      `${qui}, I'm inviting you to Mijonote 🍲${n?` With ${n} of my recipes!`:""}
+1. Open the link in Safari, then Share › “Add to Home Screen”.
+2. Open Mijonote from your home screen, enter your key: ${code}, then create your account.${n?"\n3. My recipes arrive by themselves: tap “Add to my cookbook”.":""}`);
+    go.disabled=false;msg.textContent=L(`Clé ${code} créée pour ${qui}.`,`Key ${code} created for ${qui}.`);
+    if(navigator.share){try{await navigator.share({title:"Mijonote",text,url});close();toast(L(`Invitation envoyée à ${qui}`,`Invitation sent to ${qui}`));return}catch(e){if(e&&e.name==="AbortError")return}}
+    try{await navigator.clipboard.writeText(text+"\n"+url);msg.textContent=L(`Message copié : colle-le à ${qui}. Sa clé : ${code}`,`Message copied: paste it to ${qui}. Key: ${code}`)}catch{msg.textContent=L(`Envoie-lui ce lien : ${url} et sa clé : ${code}`,`Send them: ${url} and key: ${code}`)}
+  };
+}
+// la personne invitée : les recettes offertes avec sa clé s'ouvrent toutes seules, une fois
+async function inviteRecipes(){
+  const code=window.Gate&&window.Gate.code&&window.Gate.code();if(!code||ls.get("invrec."+code,false))return;
+  try{const r=await fetch(SUPA.url+"/rest/v1/rpc/mj_lien_invite",{method:"POST",headers:{"content-type":"application/json",apikey:SUPA.key},body:JSON.stringify({p_code:code})});
+    if(!r.ok)return;const tok=await r.json();ls.set("invrec."+code,true);if(tok&&typeof tok==="string")openLien(tok)}catch{}
+}
 if(MJ_SRV&&window.MJ_PWA&&window.Account)window.Account.ready.then(async u=>{
   if(!u)return;
   const code=new URLSearchParams(location.search).get("famille");
   await famLoad(true);loadEnvois();loadRecus();setTimeout(cleanLiens,8000);
+  {let n=0;const t=setInterval(()=>{if((loaded&&db)||++n>120){clearInterval(t);if(loaded&&db)inviteRecipes()}},500)}
   if(code){history.replaceState(null,"",location.pathname+location.hash);if(!famille||famille.code!==code.toUpperCase()){if(famille)toast(L("Tu es déjà dans un carnet de famille","You're already in a family cookbook"));else if(confirm(L("Rejoindre le carnet de famille auquel on t'a invité ?","Join the family cookbook you were invited to?")))famJoin(code)}}
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){loadEnvois();loadRecus();famLoad()}});
 }).catch(()=>{});

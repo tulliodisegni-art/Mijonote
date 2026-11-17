@@ -132,7 +132,13 @@
     draw();
   }
 
-  window.Gate = { isOwner, invite, ownerLogin, allowed };
+  // pour une appli qui fait son propre écran d'invitation : crée la clé (null si annulé)
+  async function createInvite(who) {
+    if (!adminKey()) { const ok = await ownerLogin(); if (!ok) return null; }
+    return await rpc("app_invite_create", { p_key: adminKey(), p_app: C.app, p_label: who || "", p_max: 1 });
+  }
+
+  window.Gate = { isOwner, invite, ownerLogin, allowed, createInvite, code: () => ls.get("code") };
 
   /* ---------- démarrage ---------- */
   const start = () => {
