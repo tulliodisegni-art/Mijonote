@@ -57,16 +57,16 @@
   }
 
   /* ---------- écran de connexion ---------- */
-  const css = `.ac-ov{position:fixed;inset:0;z-index:2147482000;background:linear-gradient(160deg,#1C3170,#0A1330);display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:auto}
-.ac-card{background:#fff;color:#0A1330;border-radius:24px;padding:24px 20px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:11px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  const css = `.ac-ov{position:fixed;inset:0;z-index:2147482000;background:var(--ac-bg,#0E1838);display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:auto}
+.ac-card{background:#fff;color:#0A1330;border-radius:20px;padding:24px 20px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .ac-card img{width:72px;height:72px;border-radius:18px;align-self:center}
-.ac-card h1{margin:0;text-align:center;font-size:1.5rem} .ac-card p{margin:0;color:#5C6584;font-size:.92rem;text-align:center;line-height:1.4}
-.ac-card label{font-size:.8rem;font-weight:700;color:#5C6584;display:grid;gap:4px}
-.ac-card input{font:inherit;font-size:1rem;padding:12px 14px;border-radius:12px;border:1.5px solid #E2E0D8;background:#F7F6F2;color:#0A1330;width:100%;box-sizing:border-box}
-.ac-card button{font:inherit;font-weight:800;padding:14px;border-radius:14px;border:0;background:linear-gradient(135deg,#F2CB66,#E9B949 50%,#B98A2C);color:#0A1330;cursor:pointer}
-.ac-card button.ghost{background:none;border:1.5px solid #E2E0D8;font-weight:700}
-.ac-card button.link{background:none;border:0;padding:4px;font-weight:600;font-size:.85rem;color:#5C6584;text-decoration:underline}
-.ac-card .err{min-height:1.2em;font-size:.88rem;text-align:center;color:#C8352B} .ac-card .err.ok{color:#1E9C80}`;
+.ac-card h1{margin:0;text-align:center;font-size:1.5rem;font-weight:600} .ac-card p{margin:0;color:#4A5270;font-size:.9375rem;text-align:center;line-height:1.4}
+.ac-card label{font-size:.8125rem;font-weight:500;color:#626A87;display:grid;gap:4px}
+.ac-card input{font:inherit;font-size:1rem;padding:12px 14px;min-height:48px;border-radius:10px;border:1px solid rgba(10,19,48,.16);background:#F4F5F8;color:#0A1330;width:100%;box-sizing:border-box}
+.ac-card button{font:inherit;font-weight:600;min-height:48px;padding:12px 20px;border-radius:12px;border:0;background:var(--ac-acc,#E9B949);box-shadow:inset 0 1px 0 rgba(255,255,255,.3);color:var(--ac-on,#0A1330);cursor:pointer}
+.ac-card button.ghost{background:none;box-shadow:none;border:1px solid rgba(10,19,48,.16);font-weight:500}
+.ac-card button.link{background:none;box-shadow:none;border:0;min-height:0;padding:8px;font-weight:500;font-size:.875rem;color:#4A5270;text-decoration:underline;text-underline-offset:3px}
+.ac-card .err{min-height:1.2em;font-size:.88rem;text-align:center;color:#C8352B} .ac-card .err.ok{color:#15803D}`;
   const st = document.createElement("style"); st.textContent = css; (document.head || document.documentElement).appendChild(st);
 
   function login() {

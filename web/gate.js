@@ -25,23 +25,23 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   /* ---------- styles ---------- */
-  const css = `.gt-ov{position:fixed;inset:0;z-index:2147483000;background:linear-gradient(160deg,#1C3170,#0A1330);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:auto}
+  const css = `.gt-ov{position:fixed;inset:0;z-index:2147483000;background:var(--gt-bg,#0E1838);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:auto}
 .gt-ov.light{background:rgba(10,19,48,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .gt-card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;text-align:center}
-.gt-ov.light .gt-card{background:#fff;color:#0A1330;border-radius:22px;padding:20px;text-align:left;max-height:86vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.35)}
-.gt-card img{width:88px;height:88px;border-radius:22px;margin:0 auto;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-.gt-card h1{margin:0;font-size:1.9rem;line-height:1.05;color:var(--gt-acc,#E9B949)} .gt-card h2{margin:0;font-size:1.25rem}
+.gt-ov.light .gt-card{background:#fff;color:#0A1330;border-radius:20px;padding:20px;text-align:left;max-height:86vh;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.gt-card img{width:88px;height:88px;border-radius:20px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.gt-card h1{margin:0;font-size:1.875rem;font-weight:600;line-height:1.1;color:#fff} .gt-ov.light .gt-card h1{color:inherit} .gt-card h2{margin:0;font-size:1.25rem;font-weight:600}
 .gt-card p{margin:0;opacity:.85;line-height:1.4}
-.gt-card input{padding:14px;border-radius:14px;border:1.5px solid rgba(10,19,48,.15);font-size:1.15rem;text-align:center;color:#0A1330;letter-spacing:.08em;text-transform:uppercase;width:100%;box-sizing:border-box}
+.gt-card input{padding:12px 14px;min-height:48px;border-radius:12px;border:1px solid rgba(10,19,48,.16);font-size:1.125rem;text-align:center;color:#0A1330;letter-spacing:.04em;text-transform:uppercase;width:100%;box-sizing:border-box}
 .gt-card input.free{text-transform:none;letter-spacing:0;text-align:left}
-.gt-btn{padding:15px;border:0;border-radius:14px;background:linear-gradient(135deg,#F2CB66,#E9B949 50%,#B98A2C);color:#0A1330;font-weight:800;font-size:1.05rem;letter-spacing:.03em;cursor:pointer}
-.gt-btn:disabled{opacity:.6} .gt-ghost{background:none;border:0;color:inherit;opacity:.65;font-size:.88rem;text-decoration:underline;cursor:pointer;padding:6px}
+.gt-btn{min-height:48px;padding:12px 20px;border:0;border-radius:12px;background:var(--gt-acc,#E9B949);box-shadow:inset 0 1px 0 rgba(255,255,255,.3);color:var(--gt-on,#0A1330);font-weight:600;font-size:1rem;cursor:pointer}
+.gt-btn:disabled{opacity:.6} .gt-ghost{background:none;border:0;color:inherit;opacity:.7;font-size:.875rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px}
 .gt-ov.light .gt-ghost{opacity:.75}
 .gt-err{min-height:1.2em;color:#FFB4A8;font-size:.92rem} .gt-ov.light .gt-err{color:#C8352B}
 .gt-row{display:flex;gap:8px;align-items:center} .gt-row>*{flex:1}
 .gt-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
-.gt-list li{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;border:1px solid rgba(10,19,48,.12);border-radius:12px;padding:8px 10px;font-size:.9rem}
-.gt-list code{font-weight:700;letter-spacing:.06em} .gt-list small{opacity:.65;grid-column:1} .gt-list button{grid-row:1/3;grid-column:2;border:1px solid rgba(10,19,48,.2);background:none;border-radius:999px;padding:5px 10px;font-size:.8rem;cursor:pointer;color:inherit}
+.gt-list li{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;border:1px solid rgba(10,19,48,.1);border-radius:12px;padding:8px 12px;font-size:.875rem}
+.gt-list code{font-weight:600;letter-spacing:.04em} .gt-list small{opacity:.65;grid-column:1} .gt-list button{grid-row:1/3;grid-column:2;border:1px solid rgba(10,19,48,.16);background:none;border-radius:8px;padding:6px 10px;font-size:.8125rem;cursor:pointer;color:inherit}
 .gt-list li.off{opacity:.5}`;
   const st = document.createElement("style"); st.textContent = css; (document.head || document.documentElement).appendChild(st);
   const ov = (html, light) => { const d = document.createElement("div"); d.className = "gt-ov" + (light ? " light" : ""); if (C.accent) d.style.setProperty("--gt-acc", C.accent); d.innerHTML = `<div class="gt-card">${html}</div>`; (document.body || document.documentElement).appendChild(d); return d; };
