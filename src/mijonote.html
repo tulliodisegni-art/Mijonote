@@ -2090,6 +2090,7 @@ function socialModeHTML(s){
   const url=normUrl(S.url),ok=S.text.trim().length>20||S.frames.length||S.shots.length;
   const step=(n,t,body)=>`<div class="sstep"><span class="snum">${n}</span><div class="stack" style="gap:.45rem;min-width:0;flex:1"><strong>${t}</strong>${body}</div></div>`;
   return `<div class="drop" style="text-align:left;align-items:stretch;gap:1rem">
+      ${window.MJ_PWA?shareHelpHTML():""}
       <div><strong style="font-size:1.05rem">${L("Une recette vue sur Instagram, TikTok ou Facebook","A recipe from Instagram, TikTok or Facebook")}</strong>
       <div class="muted" style="font-size:.9rem;margin-top:.2rem">${L("La capture de la légende donne la recette, la vidéo donne les images de chaque étape et la vidéo pas à pas.","The caption screenshot gives the recipe, the video gives each step's pictures and the step-by-step video.")}</div><div class="row" style="gap:.35rem;margin-top:.5rem">${["Instagram","TikTok","Facebook"].map(n=>`<span class="tag plain"${platformOf(normUrl(S.url))===n?' style="border-color:var(--basil);color:var(--basil);font-weight:700"':""}>${n}</span>`).join("")}</div></div>
       ${step(1,L("La recette en capture d'écran","The recipe as a screenshot"),`<span class="muted" style="font-size:.86rem">${L("Sous la vidéo, touche <b>… plus</b> (ou <b>Voir plus</b> sur Facebook) pour afficher toute la légende, fais une <b>capture d'écran</b>, puis ajoute-la ici. Si la recette est longue, fais-en plusieurs.","Under the video, tap <b>… more</b> to show the whole caption, take a <b>screenshot</b>, then add it here. If the recipe is long, take several.")}</span>
@@ -2872,6 +2873,8 @@ async function act(a,b){
   else if(a==="pasteurl"){try{const t=await navigator.clipboard.readText();if(t){const u=normUrl(t);if(u)st.scan.url=u;else if(t.trim().length>30)st.scan.text=t;else st.scan.url=t.trim();render()}}catch{toast("Appuie longuement dans le champ, puis « Coller »")}}
   else if(a==="extractlink")extractLink();
   else if(a==="extractsocial")extractSocial();
+  else if(a==="sharesetup")shareSetup(b);
+  else if(a==="sharecopy"){navigator.clipboard?.writeText(st.shareUrl||"").then(()=>toast(L("Lien copié ✓ Colle-le dans le raccourci","Link copied ✓")),()=>toast(L("Sélectionne le lien et copie-le","Select the link and copy it")))}
   else if(a==="rmvid"){clearFrames();render()}
   else if(a==="kind"){st.scan.fam=b.dataset.k==="fam";render()}
   else if(a==="addfam"){const s=st.scan;s.fam=true;s.social.fam=false;s.mode="photo";ls.set("scanmode","photo");go("scan")}
@@ -4101,7 +4104,12 @@ async function askProche(){
 }
 async function loadEnvois(){
   const sb=SB();if(!sb)return;
-  const {data,error}=await sb.from("mj_envois").select("*").order("cree",{ascending:false});if(error)return;
+  let {data,error}=await sb.from("mj_envois").select("*").order("cree",{ascending:false});if(error)return;
+  // 📲 les liens envoyés par le Raccourci iPhone : ils s'importent tout seuls, du plus ancien au plus récent
+  const box=await shareBox(false).catch(()=>null);
+  if(box){const mine=(data||[]).filter(e=>e.token===box);data=(data||[]).filter(e=>e.token!==box);
+    mine.reverse().forEach(e=>{if(shareSeen.has(e.id))return;shareSeen.add(e.id);importShared(e.texte,()=>sb.from("mj_envois").delete().eq("id",e.id),()=>shareSeen.delete(e.id))});
+    if(!mine.length)shareSeen.clear()}
   if(JSON.stringify(data||[])!==JSON.stringify(envois)){envois=data||[];if(st.view==="lib")render()}
 }
 function demandesHTML(){
@@ -4404,6 +4412,100 @@ function bindShare(root){
 (()=>{const tok=new URLSearchParams(location.search).get("recette");if(!tok)return;
   history.replaceState(null,"",location.pathname+location.hash);
   let n=0;const t=setInterval(()=>{if((loaded&&db)||++n>60){clearInterval(t);openLien(tok)}},500)})();
+
+/* 📲 Partager › Mijonote (comme Cozy Spots) : depuis Instagram, TikTok, Facebook ou un site, la recette s'ajoute toute seule.
+   Android : l'appli installée est dans le menu Partager (share_target du manifeste) → ?lien=…&texte=…&titre=…
+   iPhone : un Raccourci dépose le lien dans la boîte de partage (une ligne mj_demandes, de=SHARE_DE) ; l'appli la vide à l'ouverture.
+   La légende (ou le texte de la page) est lue par la fonction « mijonote » : le navigateur ne peut pas lire Instagram. */
+const SHARE_DE="📲partage";let shareTok=null,sharing=false;const shareQ=[],shareSeen=new Set();
+async function shareBox(create){
+  if(shareTok)return shareTok;const sb=SB();if(!sb)return null;
+  const {data}=await sb.from("mj_demandes").select("token").eq("de",SHARE_DE).limit(1).maybeSingle();
+  if(data?.token)return shareTok=data.token;if(!create)return null;
+  const {data:d,error}=await sb.from("mj_demandes").insert({owner:UID(),qui:"Partager",de:SHARE_DE}).select("token").single();
+  return error?null:(shareTok=d?.token||null);
+}
+const shortcutUrl=tok=>`${MJ_FN}?apikey=${SUPA.key}&partage=${tok}&lien=`;
+async function sharedText(url){try{const o=await mjCall({action:"legende",lien:url});return String(o?.texte||"").trim()}catch{return ""}}
+function importShared(raw,done,fail){shareQ.push({raw,done,fail});if(!sharing)shareRun()}
+async function shareRun(){
+  sharing=true;
+  try{
+    for(let i=0;i<200&&!(loaded&&db&&ready.sample);i++)await new Promise(ok=>setTimeout(ok,300));
+    if(!(loaded&&db))return;
+    while(shareQ.length){const j=shareQ.shift();let ok=false;try{ok=await importOne(j.raw)}catch{}if(ok&&j.done)try{await j.done()}catch{}if(!ok&&j.fail)j.fail()}
+  }finally{sharing=false}
+}
+// returns true once the share is handled (saved, already there, or left in the form with its link)
+async function importOne(raw){
+  const t=String(raw||"").trim(),m=t.match(/https?:\/\/[^\s<>"']+/i),rest=(m?t.replace(m[0],""):t).trim();
+  let url=m?normUrl(m[0]):"";
+  // Instagram, TikTok… ajoutent un code de suivi différent à chaque partage : on l'enlève pour reconnaître une recette déjà rangée
+  if(url&&platformOf(url))try{const x=new URL(url);if(!/youtube\.com$/.test(x.hostname))x.search="";x.hash="";url=x.href}catch{}
+  if(!url&&rest.length<20)return true;
+  if(!navigator.onLine||!sample)return false;
+  const dup=url&&recettes.find(r=>r.lien===url);
+  if(dup){toast(L("Cette recette est déjà dans ton carnet","This recipe is already in your cookbook"));openRecipe(dup.id);return true}
+  const s=st.scan,S=s.social,plat=url?platformOf(url):"";
+  while(s.busy)await new Promise(ok=>setTimeout(ok,500));
+  dropDraft();s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.found=null;s.err="";s.report="";s.saved=null;s.burst=false;s.fam=false;s.envoi=null;
+  if(s.pdf){try{s.pdf.doc?.destroy()}catch{};s.pdf=null}
+  clearFrames();S.fam=false;S.shots.forEach(f=>URL.revokeObjectURL(f.url));S.shots=[];S.text="";S.url="";
+  s.mode=!url?"texte":plat?"social":"lien";
+  if(!url){s.text=rest;s.source="";go("scan");await extractLink()}
+  else{
+    if(plat)S.url=url;else{s.url=url;s.text=""}
+    s.busy=true;go("scan");toast(L(`Je récupère la recette${plat?" sur "+plat:""}…`,`Fetching the recipe${plat?" from "+plat:""}…`));
+    const cap=await sharedText(url);s.busy=false;
+    const txt=[cap,rest].filter(Boolean).join("\n\n");
+    if(plat){
+      S.text=txt.slice(0,8000);
+      if(txt.length<=20){s.err=L(`${plat} ne laisse pas lire cette publication. Fais une capture d'écran de la légende et ajoute-la à l'étape 1, plus haut : le lien est gardé.`,`${plat} won't let this post be read. Add a screenshot of the caption below: the link is kept.`);render();return true}
+      await extractSocial();
+    }else{s.text=txt;await extractLink()}
+  }
+  if(!s.found||!s.found.length){if(!s.err)s.err=L("Je n'ai pas trouvé de recette dans ce partage.","No recipe found in this share.");render();return true}
+  const first=s.found[0].titre,n=s.found.length;
+  await saveAll({});
+  if(s.found&&s.found.length){render();return true}
+  const pickNew=()=>recettes.filter(r=>url?r.lien===url:r.titre===first).sort((a,b)=>(b.ajoute||0)-(a.ajoute||0))[0];
+  let r=null;for(let i=0;i<10&&!(r=pickNew());i++)await new Promise(ok=>setTimeout(ok,200));
+  if(r&&n===1)openRecipe(r.id);
+  toast(n>1?L(`${n} recettes ajoutées ✓`,`${n} recipes added ✓`):L(`« ${first} » ajoutée ✓ Vérifie-la quand tu veux`,`“${first}” added ✓`));
+  return true;
+}
+// Android (appli installée) : Partager › Mijonote ouvre l'appli avec le lien
+// le partage est aussi gardé dans l'onglet 3 minutes : si l'appli se recharge juste après l'ouverture (mise à jour, premier lancement), on le reprend
+const sharePend=v=>{try{if(v===null)return sessionStorage.removeItem("mj.share");if(v)return sessionStorage.setItem("mj.share",JSON.stringify({v,at:Date.now()}));
+  const p=JSON.parse(sessionStorage.getItem("mj.share")||"null");return p&&Date.now()-p.at<180000?p.v:""}catch{return ""}};
+(()=>{const q=new URLSearchParams(location.search);let raw=[q.get("texte"),q.get("lien"),q.get("titre")].filter(Boolean).join("\n").trim();
+  if(raw){sharePend(raw);history.replaceState(null,"",location.pathname+location.hash)}else raw=sharePend();
+  if(raw)importShared(raw,()=>sharePend(null),()=>sharePend(null))})();
+async function shareSetup(btn){
+  if(!ONLINE()){toast(L("Connecte-toi d'abord à ton compte Mijonote (Mon compte)","Sign in to your Mijonote account first"));return}
+  if(btn){btn.disabled=true;btn.textContent=L("Préparation…","Preparing…")}
+  const tok=await shareBox(true);
+  if(!tok){if(btn){btn.disabled=false;btn.textContent=L("Réessayer","Try again")}toast(L("Le lien n'a pas pu être créé. Réessaie.","Could not create the link. Try again."));return}
+  st.shareUrl=shortcutUrl(tok);render();
+}
+function shareHelpHTML(){
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent),u=st.shareUrl;
+  const iph=`<p class="muted" style="font-size:.86rem;margin:.4rem 0 0"><b>iPhone</b> (une seule fois, 2 minutes) :</p>
+    ${u?`<div class="stack" style="gap:.35rem"><span class="muted" style="font-size:.84rem">${L("Ton lien personnel (garde-le pour toi) :","Your personal link (keep it private):")}</span><input readonly value="${esc(u)}" onfocus="this.select()" style="font-size:.78rem"><button class="btn soft" data-act="sharecopy" style="align-self:flex-start">${emo("📋")} ${L("Copier mon lien","Copy my link")}</button></div>`
+      :`<button class="btn soft" data-act="sharesetup" style="align-self:flex-start">${emo("🔗")} ${L("Préparer mon lien iPhone","Prepare my iPhone link")}</button>`}
+    <ol class="muted" style="font-size:.86rem;margin:.3rem 0 0;padding-left:1.2rem;display:grid;gap:.25rem">
+      <li>${L("Copie ton lien ci-dessus.","Copy your link above.")}</li>
+      <li>${L("Ouvre l'appli <b>Raccourcis</b> › <b>+</b> › nomme le raccourci <b>Mijonote</b>.","Open <b>Shortcuts</b> › <b>+</b> › name it <b>Mijonote</b>.")}</li>
+      <li>${L("Touche <b>ⓘ</b> et active <b>Afficher dans la feuille de partage</b>.","Tap <b>ⓘ</b> and turn on <b>Show in Share Sheet</b>.")}</li>
+      <li>${L("Ajoute l'action <b>Encoder en URL</b> (entrée : <b>Entrée du raccourci</b>).","Add <b>URL Encode</b> (input: <b>Shortcut Input</b>).")}</li>
+      <li>${L("Ajoute l'action <b>Obtenir le contenu de l'URL</b> : colle ton lien, puis touche juste après et choisis la variable <b>Texte encodé en URL</b>.","Add <b>Get Contents of URL</b>: paste your link, then insert the <b>URL Encoded Text</b> variable right after it.")}</li>
+      <li>${L("Ajoute l'action <b>Afficher la notification</b> avec <b>Contenu de l'URL</b> (elle dira « Envoyé à Mijonote ✓ »).","Add <b>Show Notification</b> with <b>Contents of URL</b>.")}</li>
+    </ol>
+    <p class="muted" style="font-size:.86rem;margin:.3rem 0 0">${L("Ensuite, sur Instagram, Facebook, TikTok ou un site : <b>Partager</b> › <b>Mijonote</b>. Rien ne s'ouvre : la recette t'attend et s'ajoute toute seule dès que tu ouvres Mijonote.","Then on Instagram, Facebook, TikTok or a website: <b>Share</b> › <b>Mijonote</b>. The recipe is added as soon as you open Mijonote.")}</p>`;
+  const andr=`<p class="muted" style="font-size:.86rem;margin:.4rem 0 0"><b>Android</b> : ${L("installe l'appli (Chrome › menu ⋮ › <b>Installer l'application</b>), puis sur Instagram, Facebook, TikTok ou un site touche <b>Partager</b> › <b>Mijonote</b> : l'appli s'ouvre et la recette s'ajoute toute seule.","install the app (Chrome › ⋮ › <b>Install app</b>), then on Instagram, Facebook, TikTok or a website tap <b>Share</b> › <b>Mijonote</b>: the recipe is added on its own.")}</p>`;
+  return `<details class="pastealt"${u?" open":""}><summary style="font-size:.92rem;font-weight:700">${emo("📲")} ${L("Ajouter en un geste avec « Partager »","Add in one tap with “Share”")}</summary>
+    <div class="stack" style="gap:.35rem">${ios?iph+andr:andr+iph}</div></details>`;
+}
 
 
 /* 📲 Envoyer l'appli : un prénom, une clé d'invitation, et (au choix) des recettes qui arrivent toutes seules quand la clé est entrée */
