@@ -4441,13 +4441,19 @@ async function importOne(raw){
   const t=String(raw||"").trim(),m=t.match(/https?:\/\/[^\s<>"']+/i),rest=(m?t.replace(m[0],""):t).trim();
   let url=m?normUrl(m[0]):"";
   // Instagram, TikTok… ajoutent un code de suivi différent à chaque partage : on l'enlève pour reconnaître une recette déjà rangée
-  if(url&&platformOf(url))try{const x=new URL(url);if(!/youtube\.com$/.test(x.hostname))x.search="";x.hash="";url=x.href}catch{}
+  if(url&&platformOf(url))try{const x=new URL(url);
+    if(/(^|\.)(instagram\.com|instagr\.am|tiktok\.com)$/.test(x.hostname))x.search="";
+    else [...x.searchParams.keys()].filter(k=>/^(utm_|igsh|si$|fbclid|mibextid|rdid|share_url)/.test(k)).forEach(k=>x.searchParams.delete(k));
+    x.hash="";url=x.href}catch{}
   if(!url&&rest.length<20)return true;
   if(!navigator.onLine||!sample)return false;
   const dup=url&&recettes.find(r=>r.lien===url);
   if(dup){toast(L("Cette recette est déjà dans ton carnet","This recipe is already in your cookbook"));openRecipe(dup.id);return true}
   const s=st.scan,S=s.social,plat=url?platformOf(url):"";
   while(s.busy)await new Promise(ok=>setTimeout(ok,500));
+  // une recette en cours (photos, vidéo, résultat pas encore enregistré) n'est jamais effacée : le partage attend
+  if(s.files.length||s.found?.length||s.pdf||S.shots.length||S.frames.length){
+    toast(L("Un partage t'attend : enregistre ou retire d'abord la recette en cours, puis rouvre Mijonote","A share is waiting: finish the recipe in progress first"));return false}
   dropDraft();s.files.forEach(f=>URL.revokeObjectURL(f.url));s.files=[];setDish(null);s.found=null;s.err="";s.report="";s.saved=null;s.burst=false;s.fam=false;s.envoi=null;
   if(s.pdf){try{s.pdf.doc?.destroy()}catch{};s.pdf=null}
   clearFrames();S.fam=false;S.shots.forEach(f=>URL.revokeObjectURL(f.url));S.shots=[];S.text="";S.url="";
@@ -4480,7 +4486,7 @@ const sharePend=v=>{try{if(v===null)return sessionStorage.removeItem("mj.share")
   const p=JSON.parse(sessionStorage.getItem("mj.share")||"null");return p&&Date.now()-p.at<180000?p.v:""}catch{return ""}};
 (()=>{const q=new URLSearchParams(location.search);let raw=[q.get("texte"),q.get("lien"),q.get("titre")].filter(Boolean).join("\n").trim();
   if(raw){sharePend(raw);history.replaceState(null,"",location.pathname+location.hash)}else raw=sharePend();
-  if(raw)importShared(raw,()=>sharePend(null),()=>sharePend(null))})();
+  if(raw)importShared(raw,()=>sharePend(null))})();
 async function shareSetup(btn){
   if(!ONLINE()){toast(L("Connecte-toi d'abord à ton compte Mijonote (Mon compte)","Sign in to your Mijonote account first"));return}
   if(btn){btn.disabled=true;btn.textContent=L("Préparation…","Preparing…")}
