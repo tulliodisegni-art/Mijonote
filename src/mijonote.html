@@ -390,7 +390,7 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .ing li input:checked ~ span{color:var(--muted);text-decoration:line-through}
 .note{color:var(--muted);font-size:.88rem}
 .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1.1rem;counter-reset:s}
-.steps li{display:grid;grid-template-columns:2.4rem 1fr;gap:.75rem}
+.steps li{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:.75rem}
 .steps li::before{counter-increment:s;content:counter(s);font-family:var(--display);font-size:1.15rem;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--basil);color:var(--bg);display:grid;place-items:center}
 .steps .st{font-weight:600}
 .steps .du{font-size:.8rem;color:var(--ink);font-weight:600;margin-left:.4rem;background:var(--saffron-soft);border-radius:999px;padding:.05rem .5rem}
@@ -422,8 +422,25 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .ico{overflow:hidden}
 .coverphoto{margin:12px -16px 14px;max-width:calc(100% + 32px)}
 .coverphoto img{display:block;width:100%;max-height:300px;object-fit:cover;border-radius:22px}
-.stepimg{display:block;width:100%;max-width:240px;aspect-ratio:4/3;object-fit:cover;border-radius:12px;margin-top:.55rem}
-.stepimg.big{max-width:320px}
+.steppics{display:flex;gap:.45rem;margin-top:.55rem;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.steppics::-webkit-scrollbar{display:none}
+.steppics button{flex:none;width:132px;aspect-ratio:4/3;border:0;padding:0;background:var(--saffron-soft);border-radius:12px;overflow:hidden;cursor:zoom-in;scroll-snap-align:start}
+.steppics img{display:block;width:100%;height:100%;object-fit:cover}
+.steppics .miss img{visibility:hidden}
+.steppics.one button{width:240px;max-width:100%}
+.steppics.big button{width:min(320px,74vw)}
+.stepacts{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:.4rem}
+.stepacts .steptips{flex:0 0 100%}
+.stepacts .stepadd.tip{margin-left:0}
+.picov{position:fixed;inset:0;z-index:70;background:#15100c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:calc(env(safe-area-inset-top,0px) + 3.2rem) 0 calc(env(safe-area-inset-bottom,0px) + 1.2rem)}
+.picov .prail{display:flex;width:100%;flex:1;min-height:0;overflow-x:auto;overscroll-behavior:contain;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.picov .prail::-webkit-scrollbar{display:none}
+.picov .prail>div{flex:none;box-sizing:border-box;width:100%;height:100%;scroll-snap-align:center;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center;padding:0 12px}
+.picov .prail img{width:100%;height:100%;object-fit:contain}
+.picov .px{position:absolute;top:calc(env(safe-area-inset-top,0px) + .7rem);right:.8rem;border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:600;padding:.45rem .9rem;cursor:pointer}
+.picov .pn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 1.05rem);left:1rem;color:rgba(255,255,255,.75);font-size:.88rem;font-weight:600}
+.picov .pbar{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;padding:0 12px}
+.picov .pbar button{border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-size:.88rem;font-weight:600;padding:.5rem 1rem;cursor:pointer}
 .vstep{position:relative;width:100%;max-width:340px;margin:.4rem auto 0;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:9/16;max-height:42vh;width:auto;max-width:100%}.vstep video{width:100%;height:100%;object-fit:cover;display:block}.vstep button{position:absolute;bottom:10px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-weight:600;padding:.45rem .8rem;font-size:.9rem}#ckRe{left:10px}
 .stepadd{display:inline-flex;align-items:center;gap:.35rem;margin-top:.5rem;font-size:.82rem;font-weight:600;color:var(--tomato);background:var(--tomato-soft);border-radius:999px;padding:.3rem .75rem;cursor:pointer}
 .stepadd .emo{font-size:1rem;line-height:1}
@@ -1069,7 +1086,7 @@ function clean(r){
     difficulte:r.difficulte||"facile",resume:String(r.resume||""),
     ingredients:arr(r.ingredients).map(g=>({groupe:String(g.groupe||""),items:arr(g.items).map(i=>({q:i.q==null||isNaN(i.q)?null:Number(i.q),unite:String(i.unite||""),nom:String(i.nom||""),note:String(i.note||"")}))})),
     materiel:arr(r.materiel).map(String),miseEnPlace:arr(r.miseEnPlace).map(String),
-    etapes:arr(r.etapes).map(e=>({titre:String(e.titre||""),texte:String(e.texte||""),duree_min:e.duree_min??null,ingredients:arr(e.ingredients).map(String),...(e.partie?{partie:String(e.partie)}:{}),...(typeof e.image==="string"&&e.image?{image:e.image}:{}),...(arr(e.astuces).length?{astuces:arr(e.astuces).map(String).filter(Boolean)}:{})})),
+    etapes:arr(r.etapes).map(e=>({titre:String(e.titre||""),texte:String(e.texte||""),duree_min:e.duree_min??null,ingredients:arr(e.ingredients).map(String),...(e.partie?{partie:String(e.partie)}:{}),...(typeof e.image==="string"&&e.image?{image:e.image}:{}),...(arr(e.images).filter(x=>typeof x==="string"&&x).length?{images:arr(e.images).filter(x=>typeof x==="string"&&x)}:{}),...(arr(e.astuces).length?{astuces:arr(e.astuces).map(String).filter(Boolean)}:{})})),
     astuces:arr(r.astuces).map(String),
     ...(r.manuscrit===true?{manuscrit:true}:{}),
     ...(arr(r.secrets).length?{secrets:arr(r.secrets).map(String).filter(Boolean).slice(0,6)}:{}),
@@ -3179,7 +3196,14 @@ async function attachPhoto(r,raw,blobs){
     if(sb){hide(r.etapes[i],"_img",sb);hide(r.etapes[i],"_prev",URL.createObjectURL(sb))}
   }
 }
-const stepSrc=e=>e.image?pic(e.image):(e._prev||"");
+// toutes les photos d'une étape : la première (image) puis celles ajoutées ensuite (images)
+const stepIds=e=>[...new Set([e?.image,...arr(e?.images)].filter(x=>typeof x==="string"&&x))];
+const stepSrcs=e=>{const l=stepIds(e).map(pic);return l.length?l:(e&&e._prev?[e._prev]:[])};
+const MAX_STEP_PICS=12;
+const stepPicsHTML=(e,i,big)=>{const l=stepSrcs(e);return l.length?`<div class="steppics${l.length===1?" one":""}${big?" big":""}">${l.map((u,k)=>`<button type="button" data-steppic="${i}:${k}" aria-label="${L("Agrandir la photo","Enlarge photo")} ${k+1}"><img src="${u}" alt="${L("Photo","Photo")} ${k+1} : ${esc(e.titre)}" loading="lazy"></button>`).join("")}</div>`:""};
+// une photo qui ne s'affiche pas (pas encore arrivée sur cet appareil) laisse une case douce, qu'on peut toujours ouvrir
+const stepPicsWatch=root=>root.querySelectorAll(".steppics img").forEach(im=>{im.onerror=()=>im.parentNode.classList.add("miss")});
+const canShow=b=>new Promise(ok=>{const u=URL.createObjectURL(b),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);ok(im.naturalWidth>0)};im.onerror=()=>{URL.revokeObjectURL(u);ok(false)};im.src=u});
 async function withPhoto(r,extra){
   const {_preview,...rest}=r;
   const doc={lang:LANG,...rest,...extra};
@@ -3557,7 +3581,7 @@ function showRecipe(r,opt={}){
     </section>
 
     <section class="block"><h2>Étapes</h2>${!opt.temp&&sample&&assets&&db&&arr(r.etapes).some(e=>!e.image)?`<button class="stepadd draw" id="drawSteps">${emo("✏️")} Dessiner les schémas des étapes</button>`:""}${f!==1?`<p class="note" style="margin-top:-.3rem">Quantités recalculées pour ${portions} pers. (le livre est pour ${r.portions}). Pour un plus grand plat, surveille la cuisson.</p>`:""}
-      <ol class="steps">${arr(R.etapes).map((e,ei)=>`<li><div><div><span class="st">${esc(e.titre)}</span>${e.duree_min?`<span class="du">${mins(e.duree_min)}</span>`:""}</div><div>${esc(scaleText(e.texte,f))}</div>${arr(e.ingredients).length?`<div class="use">${esc(e.ingredients.map(x=>scaleText(x,f)).join(" · "))}</div>`:""}${stepSrc(e)?`<img class="stepimg" src="${stepSrc(e)}" alt="Illustration : ${esc(e.titre)}" loading="lazy">`:""}${!opt.temp&&assets&&db?`<label class="stepadd">${emo("📷")} ${e.image?"Changer la photo":"Ajouter une photo"}<input type="file" accept="image/*" data-stepimg="${arr(full.etapes).indexOf(e)}" hidden></label>`:""}${arr(e.astuces).length?`<div class="steptips">${e.astuces.map((t,ti)=>`<p ${!opt.temp&&db?`data-stip="${arr(full.etapes).indexOf(e)}:${ti}"`:""}>${emo("💡")} ${esc(t)}</p>`).join("")}</div>`:""}${!opt.temp&&db?`<button class="stepadd tip" data-stip="${arr(full.etapes).indexOf(e)}:new">${emo("💡")} ${L("Ajouter une astuce","Add a tip")}</button>`:""}</div></li>`).join("")}</ol>
+      <ol class="steps">${arr(R.etapes).map((e,ei)=>`<li><div><div><span class="st">${esc(e.titre)}</span>${e.duree_min?`<span class="du">${mins(e.duree_min)}</span>`:""}</div><div>${esc(scaleText(e.texte,f))}</div>${arr(e.ingredients).length?`<div class="use">${esc(e.ingredients.map(x=>scaleText(x,f)).join(" · "))}</div>`:""}${stepPicsHTML(e,arr(full.etapes).indexOf(e))}<div class="stepacts">${!opt.temp&&assets&&db&&stepIds(e).length<MAX_STEP_PICS?`<label class="stepadd">${emo("📷")} <span>${stepIds(e).length?L("Ajouter d'autres photos","Add more photos"):L("Ajouter des photos","Add photos")}</span><input type="file" accept="image/*" multiple data-stepimg="${arr(full.etapes).indexOf(e)}" hidden></label>`:""}${arr(e.astuces).length?`<div class="steptips">${e.astuces.map((t,ti)=>`<p ${!opt.temp&&db?`data-stip="${arr(full.etapes).indexOf(e)}:${ti}"`:""}>${emo("💡")} ${esc(t)}</p>`).join("")}</div>`:""}${!opt.temp&&db?`<button class="stepadd tip" data-stip="${arr(full.etapes).indexOf(e)}:new">${emo("💡")} ${L("Ajouter une astuce","Add a tip")}</button>`:""}</div></div></li>`).join("")}</ol>
     </section>
 
     ${arr(r.secrets).length||r.histoire||!opt.temp?secretHTML(r):""}
@@ -3601,6 +3625,8 @@ function showRecipe(r,opt={}){
   sh.querySelectorAll("[data-variant]").forEach(b=>b.onclick=()=>proteinVersion(r,b,b.dataset.variant));
   const ds=$("#drawSteps");if(ds)ds.onclick=()=>drawSchemas(r,ds);
   sh.querySelectorAll("[data-stepimg]").forEach(inp=>inp.onchange=()=>stepPhoto(r,+inp.dataset.stepimg,inp));
+  sh.querySelectorAll("[data-steppic]").forEach(b=>b.onclick=()=>{const [i,k]=b.dataset.steppic.split(":").map(Number);stepViewer(r,i,k,!opt.temp&&!!assets&&!!db,arr(full.etapes)[i])});
+  stepPicsWatch(sh);
   const si=$("#saveIdea");if(si)si.onclick=async()=>{si.disabled=true;si.textContent="Ajout…";
     if(opt.lien){try{const L0=opt.lien;await addShared(arr(L0.d.recettes)[0],L0.d.de);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"));if(L0.recu)recuDrop(L0.tok,true)}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
     if(opt.fam){try{await saveFamRecipe(r,opt.fam);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"))}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
@@ -3608,15 +3634,64 @@ function showRecipe(r,opt={}){
     catch(e){si.disabled=false;si.textContent="Réessayer"}};
 }
 async function stepPhoto(r,i,inp){
-  const f=inp.files&&inp.files[0];if(!f||!assets||!db)return;
-  const lab=inp.closest("label");lab.classList.add("busy");lab.firstChild.nextSibling.textContent=" Envoi…";
+  const files=[...(inp.files||[])].filter(f=>(!f.type||/^image\//.test(f.type))&&f.type!=="image/svg+xml");
+  if(!files.length||!assets||!db)return;
+  const lab=inp.closest("label"),txt=lab.querySelector("span:not(.emo)")||lab,say=t=>{txt.textContent=t};lab.classList.add("busy");
+  const room=Math.max(0,MAX_STEP_PICS-stepIds(arr((r._raw||r).etapes)[i]).length),todo=files.slice(0,room),over=files.length-todo.length,ids=[];
+  let bad=0,lost=0,full=false;
+  for(let k=0;k<todo.length;k++){
+    say(todo.length>1?L(`Ajout ${k+1} / ${todo.length}…`,`Adding ${k+1} / ${todo.length}…`):L("Ajout…","Adding…"));
+    // réduite et remise droite comme la photo du plat ; un fichier que l'appareil ne sait pas afficher n'est pas gardé
+    const b=await shrinkPhoto(todo[k],1400);if(b===todo[k]&&!(await canShow(b))){bad++;continue}
+    try{ids.push((await assets.upload(b,{type:b.type||"image/jpeg"})).id)}catch(e){lost++;if(e&&e.name==="QuotaExceededError")full=true}
+  }
+  try{inp.value=""}catch{} // pour pouvoir rechoisir la même photo après un échec
+  const fail=()=>{lab.classList.remove("busy");say(L("Réessayer","Retry"));toast(full?L("Plus de place sur l'appareil pour ajouter des photos","No room left on this device to add photos"):files.length>1?L("Les photos n'ont pas pu être ajoutées","The photos could not be added"):L("La photo n'a pas pu être ajoutée","The photo could not be added"))};
+  if(!ids.length)return fail();
   try{
-    const b=await cropBlob(f,[0,0,1,1])||f;
-    const id=(await assets.upload(b,{type:b.type||"image/jpeg"})).id;
-    const etapes=arr((r._raw||r).etapes).map((e,k)=>k===i?{...e,image:id}:{...e});
-    await db.collection("recettes").doc(r.id).update({etapes});
-    showRecipe(loc({...(r._raw||r),etapes}),{refresh:true});toast("Photo ajoutée à l'étape "+(i+1));
-  }catch(e){lab.classList.remove("busy");lab.firstChild.nextSibling.textContent=" Réessayer";toast("La photo n'a pas pu être envoyée")}
+    await stepSetPics(r,i,l=>[...l,...ids.filter(x=>!l.includes(x))]);
+    toast((ids.length>1?L(`${ids.length} photos ajoutées à l'étape ${i+1}`,`${ids.length} photos added to step ${i+1}`):L("Photo ajoutée à l'étape "+(i+1),"Photo added to step "+(i+1)))
+      +(bad?L(` · ${bad} illisible${bad>1?"s":""}`,` · ${bad} unreadable`):"")
+      +(lost?(full?L(` · plus de place sur l'appareil pour ${lost>1?`les ${lost} autres`:"la dernière"}`,` · no room left on this device for ${lost} more`):L(` · ${lost} non enregistrée${lost>1?"s":""}`,` · ${lost} not saved`)):"")
+      +(over?L(` · ${MAX_STEP_PICS} photos max par étape`,` · ${MAX_STEP_PICS} photos max per step`):""));
+  }catch(e){fail()}
+}
+// la recette telle qu'on la connaît à l'instant : celle qui est affichée (chaque modification la réaffiche), sinon celle du carnet
+const freshRaw=r=>{const c=cur&&!cur.opt?.temp&&cur.r&&cur.r.id===r.id?cur.r:recettes.find(x=>x.id===r.id)||r;return c._raw||c};
+// change la liste des photos d'une étape (la 1re = image, les suivantes = images) à partir de la liste du moment, puis réaffiche la recette si elle est ouverte
+async function stepSetPics(r,i,change){
+  const raw=freshRaw(r);if(!arr(raw.etapes)[i])throw new Error("step");
+  const now=stepIds(raw.etapes[i]),ids=change(now);
+  if(ids.length===now.length&&ids.every((x,k)=>x===now[k]))return ids;
+  const etapes=raw.etapes.map((e,k)=>{if(k!==i)return {...e};const {image,images,...x}=e;return {...x,...(ids[0]?{image:ids[0]}:{}),...(ids.length>1?{images:ids.slice(1)}:{})}});
+  await db.collection("recettes").doc(r.id).update({etapes});
+  if(openId===r.id)showRecipe(loc({...raw,etapes}),{refresh:true});
+  return ids;
+}
+// les photos d'une étape en grand : on glisse de l'une à l'autre, on peut en retirer une ou la mettre en premier
+// (shown = l'étape telle qu'elle est affichée ; les changements se font sur les photos de la recette d'origine)
+function stepViewer(r,i,k,edit,shown){
+  const rawE=arr((r._raw||r).etapes)[i],e=shown||rawE;if(!e)return;
+  const srcs=stepSrcs(e),ids=edit?stepIds(rawE):[];if(!srcs.length)return;
+  const can=edit&&ids.length===srcs.length;
+  const o=document.createElement("div");o.className="picov";o.setAttribute("role","dialog");o.setAttribute("aria-label",L("Photos de l'étape","Step photos"));
+  o.innerHTML=`<span class="pn"></span><button class="px" data-x>${L("Fermer","Close")}</button><div class="prail">${srcs.map(u=>`<div><img src="${u}" alt=""></div>`).join("")}</div>${can?`<div class="pbar">${ids.length>1?`<button data-first>${L("Mettre en premier","Make it first")}</button>`:""}<button data-del>${L("Retirer cette photo","Remove this photo")}</button></div>`:""}`;
+  const rail=o.querySelector(".prail"),pn=o.querySelector(".pn"),fb=o.querySelector("[data-first]"),del=o.querySelector("[data-del]");
+  const at=()=>Math.max(0,Math.min(srcs.length-1,Math.round(rail.scrollLeft/Math.max(1,rail.clientWidth))));
+  const upd=()=>{const c=at();pn.textContent=srcs.length>1?`${c+1} / ${srcs.length}`:"";if(fb)fb.hidden=c===0};
+  const close=()=>{o.remove();document.removeEventListener("keydown",key)},key=ev=>{if(ev.key==="Escape")close()};
+  const oops=()=>toast(L("Ça n'a pas marché, réessaie","It failed, try again"));
+  o.addEventListener("click",ev=>{if(ev.target.closest("[data-x]")||ev.target===o||ev.target.parentNode===rail)close()});
+  document.addEventListener("keydown",key);rail.addEventListener("scroll",upd,{passive:true});
+  const place=()=>{rail.scrollLeft=k*rail.clientWidth;upd()};
+  document.body.appendChild(o);place();requestAnimationFrame(()=>{if(o.isConnected&&at()!==k)place()});
+  if(fb)fb.onclick=async()=>{const id=ids[at()];close();try{await stepSetPics(r,i,l=>l.includes(id)?[id,...l.filter(x=>x!==id)]:l)}catch{oops()}};
+  if(del)del.onclick=async()=>{const c=at(),gone=ids[c];close();
+    // la photo quitte l'étape mais reste sur l'appareil (comme pour une recette supprimée) : « Annuler » la remet à sa place
+    try{
+      await stepSetPics(r,i,l=>l.filter(x=>x!==gone));
+      toast(L("Photo retirée","Photo removed"),{ms:7000,fn:async()=>{try{await stepSetPics(r,i,l=>l.includes(gone)?l:[...l.slice(0,c),gone,...l.slice(c)])}catch{toast(L("Impossible de la remettre","Couldn't bring it back"))}}});
+    }catch{oops()}};
 }
 async function drawSchemas(r,btn){
   if(!sample||!assets||!db)return;
@@ -3855,7 +3930,7 @@ async function proteinVersion(r,btn,kind="prot"){
   const V=VARIANTS[kind]||VARIANTS.prot;
   const z=$("#protZone");document.querySelectorAll("[data-variant]").forEach(b=>b.disabled=true);
   z.innerHTML=`<div class="status" style="margin-top:.6rem"><span class="spin"></span>Claude adapte la recette… <span class="muted">(20 à 40 s)</span></div>`;
-  const src={titre:r.titre,portions:r.portions,ingredients:r.ingredients,etapes:r.etapes,miseEnPlace:r.miseEnPlace,nutrition:r.nutrition};
+  const src={titre:r.titre,portions:r.portions,ingredients:r.ingredients,etapes:arr(r.etapes).map(({images,...e})=>e),miseEnPlace:r.miseEnPlace,nutrition:r.nutrition};
   const prompt=`Voici une recette d'un livre de cuisine (JSON) :
 ${JSON.stringify(src)}
 
@@ -4173,7 +4248,7 @@ async function famSync(){
     for(const r of famille.partage?recRaw.filter(famOk):[]){
       seen.add(r.id);
       const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,...rec}=r;
-      rec.etapes=arr(rec.etapes).map(({image,...e})=>e);
+      rec.etapes=arr(rec.etapes).map(({image,images,...e})=>e);
       const h=hstr(JSON.stringify(rec)+"|"+(photo||"")+"|"+prenomMoi());if(cache[id]===h)continue;
       let ph=null;
       if(photo){try{const b=await (await fetch(pic(photo))).blob();ph=`${famille.id}/${uid}/${id}.jpg`;const up=await sb.storage.from("mj-famille").upload(ph,b,{contentType:b.type||"image/jpeg",upsert:true});if(up.error)ph=null}catch{ph=null}}
@@ -4250,7 +4325,7 @@ const newToken=()=>{const a=new Uint8Array(16);crypto.getRandomValues(a);return 
 // la recette telle qu'elle part : jamais les notes perso, le journal, les voix ni les vidéos
 function packShare(r){
   const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,partageePar,ajoute,origine,_raw,_preview,...rec}=r;
-  rec.etapes=arr(rec.etapes).map(({image,...e})=>e);
+  rec.etapes=arr(rec.etapes).map(({image,images,...e})=>e);
   return rec;
 }
 function recipeText(r){
@@ -4607,7 +4682,8 @@ function drawCook(){
       <div class="n">Étape ${ck.i+1} sur ${n}</div>
       <h2>${esc(e.titre)}</h2>
       ${vSeg(r,ck.i)?`<div class="vstep"><video id="ckV" src="${pic(r.videoAsset)}" playsinline muted autoplay preload="auto"></video><button id="ckRe">${L("↺ Revoir","↺ Replay")}</button></div>`
-        :stepSrc(e)?`<img class="stepimg big" src="${stepSrc(e)}" alt="Illustration : ${esc(e.titre)}">`:""}
+        :""}
+      ${!vSeg(r,ck.i)||arr(e.images).length?stepPicsHTML(e,ck.i,true):""}
       ${ck.i===0&&(recRaw.find(x=>x.id===r.id)||{}).maNote?`<div class="cknote">${emo("✍️")} <span><b>${L("Ta note","Your note")} :</b> ${esc(recRaw.find(x=>x.id===r.id).maNote)}</span></div>`:""}
       <div class="txt">${esc(scaleText(e.texte,ck.f))}</div>
       ${arr(e.ingredients).length?`<div class="use">${e.ingredients.map(x=>`<span>${esc(scaleText(x,ck.f))}</span>`).join("")}</div>`:""}
@@ -4616,6 +4692,8 @@ function drawCook(){
     </div>
     <div class="nav"><button class="prev" id="ckP" ${ck.i===0?"disabled":""}>Précédente</button><button id="ckN">${ck.i===n-1?"Terminé":"Suivante"}</button></div>`;
   $("#ckX").onclick=stopCook;
+  c.querySelectorAll("[data-steppic]").forEach(b=>b.onclick=()=>stepViewer(r,ck.i,+b.dataset.steppic.split(":")[1],false,e));
+  stepPicsWatch(c);
   $("#ckP").onclick=()=>{if(ck.i>0){ck.i--;drawCook()}};
   $("#ckN").onclick=async()=>{if(ck.i<n-1){ck.i++;drawCook()}else{stopCook();const ok=await markMade(r,true);toast(ok?L("Bon appétit, c'est noté dans ton carnet","Enjoy! Noted in your cookbook"):"Bon appétit");if(ok&&cur&&cur.r.id===r.id)showRecipe(cur.r,{...cur.opt,refresh:true})}};
   const tb=$("#tmBtn");if(tb)tb.onclick=()=>toggleTimer(e.duree_min);
