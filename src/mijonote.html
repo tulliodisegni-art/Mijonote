@@ -424,11 +424,11 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .coverphoto img{display:block;width:100%;max-height:300px;object-fit:cover;border-radius:22px}
 .steppics{display:flex;gap:.45rem;margin-top:.55rem;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
 .steppics::-webkit-scrollbar{display:none}
-.steppics button{flex:none;width:132px;aspect-ratio:4/3;border:0;padding:0;background:var(--saffron-soft);border-radius:12px;overflow:hidden;cursor:zoom-in;scroll-snap-align:start}
+.steppics button{flex:none;width:132px;height:99px;border:0;padding:0;background:var(--saffron-soft);border-radius:12px;overflow:hidden;cursor:zoom-in;scroll-snap-align:start}
 .steppics img{display:block;width:100%;height:100%;object-fit:cover}
 .steppics .miss img{visibility:hidden}
-.steppics.one button{width:240px;max-width:100%}
-.steppics.big button{width:min(320px,74vw)}
+.steppics.one button{width:240px;max-width:100%;height:180px}
+.steppics.big button{width:min(320px,74vw);height:min(240px,55.5vw)}
 .stepacts{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:.4rem}
 .stepacts .steptips{flex:0 0 100%}
 .stepacts .stepadd.tip{margin-left:0}
@@ -3580,7 +3580,7 @@ function showRecipe(r,opt={}){
     <div id="shopZone"></div>`:""}
     </section>
 
-    <section class="block"><h2>Étapes</h2>${!opt.temp&&sample&&assets&&db&&arr(r.etapes).some(e=>!e.image)?`<button class="stepadd draw" id="drawSteps">${emo("✏️")} Dessiner les schémas des étapes</button>`:""}${f!==1?`<p class="note" style="margin-top:-.3rem">Quantités recalculées pour ${portions} pers. (le livre est pour ${r.portions}). Pour un plus grand plat, surveille la cuisson.</p>`:""}
+    <section class="block"><h2>Étapes</h2>${!opt.temp&&sample&&assets&&db&&arr(r.etapes).some(e=>!stepIds(e).length)?`<button class="stepadd draw${drawing.has(r.id)?" busy":""}" id="drawSteps">${emo("✏️")} ${drawing.has(r.id)?"Claude dessine…":"Dessiner les schémas des étapes"}</button>`:""}${f!==1?`<p class="note" style="margin-top:-.3rem">Quantités recalculées pour ${portions} pers. (le livre est pour ${r.portions}). Pour un plus grand plat, surveille la cuisson.</p>`:""}
       <ol class="steps">${arr(R.etapes).map((e,ei)=>`<li><div><div><span class="st">${esc(e.titre)}</span>${e.duree_min?`<span class="du">${mins(e.duree_min)}</span>`:""}</div><div>${esc(scaleText(e.texte,f))}</div>${arr(e.ingredients).length?`<div class="use">${esc(e.ingredients.map(x=>scaleText(x,f)).join(" · "))}</div>`:""}${stepPicsHTML(e,arr(full.etapes).indexOf(e))}<div class="stepacts">${!opt.temp&&assets&&db&&stepIds(e).length<MAX_STEP_PICS?`<label class="stepadd">${emo("📷")} <span>${stepIds(e).length?L("Ajouter d'autres photos","Add more photos"):L("Ajouter des photos","Add photos")}</span><input type="file" accept="image/*" multiple data-stepimg="${arr(full.etapes).indexOf(e)}" hidden></label>`:""}${arr(e.astuces).length?`<div class="steptips">${e.astuces.map((t,ti)=>`<p ${!opt.temp&&db?`data-stip="${arr(full.etapes).indexOf(e)}:${ti}"`:""}>${emo("💡")} ${esc(t)}</p>`).join("")}</div>`:""}${!opt.temp&&db?`<button class="stepadd tip" data-stip="${arr(full.etapes).indexOf(e)}:new">${emo("💡")} ${L("Ajouter une astuce","Add a tip")}</button>`:""}</div></div></li>`).join("")}</ol>
     </section>
 
@@ -3623,7 +3623,7 @@ function showRecipe(r,opt={}){
   const ce=$("#chkEdit");if(ce)ce.onclick=()=>editForm(r);
   bindJournal(r);if(!opt.temp&&db&&isPerso(r))bindVoix(r);
   sh.querySelectorAll("[data-variant]").forEach(b=>b.onclick=()=>proteinVersion(r,b,b.dataset.variant));
-  const ds=$("#drawSteps");if(ds)ds.onclick=()=>drawSchemas(r,ds);
+  const ds=$("#drawSteps");if(ds)ds.onclick=()=>drawSchemas(r);
   sh.querySelectorAll("[data-stepimg]").forEach(inp=>inp.onchange=()=>stepPhoto(r,+inp.dataset.stepimg,inp));
   sh.querySelectorAll("[data-steppic]").forEach(b=>b.onclick=()=>{const [i,k]=b.dataset.steppic.split(":").map(Number);stepViewer(r,i,k,!opt.temp&&!!assets&&!!db,arr(full.etapes)[i])});
   stepPicsWatch(sh);
@@ -3693,9 +3693,12 @@ function stepViewer(r,i,k,edit,shown){
       toast(L("Photo retirée","Photo removed"),{ms:7000,fn:async()=>{try{await stepSetPics(r,i,l=>l.includes(gone)?l:[...l.slice(0,c),gone,...l.slice(c)])}catch{toast(L("Impossible de la remettre","Couldn't bring it back"))}}});
     }catch{oops()}};
 }
-async function drawSchemas(r,btn){
-  if(!sample||!assets||!db)return;
-  btn.classList.add("busy");btn.lastChild.textContent=" Claude dessine…";
+// recettes dont les schémas sont en train d'être dessinés : le bouton reste occupé même si la fiche se redessine entre-temps
+const drawing=new Set();
+async function drawSchemas(r){
+  if(!sample||!assets||!db||drawing.has(r.id))return;
+  const btn=()=>openId===r.id?$("#drawSteps"):null,say=(t,busy)=>{const b=btn();if(b){b.classList.toggle("busy",busy);b.lastChild.textContent=" "+t}};
+  drawing.add(r.id);say("Claude dessine…",true);
   const steps=arr((r._raw||r).etapes);
   const prompt=`Tu es illustrateur culinaire. Pour la recette « ${r.titre} », dessine un schéma SVG simple et clair pour chaque étape ci-dessous, comme dans un livre de cuisine pédagogique.
 Style : dessin plat et propre, traits arrondis épaisseur 3 à 4, couleur de trait #3a2a20, aplats doux parmi #ffe9d6 #e6f2df #ffe5dc #fff0d1 #f0e3d2, accents #e0553a #3f7a4a #e39b1c. Fond #fffaf3 sur tout le cadre.
@@ -3706,19 +3709,23 @@ ${steps.map((e,i)=>`${i+1}. ${e.titre} : ${e.texte}`).join("\n")}
 Réponds UNIQUEMENT avec ce JSON : {"schemas":[ un SVG (chaîne) par étape, dans l'ordre, ${steps.length} au total ]}`;
   try{
     const out=await sample.json(prompt,{modelTier:"complex",cache:false,noLang:true});
-    const svgs=arr(out?.schemas);
-    const etapes=[];let n=0;
+    const svgs=arr(out?.schemas),made=new Map();
     for(let i=0;i<steps.length;i++){
-      const e={...steps[i]},svg=String(svgs[i]||"").trim();
-      if(!e.image&&/^<svg[\s>]/i.test(svg)&&/<\/svg>$/i.test(svg)){
-        try{e.image=(await assets.upload(new Blob([svg],{type:"image/svg+xml"}),{type:"image/svg+xml"})).id;n++}catch{}
+      const svg=String(svgs[i]||"").trim();
+      if(!stepIds(steps[i]).length&&/^<svg[\s>]/i.test(svg)&&/<\/svg>$/i.test(svg)){
+        try{made.set(i,(await assets.upload(new Blob([svg],{type:"image/svg+xml"}),{type:"image/svg+xml"})).id)}catch{}
       }
-      etapes.push(e);
     }
-    if(!n)throw {code:"invalid_json"};
-    await db.collection("recettes").doc(r.id).update({etapes});
-    showRecipe(loc({...(r._raw||r),etapes}),{refresh:true});toast(n+" schéma"+(n>1?"s":"")+" ajouté"+(n>1?"s":""));
-  }catch(e){btn.classList.remove("busy");btn.lastChild.textContent=" Réessayer les schémas";toast(errText(e))}
+    if(!made.size)throw {code:"invalid_json"};
+    // le dessin a pris du temps : on repart de la recette telle qu'elle est maintenant, et un schéma ne va que sur une étape
+    // restée sans photo (des photos ou des astuces ont pu être ajoutées pendant que Claude dessinait)
+    const raw=freshRaw(r);let n=0;
+    const etapes=arr(raw.etapes).map((e,i)=>{const id=made.get(i);if(!id||stepIds(e).length||e.titre!==steps[i].titre||e.texte!==steps[i].texte)return {...e};n++;return {...e,image:id}});
+    if(n)await db.collection("recettes").doc(r.id).update({etapes});
+    drawing.delete(r.id);
+    if(openId===r.id)showRecipe(loc(n?{...raw,etapes}:raw),{refresh:true});
+    if(n)toast(n+" schéma"+(n>1?"s":"")+" ajouté"+(n>1?"s":""));
+  }catch(e){drawing.delete(r.id);say("Réessayer les schémas",false);toast(errText(e))}
 }
 /* ---------- Courses : ingrédients manquants -> panier Carrefour (drive ou livraison) ---------- */
 const CF="Carrefour", haves=new Map();
