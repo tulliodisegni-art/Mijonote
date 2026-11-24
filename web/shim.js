@@ -169,15 +169,18 @@ async function callServer(input,o){
   let r;
   try{r=await send(1568,.82)}
   catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");
+    // une photo illisible le restera : on le dit tel quel, sans parler du serveur
+    if(e&&e.code==="image_rejected")throw e;
     // deuxième essai avec des images plus légères
-    try{r=await send(1024,.75)}catch(e2){if(o.signal&&o.signal.aborted)throw err("cancelled");throw err("network",navigator.onLine===false?"Pas de connexion. Vérifie internet et réessaie.":"Le serveur de lecture n'a pas répondu. Réessaie avec moins d'images, ou dans un instant.")}}
+    try{r=await send(1024,.75)}catch(e2){if(o.signal&&o.signal.aborted)throw err("cancelled");if(e2&&e2.code==="image_rejected")throw e2;throw err("network",navigator.onLine===false?"Pas de connexion. Vérifie internet et réessaie.":"Le serveur de lecture n'a pas répondu. Réessaie avec moins d'images, ou dans un instant.")}}
   const out=await r.json().catch(()=>({}));
   if(!r.ok){const st=out.status||r.status;if(st===429)throw err("rate_limited");if(r.status===400)throw err("prompt_too_large");throw err("api_error","La lecture n'a pas marché ("+st+"). Réessaie dans un instant.")}
   const text=String(out.text||"");o.onText&&o.onText({text,delta:text});
   return {text,truncated:false,modelApplied:"serveur"};
 }
 async function call(input,o={}){
-  if(!getKey())return callServer(input,o);
+  // serveur:true = travail de fond (ex. préparer les images des étapes) : jamais facturé sur la clé de la personne
+  if(!getKey()||o.serveur)return callServer(input,o);
   const msgs=typeof input==="string"?[{role:"user",content:input}]:input.map(m=>({role:m.role,content:m.content}));
   const imgs=o.images||[];
   if(imgs.length){const last=msgs[msgs.length-1];const parts=[];for(const b of imgs)parts.push(await imgPart(b));last.content=[...parts,{type:"text",text:String(last.content)}]}
@@ -216,10 +219,31 @@ function parseJSON(t){
   const open=t[s],close=open==="{"?"}":"]",e=t.lastIndexOf(close);
   try{return JSON.parse(t.slice(s,e+1))}catch{throw err("invalid_json")}
 }
+/* ---------- images des étapes : demandées à la fonction « image » du serveur de Mijonote (Supabase), qui garde le jeton
+   du service d'images. Offre gratuite uniquement : un nombre limité d'images par jour, puis « quota » jusqu'au lendemain. ---------- */
+const IMG_URL="https://vvxkkqcmjrwytagbxdfg.supabase.co/functions/v1/image";
+async function image(prompt,o={}){
+  let r;
+  try{r=await fetch(IMG_URL,{method:"POST",signal:o.signal,headers:{"content-type":"application/json",apikey:IA.key},
+    body:JSON.stringify({prompt:String(prompt||"").slice(0,1500),...(Number.isInteger(o.seed)?{seed:o.seed}:{})})})}
+  catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");throw err("network")}
+  if(r.ok&&/^image\//.test(r.headers.get("content-type")||"")){
+    let b;
+    // la connexion peut tomber pendant que l'image arrive : même erreur que si la demande n'était pas partie
+    try{b=await r.blob()}catch(e){throw err(o.signal&&o.signal.aborted?"cancelled":"network")}
+    if(b.size>500)return b;throw err("api_error");
+  }
+  const out=await r.json().catch(()=>({}));
+  if(o.signal&&o.signal.aborted)throw err("cancelled");
+  // quota = plus d'images aujourd'hui · off = service pas branché · busy = réessayer plus tard · refused = cette image-là est refusée
+  const c=typeof out.code==="string"?out.code:"";
+  throw err(["quota","off","busy","refused"].includes(c)?c:r.status===404||r.status===401||r.status===403?"off":r.status===429||r.status>=500?"busy":"api_error");
+}
 const JSON_NOTE="\n\nRéponds uniquement avec le JSON demandé, sans texte autour ni balises de code.";
 const sample=Object.freeze(Object.assign((i,o)=>call(i,o),{
   json:async(i,o)=>{const inp=typeof i==="string"?i+JSON_NOTE:i.map((m,k)=>k===i.length-1?{...m,content:m.content+JSON_NOTE}:m);return parseJSON((await call(inp,o)).text)},
-  limits:async()=>({images:{maxCount:4}})
+  limits:async()=>({images:{maxCount:4}}),
+  image
 }));
 
 /* ---------- window.claude ---------- */

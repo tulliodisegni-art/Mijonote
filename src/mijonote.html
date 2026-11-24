@@ -429,6 +429,14 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .steppics .miss img{visibility:hidden}
 .steppics.one button{width:240px;max-width:100%;height:180px}
 .steppics.big button{width:min(320px,74vw);height:min(240px,55.5vw)}
+.steppics.wait span{flex:none;position:relative;display:flex;align-items:center;justify-content:center;width:240px;max-width:100%;height:180px;border-radius:12px;overflow:hidden;background:var(--saffron-soft);color:var(--ink);font-size:.82rem;font-weight:600}
+.steppics.wait.big span{width:min(320px,74vw);height:min(240px,55.5vw)}
+.steppics.wait i{position:relative;font-style:normal;opacity:.62}
+.steppics.wait span::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.42) 50%,transparent 70%);transform:translateX(-100%);animation:picwait 1.9s ease-in-out infinite}
+:root[data-theme="dark"] .steppics.wait span::before{background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.09) 50%,transparent 70%)}
+@keyframes picwait{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.steppics.wait span::before{animation:none}}
+.imgnote{margin:-.2rem 0 .9rem}
 .stepacts{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:.4rem}
 .stepacts .steptips{flex:0 0 100%}
 .stepacts .stepadd.tip{margin-left:0}
@@ -440,6 +448,7 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .picov .px{position:absolute;top:calc(env(safe-area-inset-top,0px) + .7rem);right:.8rem;border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:600;padding:.45rem .9rem;cursor:pointer}
 .picov .pn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 1.05rem);left:1rem;color:rgba(255,255,255,.75);font-size:.88rem;font-weight:600}
 .picov .pbar{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;padding:0 12px}
+.picov .pcap{margin:0;padding:0 16px;color:rgba(255,255,255,.72);font-size:.82rem;text-align:center}
 .picov .pbar button{border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-size:.88rem;font-weight:600;padding:.5rem 1rem;cursor:pointer}
 .vstep{position:relative;width:100%;max-width:340px;margin:.4rem auto 0;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:9/16;max-height:42vh;width:auto;max-width:100%}.vstep video{width:100%;height:100%;object-fit:cover;display:block}.vstep button{position:absolute;bottom:10px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-weight:600;padding:.45rem .8rem;font-size:.9rem}#ckRe{left:10px}
 .stepadd{display:inline-flex;align-items:center;gap:.35rem;margin-top:.5rem;font-size:.82rem;font-weight:600;color:var(--tomato);background:var(--tomato-soft);border-radius:999px;padding:.3rem .75rem;cursor:pointer}
@@ -935,7 +944,7 @@ function relocalize(){recettes=recRaw.map(loc).sort((a,b)=>(a.titre||"").localeC
 const escX=t=>String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const sameShape=(a,b)=>!!b&&typeof b.titre==="string"&&arr(b.etapes).length===a.etapes.length&&arr(b.ingredients).length===a.ingredients.length&&a.ingredients.every((g,i)=>arr(b.ingredients[i]?.items).length===g.items.length);
 let trRun=false,trDone=0,trTotal=0;const trFail=new Set();
-const trNeeds=r=>{if(recLang(r)===LANG||trFail.has(r.id+LANG))return false;const e=trOf(r);return !e||arr(r.etapes).some((s,i)=>s.image&&e.etapes?.[i]?.imgFrom!==s.image)};
+const trNeeds=r=>{if(recLang(r)===LANG||trFail.has(r.id+LANG))return false;const e=trOf(r);return !e||arr(r.etapes).some((s,i)=>s.image&&!arr(r.imgIA).includes(s.image)&&e.etapes?.[i]?.imgFrom!==s.image)};
 function trPill(){
   let p=$("#trpill");
   if(!trRun){if(p)p.remove();return}
@@ -957,7 +966,7 @@ async function trQueue(){
 async function trOne(r,target){
   const h=trKey(r),prev=trOf(r,target),txt=prev?null:TR_TXT(r),steps=arr(r.etapes),imgs=[],labels={};
   for(let i=0;i<steps.length;i++){
-    const id=steps[i].image;if(!id||prev?.etapes?.[i]?.imgFrom===id)continue;
+    const id=steps[i].image;if(!id||arr(r.imgIA).includes(id)||prev?.etapes?.[i]?.imgFrom===id)continue;
     let svg=null;try{const t=await (await fetch(pic(id))).text();if(/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(t))svg=t}catch{}
     const lb=svg?[...svg.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/gi)].map(m=>m[1].replace(/<[^>]+>/g,"").trim()):[];
     imgs.push({i,id,svg,lb});if(lb.some(Boolean))labels[i]=lb;
@@ -993,6 +1002,7 @@ function wrapSample(s){
   const go=(fn,i,o)=>{if(o&&o.noLang){const {noLang,...r}=o;return fn(i,r)}return fn(addNote(i),o)};
   const f=(i,o)=>go(s,i,o);
   f.json=(i,o)=>go(s.json.bind(s),i,o);f.limits=(...a)=>s.limits(...a);
+  if(s.image)f.image=(p,o)=>s.image(p,o); // images des étapes (appli installée)
   return f;
 }
 document.addEventListener("click",ev=>{if(!ev.target.closest("#themeBtn"))return;const t=curTheme()==="dark"?"light":"dark";tutoMark("theme",t);document.documentElement.dataset.theme=t;render()});
@@ -1016,11 +1026,13 @@ let ctl=null;
       loadDraft();
       Promise.resolve().then(()=>db.collection("reglages").doc("gouts").get()).then(g=>{if(g.exists){gouts=g.data()||{};ls.set("gouts",gouts);render()}else if(Object.keys(gouts).length)db.collection("reglages").doc("gouts").set(gouts).catch(()=>{})}).catch(()=>{});
       db.collection("recettes").onSnapshot(s=>{
-      const was=openId&&JSON.stringify(recRaw.find(r=>r.id===openId));
+      const old=openId&&recRaw.find(r=>r.id===openId),was=old&&JSON.stringify(old),wasP=old&&noPics(old);
       recRaw=s.docs.map(d=>({id:d.id,...d.data()}));
       for(const r of recRaw)if(typeof r.origine==="string"){const v=r.origine;r.origine=null;if(v&&!r.provenance)r.provenance=v;try{db.collection("recettes").doc(r.id).update({origine:null,...(v?{provenance:v}:{})}).catch(()=>{})}catch{}}
       relocalize();
-      loaded=true;famSyncSoon();render();if(openId&&JSON.stringify(recRaw.find(r=>r.id===openId))!==was)openRecipe(openId,true);trQueue();
+      loaded=true;famSyncSoon();render();
+      if(openId){const now=recRaw.find(r=>r.id===openId);if(JSON.stringify(now)!==was){if(now&&noPics(now)===wasP)stepPicsSync(recettes.find(r=>r.id===openId));else openRecipe(openId,true)}}
+      trQueue();imgSoon();
     },e=>{loaded=true;render()});
       db.collection("albums").onSnapshot(s=>{st.album.list=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.maj||0)-(a.maj||0));if(st.view==="album"&&!st.album.cur)render()},()=>{});
       db.collection("proches").onSnapshot(s=>{proches=Object.fromEntries(s.docs.map(d=>[d.id,d.data()]));if(st.view==="lib"||st.view==="album")render()},()=>{});
@@ -1032,7 +1044,7 @@ let ctl=null;
   use("mcp").then(m=>{mcp=m;if(st.view==="scan")render()}).catch(()=>{});
   use("sample").then(async s=>{sample=wrapSample(s);ready.sample=true;
     if(s){imgLimits=(await s.limits().catch(()=>null))?.images||null}
-    render();trQueue();
+    render();trQueue();imgSoon(6000);
   },()=>{ready.sample=true;render()});
 })();
 
@@ -1579,6 +1591,7 @@ function viewAccount(){
     <button class="btn ghost block" data-go="album">${emo("🎁")} ${L("Mon livre de recettes (PDF)","My recipe book (PDF)")}</button>
     <button class="btn ghost block" data-acc="tuto">${emo("🧭")} ${L("Revoir le tutoriel","Replay the tutorial")}</button>
   </section>
+  ${imgAccHTML()}
   ${window.MJ_PWA?`<section class="acc"><h2>${L("Lecture des recettes","Recipe reading")}</h2>
     <p class="note" style="margin:0 0 .4rem">${L("La lecture des photos, vidéos et liens est incluse : tu n'as rien à faire ni à payer. Facultatif : si tu as une clé Anthropic, colle-la ici pour que la lecture passe directement par Claude (facturée sur ton compte).","Reading photos, videos and links is included: nothing to set up or pay. Optional: paste an Anthropic key here to read directly with Claude (billed to your account).")}</p>
     <div class="kv"><span>${L("Clé","Key")}</span><b>${window.MJ.hasKey()?L("enregistrée ✓","saved ✓"):L("à ajouter","not set")}</b></div>
@@ -1586,7 +1599,7 @@ function viewAccount(){
     <div class="row" style="gap:.5rem"><button class="btn" data-acc="savekey">${L("Enregistrer","Save")}</button>${window.MJ.hasKey()?`<button class="btn ghost" data-acc="rmkey">${L("Retirer","Remove")}</button>`:""}</div>
   </section>`:""}
   <section class="acc"><h2>${L("Sauvegarde","Backup")}</h2>
-    <p class="note" style="margin:0 0 .4rem">${L("Range tout ton carnet (recettes, photos, livres) dans un fichier, pour le garder à l'abri ou le mettre sur un autre appareil.","Put your whole cookbook (recipes, photos, books) in one file, to keep it safe or move it to another device.")}</p>
+    <p class="note" style="margin:0 0 .4rem">${L("Range tout ton carnet (recettes, photos, livres) dans un fichier, pour le garder à l'abri ou le mettre sur un autre appareil.","Put your whole cookbook (recipes, photos, books) in one file, to keep it safe or move it to another device.")}${imgOpen()?" "+L("Les images créées par l'IA n'y sont pas : elles se recréent toutes seules.","AI-made pictures are left out: they are made again automatically."):""}</p>
     <button class="btn ghost block" data-acc="export" ${st.bk?"disabled":""}>${emo("💾")} ${L("Sauvegarder mon carnet","Back up my cookbook")}</button>
     <label class="btn ghost block" for="importIn" style="margin-top:.5rem;text-align:center;box-sizing:border-box;width:100%">${emo("📥")} ${L("Restaurer un carnet","Restore a cookbook")}</label><input id="importIn" type="file" accept="application/json,.json" hidden>
     ${st.bk?`<p class="note" style="margin:.5rem 0 0">${esc(st.bk)}</p>`:""}
@@ -1602,6 +1615,7 @@ function bindAccount(root){
   ["pfPrenom","pfTel"].forEach(id=>{const el=root.querySelector("#"+id);if(el)el.onchange=()=>{save();toast("Enregistré")}});
   root.querySelectorAll("[data-gout]").forEach(b=>b.onclick=()=>{const k=b.dataset.gout,v=b.dataset.v,g={...gouts};
     if(k==="allergies"){const a=new Set(arr(g.allergies));a.has(v)?a.delete(v):a.add(v);g.allergies=[...a]}else g[k]=v;setGouts(g);render()});
+  const ia=root.querySelector("#imgAuto");if(ia)ia.onchange=()=>{ls.set("imgia",ia.checked);toast(ia.checked?L("Les images se créent toutes seules","Pictures are made automatically"):L("Les images ne se créent plus toutes seules","Pictures are no longer made automatically"));stepPicsSync();render();if(ia.checked)imgSoon(300)};
   const ii=root.querySelector("#importIn");if(ii)ii.onchange=()=>{const f=ii.files&&ii.files[0];ii.value="";if(f)importCarnet(f)};
   const pn=root.querySelector("#pfNo");if(pn)pn.onchange=()=>{setGouts({...gouts,pasAime:pn.value.trim()});toast(L("Enregistré","Saved"))};
   const al=root.querySelector("#adLabel"),aw=root.querySelector("#adWhere");
@@ -1636,9 +1650,9 @@ const blobB64=b=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(
 async function packCarnet(gift){
   const pack=list=>list.map(({id,...d})=>({id,d}));
   let docs;
-  if(gift){const rs=(gift==="coeur"?recRaw.filter(isPerso):recRaw).map(({faite,maNote,partageePar,...r})=>r),who=new Set(rs.map(r=>r.livre).filter(Boolean));
+  if(gift){const rs=(gift==="coeur"?recRaw.filter(isPerso):recRaw).map(({faite,maNote,partageePar,...r})=>sansIA(r)),who=new Set(rs.map(r=>r.livre).filter(Boolean));
     docs={recettes:pack(rs),proches:pack(Object.entries(proches).filter(([id,d])=>who.has(d.nom)).map(([id,d])=>({id,...d})))}}
-  else{docs={recettes:pack(recRaw),albums:pack(st.album.list),liens:pack(liens),proches:pack(Object.entries(proches).map(([id,d])=>({id,...d}))),reglages:[]};
+  else{docs={recettes:pack(recRaw.map(sansIA)),albums:pack(st.album.list),liens:pack(liens),proches:pack(Object.entries(proches).map(([id,d])=>({id,...d}))),reglages:[]};
     for(const k of ["gouts","tuto"]){try{const g=await db.collection("reglages").doc(k).get();if(g.exists)docs.reglages.push({id:k,d:g.data()})}catch{}}}
   const ids=new Set();JSON.stringify(docs,(k,v)=>{if(typeof v==="string"&&ASSET_RX.test(v))ids.add(v);return v});
   const blobs={};let n=0;
@@ -2859,7 +2873,7 @@ document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{const v=b.da
   if(v==="lib"&&(TAB_OF[st.view]||st.view)==="lib"){if(st.view!=="lib")go("lib");else act("reset");return}
   if(v==="album"&&st.view==="album"&&st.album.cur){albumSave();st.album.cur=null;st.album.link="";render();window.scrollTo(0,0);return}
   go(v)});
-function go(v){st.view=v;render();window.scrollTo(0,0)}
+function go(v){st.view=v;render();window.scrollTo(0,0);imgSoon()}
 
 async function act(a,b){
   if(a==="rmdish"){setDish(null);render()}
@@ -3201,6 +3215,11 @@ const stepIds=e=>[...new Set([e?.image,...arr(e?.images)].filter(x=>typeof x==="
 const stepSrcs=e=>{const l=stepIds(e).map(pic);return l.length?l:(e&&e._prev?[e._prev]:[])};
 const MAX_STEP_PICS=12;
 const stepPicsHTML=(e,i,big)=>{const l=stepSrcs(e);return l.length?`<div class="steppics${l.length===1?" one":""}${big?" big":""}">${l.map((u,k)=>`<button type="button" data-steppic="${i}:${k}" aria-label="${L("Agrandir la photo","Enlarge photo")} ${k+1}"><img src="${u}" alt="${L("Photo","Photo")} ${k+1} : ${esc(e.titre)}" loading="lazy"></button>`).join("")}</div>`:""};
+// la recette sans les images de ses étapes : quand rien d'autre n'a changé, on remplace les images à l'écran sans redessiner la fiche
+const noPics=r=>JSON.stringify({...r,imgIA:0,imgNon:0,etapes:arr(r.etapes).map(({image,images,...e})=>e)});
+// la recette sans ses images créées par l'IA (elles se recréent toutes seules) : pour le fichier de sauvegarde et les envois
+const sansIA=r=>{const g=new Set(arr(r.imgIA));if(!g.size&&r.imgIA===undefined&&r.imgNon===undefined)return r;const {imgIA,imgNon,...x}=r;
+  return {...x,etapes:arr(r.etapes).map(e=>{const ids=stepIds(e).filter(id=>!g.has(id)),{image,images,...y}=e;return {...y,...(ids[0]?{image:ids[0]}:{}),...(ids.length>1?{images:ids.slice(1)}:{})}})}};
 // une photo qui ne s'affiche pas (pas encore arrivée sur cet appareil) laisse une case douce, qu'on peut toujours ouvrir
 const stepPicsWatch=root=>root.querySelectorAll(".steppics img").forEach(im=>{im.onerror=()=>im.parentNode.classList.add("miss")});
 const canShow=b=>new Promise(ok=>{const u=URL.createObjectURL(b),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);ok(im.naturalWidth>0)};im.onerror=()=>{URL.revokeObjectURL(u);ok(false)};im.src=u});
@@ -3524,7 +3543,7 @@ function showRecipe(r,opt={}){
   const full=r,parts=partsOf(full);if(partSel!=null&&!parts.some(p=>p.i===partSel))partSel=null;
   const R=onlyPart(full,partSel);
   cur={r,opt};openId=opt.temp?null:r.id;
-  const sh=$("#sheet");
+  const sh=$("#sheet"),headH=stepsHeadHTML(r,opt);
   const portions=Math.max(1,Math.round((r.portions||4)*factor));
   const f=portions/(r.portions||4);
   const vers=opt.temp?[]:versionsOf(r), parent=opt.temp?null:parentOf(r), kids=opt.temp?[]:childrenOf(r).filter(k=>!arr(r.composants).some(c=>c.id===k.id));
@@ -3580,8 +3599,8 @@ function showRecipe(r,opt={}){
     <div id="shopZone"></div>`:""}
     </section>
 
-    <section class="block"><h2>Étapes</h2>${!opt.temp&&sample&&assets&&db&&arr(r.etapes).some(e=>!stepIds(e).length)?`<button class="stepadd draw${drawing.has(r.id)?" busy":""}" id="drawSteps">${emo("✏️")} ${drawing.has(r.id)?"Claude dessine…":"Dessiner les schémas des étapes"}</button>`:""}${f!==1?`<p class="note" style="margin-top:-.3rem">Quantités recalculées pour ${portions} pers. (le livre est pour ${r.portions}). Pour un plus grand plat, surveille la cuisson.</p>`:""}
-      <ol class="steps">${arr(R.etapes).map((e,ei)=>`<li><div><div><span class="st">${esc(e.titre)}</span>${e.duree_min?`<span class="du">${mins(e.duree_min)}</span>`:""}</div><div>${esc(scaleText(e.texte,f))}</div>${arr(e.ingredients).length?`<div class="use">${esc(e.ingredients.map(x=>scaleText(x,f)).join(" · "))}</div>`:""}${stepPicsHTML(e,arr(full.etapes).indexOf(e))}<div class="stepacts">${!opt.temp&&assets&&db&&stepIds(e).length<MAX_STEP_PICS?`<label class="stepadd">${emo("📷")} <span>${stepIds(e).length?L("Ajouter d'autres photos","Add more photos"):L("Ajouter des photos","Add photos")}</span><input type="file" accept="image/*" multiple data-stepimg="${arr(full.etapes).indexOf(e)}" hidden></label>`:""}${arr(e.astuces).length?`<div class="steptips">${e.astuces.map((t,ti)=>`<p ${!opt.temp&&db?`data-stip="${arr(full.etapes).indexOf(e)}:${ti}"`:""}>${emo("💡")} ${esc(t)}</p>`).join("")}</div>`:""}${!opt.temp&&db?`<button class="stepadd tip" data-stip="${arr(full.etapes).indexOf(e)}:new">${emo("💡")} ${L("Ajouter une astuce","Add a tip")}</button>`:""}</div></div></li>`).join("")}</ol>
+    <section class="block"><h2>Étapes</h2><div id="stepsHead">${headH}</div>${f!==1?`<p class="note" style="margin-top:-.3rem">Quantités recalculées pour ${portions} pers. (le livre est pour ${r.portions}). Pour un plus grand plat, surveille la cuisson.</p>`:""}
+      <ol class="steps">${arr(R.etapes).map((e,ei)=>`<li data-step="${arr(full.etapes).indexOf(e)}"><div><div><span class="st">${esc(e.titre)}</span>${e.duree_min?`<span class="du">${mins(e.duree_min)}</span>`:""}</div><div>${esc(scaleText(e.texte,f))}</div>${arr(e.ingredients).length?`<div class="use">${esc(e.ingredients.map(x=>scaleText(x,f)).join(" · "))}</div>`:""}${stepPicsHTML(e,arr(full.etapes).indexOf(e))||(!opt.temp&&imgPending(full,arr(full.etapes).indexOf(e))?stepWaitHTML():"")}<div class="stepacts">${!opt.temp&&assets&&db&&stepIds(e).length<MAX_STEP_PICS?`<label class="stepadd">${emo("📷")} <span>${stepIds(e).length?L("Ajouter d'autres photos","Add more photos"):L("Ajouter des photos","Add photos")}</span><input type="file" accept="image/*" multiple data-stepimg="${arr(full.etapes).indexOf(e)}" hidden></label>`:""}${arr(e.astuces).length?`<div class="steptips">${e.astuces.map((t,ti)=>`<p ${!opt.temp&&db?`data-stip="${arr(full.etapes).indexOf(e)}:${ti}"`:""}>${emo("💡")} ${esc(t)}</p>`).join("")}</div>`:""}${!opt.temp&&db?`<button class="stepadd tip" data-stip="${arr(full.etapes).indexOf(e)}:new">${emo("💡")} ${L("Ajouter une astuce","Add a tip")}</button>`:""}</div></div></li>`).join("")}</ol>
     </section>
 
     ${arr(r.secrets).length||r.histoire||!opt.temp?secretHTML(r):""}
@@ -3623,10 +3642,10 @@ function showRecipe(r,opt={}){
   const ce=$("#chkEdit");if(ce)ce.onclick=()=>editForm(r);
   bindJournal(r);if(!opt.temp&&db&&isPerso(r))bindVoix(r);
   sh.querySelectorAll("[data-variant]").forEach(b=>b.onclick=()=>proteinVersion(r,b,b.dataset.variant));
-  const ds=$("#drawSteps");if(ds)ds.onclick=()=>drawSchemas(r);
+  const hd=$("#stepsHead");if(hd)hd._h=headH;stepsHeadBind();
   sh.querySelectorAll("[data-stepimg]").forEach(inp=>inp.onchange=()=>stepPhoto(r,+inp.dataset.stepimg,inp));
-  sh.querySelectorAll("[data-steppic]").forEach(b=>b.onclick=()=>{const [i,k]=b.dataset.steppic.split(":").map(Number);stepViewer(r,i,k,!opt.temp&&!!assets&&!!db,arr(full.etapes)[i])});
-  stepPicsWatch(sh);
+  stepPicsBind(sh);
+  if(!opt.temp&&!opt.refresh)imgSoon(200); // les images de cette recette passent en premier
   const si=$("#saveIdea");if(si)si.onclick=async()=>{si.disabled=true;si.textContent="Ajout…";
     if(opt.lien){try{const L0=opt.lien;await addShared(arr(L0.d.recettes)[0],L0.d.de);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"));if(L0.recu)recuDrop(L0.tok,true)}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
     if(opt.fam){try{await saveFamRecipe(r,opt.fam);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"))}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
@@ -3659,13 +3678,16 @@ async function stepPhoto(r,i,inp){
 // la recette telle qu'on la connaît à l'instant : celle qui est affichée (chaque modification la réaffiche), sinon celle du carnet
 const freshRaw=r=>{const c=cur&&!cur.opt?.temp&&cur.r&&cur.r.id===r.id?cur.r:recettes.find(x=>x.id===r.id)||r;return c._raw||c};
 // change la liste des photos d'une étape (la 1re = image, les suivantes = images) à partir de la liste du moment, puis réaffiche la recette si elle est ouverte
-async function stepSetPics(r,i,change){
+// more(recette) = d'autres champs à écrire en même temps ; soft = seules les images changent à l'écran, la fiche n'est pas redessinée
+async function stepSetPics(r,i,change,more,soft){
   const raw=freshRaw(r);if(!arr(raw.etapes)[i])throw new Error("step");
   const now=stepIds(raw.etapes[i]),ids=change(now);
   if(ids.length===now.length&&ids.every((x,k)=>x===now[k]))return ids;
   const etapes=raw.etapes.map((e,k)=>{if(k!==i)return {...e};const {image,images,...x}=e;return {...x,...(ids[0]?{image:ids[0]}:{}),...(ids.length>1?{images:ids.slice(1)}:{})}});
-  await db.collection("recettes").doc(r.id).update({etapes});
-  if(openId===r.id)showRecipe(loc({...raw,etapes}),{refresh:true});
+  const plus=more?more(raw):null;
+  await db.collection("recettes").doc(r.id).update({etapes,...plus});
+  if(soft)stepPicsSync(loc({...raw,etapes,...plus}));
+  else if(openId===r.id)showRecipe(loc({...raw,etapes,...plus}),{refresh:true});
   return ids;
 }
 // les photos d'une étape en grand : on glisse de l'une à l'autre, on peut en retirer une ou la mettre en premier
@@ -3674,11 +3696,13 @@ function stepViewer(r,i,k,edit,shown){
   const rawE=arr((r._raw||r).etapes)[i],e=shown||rawE;if(!e)return;
   const srcs=stepSrcs(e),ids=edit?stepIds(rawE):[];if(!srcs.length)return;
   const can=edit&&ids.length===srcs.length;
+  // une image créée par l'IA le dit, et peut être refaite
+  const all=stepIds(edit?rawE:e),gen=new Set(arr(freshRaw(r).imgIA)),isGen=c=>all.length===srcs.length&&gen.has(all[c]);
   const o=document.createElement("div");o.className="picov";o.setAttribute("role","dialog");o.setAttribute("aria-label",L("Photos de l'étape","Step photos"));
-  o.innerHTML=`<span class="pn"></span><button class="px" data-x>${L("Fermer","Close")}</button><div class="prail">${srcs.map(u=>`<div><img src="${u}" alt=""></div>`).join("")}</div>${can?`<div class="pbar">${ids.length>1?`<button data-first>${L("Mettre en premier","Make it first")}</button>`:""}<button data-del>${L("Retirer cette photo","Remove this photo")}</button></div>`:""}`;
-  const rail=o.querySelector(".prail"),pn=o.querySelector(".pn"),fb=o.querySelector("[data-first]"),del=o.querySelector("[data-del]");
+  o.innerHTML=`<span class="pn"></span><button class="px" data-x>${L("Fermer","Close")}</button><div class="prail">${srcs.map(u=>`<div><img src="${u}" alt=""></div>`).join("")}</div><p class="pcap" hidden>${L("Image créée par l'IA, pour donner une idée de l'étape","AI-made picture, to give an idea of the step")}</p>${can?`<div class="pbar">${ids.length>1?`<button data-first>${L("Mettre en premier","Make it first")}</button>`:""}${imgOpen()?`<button data-redo hidden>${L("Refaire l'image","Redo the picture")}</button>`:""}<button data-del>${L("Retirer cette photo","Remove this photo")}</button></div>`:""}`;
+  const rail=o.querySelector(".prail"),pn=o.querySelector(".pn"),fb=o.querySelector("[data-first]"),del=o.querySelector("[data-del]"),cap=o.querySelector(".pcap"),redo=o.querySelector("[data-redo]");
   const at=()=>Math.max(0,Math.min(srcs.length-1,Math.round(rail.scrollLeft/Math.max(1,rail.clientWidth))));
-  const upd=()=>{const c=at();pn.textContent=srcs.length>1?`${c+1} / ${srcs.length}`:"";if(fb)fb.hidden=c===0};
+  const upd=()=>{const c=at(),g=isGen(c);pn.textContent=srcs.length>1?`${c+1} / ${srcs.length}`:"";if(fb)fb.hidden=c===0;cap.hidden=!g;if(redo)redo.hidden=!g;if(del)del.textContent=g?L("Retirer cette image","Remove this picture"):L("Retirer cette photo","Remove this photo")};
   const close=()=>{o.remove();document.removeEventListener("keydown",key)},key=ev=>{if(ev.key==="Escape")close()};
   const oops=()=>toast(L("Ça n'a pas marché, réessaie","It failed, try again"));
   o.addEventListener("click",ev=>{if(ev.target.closest("[data-x]")||ev.target===o||ev.target.parentNode===rail)close()});
@@ -3686,11 +3710,14 @@ function stepViewer(r,i,k,edit,shown){
   const place=()=>{rail.scrollLeft=k*rail.clientWidth;upd()};
   document.body.appendChild(o);place();requestAnimationFrame(()=>{if(o.isConnected&&at()!==k)place()});
   if(fb)fb.onclick=async()=>{const id=ids[at()];close();try{await stepSetPics(r,i,l=>l.includes(id)?[id,...l.filter(x=>x!==id)]:l)}catch{oops()}};
-  if(del)del.onclick=async()=>{const c=at(),gone=ids[c];close();
+  if(redo)redo.onclick=()=>{const id=ids[at()];close();imgRedo(r,i,id)};
+  if(del)del.onclick=async()=>{const c=at(),gone=ids[c],g=gen.has(gone);close();
     // la photo quitte l'étape mais reste sur l'appareil (comme pour une recette supprimée) : « Annuler » la remet à sa place
+    // (une image de l'IA retirée exprès ne revient pas toute seule sur cette étape)
     try{
-      await stepSetPics(r,i,l=>l.filter(x=>x!==gone));
-      toast(L("Photo retirée","Photo removed"),{ms:7000,fn:async()=>{try{await stepSetPics(r,i,l=>l.includes(gone)?l:[...l.slice(0,c),gone,...l.slice(c)])}catch{toast(L("Impossible de la remettre","Couldn't bring it back"))}}});
+      await stepSetPics(r,i,l=>l.filter(x=>x!==gone),g?x=>({imgNon:[...new Set([...arr(x.imgNon),stepKey(arr(x.etapes)[i])])]}):null);
+      if(g)IMG.force.delete(r.id);
+      toast(g?L("Image retirée","Picture removed"):L("Photo retirée","Photo removed"),{ms:7000,fn:async()=>{try{await stepSetPics(r,i,l=>l.includes(gone)?l:[...l.slice(0,c),gone,...l.slice(c)])}catch{toast(L("Impossible de la remettre","Couldn't bring it back"))}}});
     }catch{oops()}};
 }
 // recettes dont les schémas sont en train d'être dessinés : le bouton reste occupé même si la fiche se redessine entre-temps
@@ -3727,6 +3754,302 @@ Réponds UNIQUEMENT avec ce JSON : {"schemas":[ un SVG (chaîne) par étape, dan
     if(n)toast(n+" schéma"+(n>1?"s":"")+" ajouté"+(n>1?"s":""));
   }catch(e){drawing.delete(r.id);say("Réessayer les schémas",false);toast(errText(e))}
 }
+/* ---------- 🖼️ une image réaliste sous chaque étape, créée toute seule (appli installée uniquement) ----------
+   Le texte des étapes devient une courte description (lecture gratuite du serveur), puis le serveur de Mijonote crée l'image.
+   Offre gratuite uniquement : un nombre limité d'images par jour pour tout le monde ; quand il est atteint, la suite reprend le lendemain.
+   L'image va sur une étape restée sans photo. Ses identifiants sont notés dans imgIA (mention « créée par l'IA », bouton « Refaire »,
+   hors sauvegarde et partage : elle se recrée toute seule). imgNon = les étapes dont la personne a retiré l'image exprès. */
+const IMG={run:false,off:false,wait:Number(ls.get("imgia_wait",0))||0,down:0,fails:0,lost:0,told:0,t:null,at:0,force:new Set(),bad:new Set(),later:new Map(),tries:new Map(),pq:new Map(),
+  prompts:(p=>p&&typeof p==="object"&&!Array.isArray(p)?p:{})(ls.get("imgia_p",{}))};
+const imgAvail=()=>!!(sample&&sample.image&&db&&assets);
+const imgAuto=()=>ls.get("imgia",true)!==false;
+// le service existe et n'a pas dit qu'il était fermé
+const imgOpen=()=>imgAvail()&&!IMG.off;
+// plus d'images pour aujourd'hui (le quota gratuit du jour est atteint)
+const imgQuota=()=>Date.now()<IMG.wait;
+// des images peuvent être créées en ce moment (slack : une courte attente avant un nouvel essai ne change rien à l'écran)
+const imgNow=(slack=0)=>imgOpen()&&!imgQuota()&&Date.now()+slack>=IMG.down&&navigator.onLine!==false;
+const stepKey=e=>hstr((e?.titre||"")+"\n"+(e?.texte||""));
+// cette recette est-elle illustrée toute seule (réglage) ou parce qu'on vient de le demander ?
+const imgFor=raw=>imgAuto()||IMG.force.has(raw.id);
+// l'étape i de la recette (telle qu'elle est enregistrée) attend-elle une image ?
+const imgNeeds=(raw,i)=>{const e=arr(raw.etapes)[i];return !!e&&!stepIds(e).length&&String(e.texte||e.titre||"").trim().length>2&&!IMG.bad.has(raw.id+":"+stepKey(e))&&(IMG.force.has(raw.id)||!arr(raw.imgNon).includes(stepKey(e)))};
+const imgHeld=id=>(IMG.later.get(id)||0)>Date.now();
+// une image va bientôt arriver sous l'étape i de la recette affichée : on lui garde sa place
+// (après trois ratés de suite, plus de place gardée tant qu'une image n'est pas arrivée : rien ne clignote si le service est en panne)
+const imgPending=(r,i)=>{const raw=r._raw||r;return IMG.fails<3&&imgNow(65000)&&imgFor(raw)&&!imgHeld(raw.id)&&recRaw.some(x=>x.id===raw.id)&&imgNeeds(raw,i)};
+// (même boîte que les photos : rien ne bouge quand l'image prend sa place)
+const stepWaitHTML=big=>`<div class="steppics wait${big?" big":""}" role="status"><span><i>${L("Image en cours…","Picture on its way…")}</i></span></div>`;
+const IMG_QUOTA=()=>L("Plus d'images pour aujourd'hui : la suite se crée demain.","No more pictures today: the rest comes tomorrow.");
+// au-dessus des étapes : les schémas à dessiner (quand les images ne se créent pas toutes seules), les images à demander, ou le mot d'attente
+function stepsHeadHTML(r,opt){
+  if(opt.temp||!db||!assets)return "";
+  const raw=r._raw||r,E=arr(raw.etapes),miss=E.map((e,i)=>i).filter(i=>!stepIds(E[i]).length);
+  if(!miss.length)return "";
+  const auto=imgOpen()&&imgFor(raw),non=miss.filter(i=>arr(raw.imgNon).includes(stepKey(E[i])));
+  const gen=imgOpen()&&!IMG.force.has(raw.id)&&(!auto||non.length)?`<button class="stepadd draw" id="genSteps">${emo("🎨")} ${miss.length===E.length?L("Créer les images des étapes","Create the step pictures"):L("Créer les images qui manquent","Create the missing pictures")}</button>`:"";
+  // les images réalistes se créent toutes seules : pas de schémas en plus, les deux se marcheraient dessus
+  if(auto)return (imgQuota()&&miss.length>non.length?`<p class="note imgnote">${IMG_QUOTA()}</p>`:"")+gen;
+  return (sample?`<button class="stepadd draw${drawing.has(r.id)?" busy":""}" id="drawSteps">${emo("✏️")} ${drawing.has(r.id)?"Claude dessine…":"Dessiner les schémas des étapes"}</button>`:"")+gen;
+}
+function stepsHeadBind(){
+  const ds=$("#drawSteps");if(ds)ds.onclick=()=>{if(cur)drawSchemas(cur.r)};
+  const gs=$("#genSteps");if(gs)gs.onclick=()=>{if(cur)imgAsk(cur.r)};
+}
+// les vignettes ouvrent les photos de la recette affichée à ce moment-là (la fiche n'est pas redessinée quand une image arrive)
+function stepPicsBind(sh){
+  sh.querySelectorAll("[data-steppic]").forEach(b=>b.onclick=()=>{const c=cur;if(!c)return;const [i,k]=b.dataset.steppic.split(":").map(Number);stepViewer(c.r,i,k,!c.opt.temp&&!!assets&&!!db,arr(c.r.etapes)[i])});
+  stepPicsWatch(sh);
+}
+const picsKey=el=>el?(el.classList.contains("wait")?"w":[...el.querySelectorAll("img")].map(im=>im.getAttribute("src")).join("|")):"";
+// remplace ce qu'il y a sous une étape (photos, place gardée ou rien) seulement si ça a changé ; before = l'élément devant lequel ça se range
+function picsSwap(box,html,before){
+  const old=box.querySelector(".steppics"),t=document.createElement("div");t.innerHTML=html;const nw=t.firstElementChild;
+  if(picsKey(old)===picsKey(nw)||!before)return false;
+  if(old)old.remove();if(nw)before.parentNode.insertBefore(nw,before);
+  return true;
+}
+// en mode cuisine, sous le titre de l'étape : ses photos en grand, ou la place de l'image qui arrive
+function ckPicsHTML(){
+  const r=ck.r,e=arr(r.etapes)[ck.i];if(!e)return "";
+  const seg=vSeg(r,ck.i),h=!seg||arr(e.images).length?stepPicsHTML(e,ck.i,true):"";
+  if(h||seg)return h;
+  const i=cur&&cur.r&&!cur.opt.temp&&cur.r.id===r.id?arr(cur.r.etapes).indexOf(e):-1;
+  return i>=0&&imgPending(cur.r,i)?stepWaitHTML(true):"";
+}
+// Les images d'une recette ont changé (image créée, photo arrivée d'un autre appareil) ou vont arriver : on change seulement ce qu'il y a
+// sous les étapes, sans redessiner la fiche ni le mode cuisine (on perdrait ce que la personne est en train d'écrire ou de lire).
+// nr = la recette à jour, dans la langue d'affichage ; sans nr, on revoit juste les places gardées et le haut des étapes.
+function stepPicsSync(nr){
+  const same=(a,b)=>!!a&&!!b&&a.titre===b.titre&&a.texte===b.texte,sig=e=>stepIds(e).join(",");
+  const put=(to,from)=>{delete to.image;delete to.images;if(from.image)to.image=from.image;if(arr(from.images).length)to.images=[...from.images]};
+  if(cur&&cur.r&&!cur.opt.temp&&(!nr||cur.r.id===nr.id)){
+    const r=cur.r,sh=$("#sheet");let full=false;
+    if(nr&&nr!==r){
+      const E=arr(r.etapes),N=arr(nr.etapes);
+      // autre chose que les images a changé, ou une étape passe le nombre maximum de photos : on redessine comme avant
+      if(E.length!==N.length||E.some((e,i)=>!same(e,N[i]))||E.some((e,i)=>(stepIds(e).length>=MAX_STEP_PICS)!==(stepIds(N[i]).length>=MAX_STEP_PICS)))full=true;
+      else{
+        E.forEach((e,i)=>{if(sig(e)!==sig(N[i]))put(e,N[i]);const a=r._raw&&arr(r._raw.etapes)[i],b=nr._raw&&arr(nr._raw.etapes)[i];if(a&&b&&a!==e&&sig(a)!==sig(b))put(a,b)});
+        const a=r._raw||r,b=nr._raw||nr;for(const k of ["imgIA","imgNon"]){if(b[k]!==undefined)a[k]=b[k];else delete a[k]}
+      }
+    }
+    if(full)showRecipe(nr,{...cur.opt,refresh:true});
+    else{
+    sh.querySelectorAll("ol.steps>li[data-step]").forEach(li=>{
+      const i=+li.dataset.step,e=arr(r.etapes)[i];if(!e)return;
+      if(!picsSwap(li,stepPicsHTML(e,i)||(imgPending(r,i)?stepWaitHTML():""),li.querySelector(".stepacts")))return;
+      const lab=li.querySelector("label.stepadd:not(.busy)"),sp=lab&&lab.querySelector("span:not(.emo)");
+      if(sp)sp.textContent=stepIds(e).length?L("Ajouter d'autres photos","Add more photos"):L("Ajouter des photos","Add photos");
+    });
+    stepPicsBind(sh);
+    const hd=$("#stepsHead"),h=hd?stepsHeadHTML(r,cur.opt):"";
+    if(hd&&hd._h!==h){hd.innerHTML=h;hd._h=h;stepsHeadBind()}
+    }
+  }
+  const c=$("#cook");
+  if(ck.r&&c&&!c.hidden&&(!nr||ck.r.id===nr.id)){
+    const S=arr(ck.r.etapes);
+    if(nr){const N=arr(nr.etapes),used=new Set();for(const e of S){const j=N.findIndex((x,k)=>!used.has(k)&&same(x,e));if(j<0)continue;used.add(j);if(sig(e)!==sig(N[j]))put(e,N[j])}}
+    const body=c.querySelector(".body"),e=S[ck.i];
+    if(body&&e&&picsSwap(body,ckPicsHTML(),body.querySelector(".cknote")||body.querySelector(".txt")))ckPicsBind(c,ck.r,e);
+  }
+}
+function ckPicsBind(c,r,e){
+  c.querySelectorAll("[data-steppic]").forEach(b=>b.onclick=()=>stepViewer(r,ck.i,+b.dataset.steppic.split(":")[1],false,e));
+  stepPicsWatch(c);
+}
+// ce qui s'affiche autour des images (places gardées, mot d'attente, compteur de Mon compte) suit l'état du service
+function imgUi(){stepPicsSync();if(st.view==="compte")render()}
+function imgSoon(ms=4000){
+  if(!imgOpen()||IMG.run)return;
+  const at=Date.now()+ms;if(IMG.t&&IMG.at<=at)return;
+  clearTimeout(IMG.t);IMG.at=at;IMG.t=setTimeout(()=>{IMG.t=null;imgRun()},ms);
+}
+// la prochaine image à créer : d'abord la recette ouverte (ou celle qu'on cuisine) et celles demandées à la main, puis tout le carnet, les plus récentes d'abord
+function imgNext(){
+  const pick=raw=>{if(!raw||!imgFor(raw)||imgHeld(raw.id))return null;const E=arr(raw.etapes);for(let i=0;i<E.length;i++)if(imgNeeds(raw,i))return {id:raw.id,i};return null};
+  const c=$("#cook");
+  for(const id of [openId,ck.r&&c&&!c.hidden?ck.r.id:null,...IMG.force]){const j=id&&pick(recRaw.find(x=>x.id===id));if(j)return j}
+  // le reste du carnet attend pendant qu'on ajoute une recette (sa lecture passe avant) ou qu'on met en page le livre (rien ne doit bouger sous les doigts)
+  if(!imgAuto()||st.view==="scan"||st.view==="album")return null;
+  for(const raw of [...recRaw].sort((a,b)=>(b.ajoute||0)-(a.ajoute||0))){const j=pick(raw);if(j)return j}
+  return null;
+}
+async function imgRun(){
+  if(IMG.run||!loaded)return;
+  IMG.run=true;
+  try{
+    stepPicsSync();
+    for(;;){
+      if(!imgNow()||document.visibilityState==="hidden")break;
+      const job=imgNext();if(!job)break;
+      const ok=await imgOne(job);
+      if(!imgNow())break; // quota du jour atteint, service fermé ou nouvel essai prévu : l'écran le dit tout de suite
+      await new Promise(z=>setTimeout(z,ok?400:1500));
+    }
+  }finally{
+    IMG.run=false;imgUi();
+    // un nouvel essai est prévu (lecture occupée, souci passager) : on reprend à ce moment-là
+    const next=Math.min(IMG.down>Date.now()?IMG.down:Infinity,...[...IMG.later.values()].filter(t=>t>Date.now()));
+    if(next<Infinity&&imgOpen()&&!imgQuota())imgSoon(next-Date.now()+500);
+  }
+}
+// les descriptions des photos d'une recette, écrites une fois par la lecture gratuite du serveur (jamais avec la clé de la personne)
+function imgPrompts(raw){
+  const cut=(t,n)=>{t=String(t??"").replace(/\s+/g," ").trim();return t.length>n?t.slice(0,n)+"…":t};
+  const steps=arr(raw.etapes),titre=cut(raw.titre,140);
+  const ing=cut(arr(raw.ingredients).flatMap(g=>arr(g.items).map(x=>x.nom)).filter(Boolean).slice(0,40).join(", "),900);
+  // les descriptions gardées valent pour tout ce que la demande reprend de la recette : titre, ingrédients, étapes
+  const h=hstr(JSON.stringify([titre,ing,steps.map(e=>[e.titre||"",e.texte||""])]));
+  const c=IMG.prompts[raw.id];if(c&&c.h===h&&arr(c.p).length===steps.length)return Promise.resolve(c);
+  const k=raw.id+":"+h;if(IMG.pq.has(k))return IMG.pq.get(k);
+  const max=Math.max(160,Math.floor(20000/Math.max(1,steps.length)));
+  const q=sample.json(`Tu prépares les photos d'un livre de cuisine pas à pas. Pour chaque étape de la recette « ${titre} », écris en ANGLAIS la description d'une photo réaliste qui montre le moment clé de l'étape : ce qu'on voit sur le plan de travail, sur le feu ou dans le four à ce moment-là.
+Règles :
+- une phrase de 25 à 45 mots par étape, concrète : le récipient ou l'ustensile principal, ce qu'il contient avec sa couleur et sa texture à CE stade de la recette (cru, coupé, fondu, monté, doré…), et l'angle de vue (vue de dessus ou de trois quarts) ;
+- montre la préparation telle qu'elle est à ce stade : le plat fini n'apparaît qu'à la dernière étape ;
+- jamais de personne, de visage ni de main ; jamais de texte, d'étiquette, de marque ni de nom propre ;
+- garde les mêmes récipients d'une étape à l'autre, et redis à chaque fois leur matière et leur couleur : chaque description doit se comprendre toute seule, sans les autres.
+Écris aussi « decor » : une courte phrase en anglais qui décrit seulement le plan de travail, l'arrière-plan et la lumière, les mêmes pour toutes les photos (exemple : "light oak countertop, pale linen cloth in the background, soft daylight from a window").
+Ingrédients : ${ing||"(non précisés)"}
+Étapes :
+${steps.map((e,i)=>`${i+1}. ${cut(e.titre,120)} : ${cut(e.texte,max)}`).join("\n")}
+Réponds UNIQUEMENT avec ce JSON : {"decor":"…","photos":[ une description (chaîne) par étape, dans l'ordre, ${steps.length} au total ]}`,{modelTier:"quick",cache:false,noLang:true,serveur:true}).then(out=>{
+    const p=arr(out?.photos).map(x=>typeof x==="string"?cut(x,420):"");
+    if(p.length!==steps.length||!p.some(Boolean))throw {code:"invalid_json"};
+    const v={h,d:typeof out.decor==="string"?cut(out.decor,220):"",p};
+    delete IMG.prompts[raw.id];IMG.prompts[raw.id]=v;
+    const ks=Object.keys(IMG.prompts);while(ks.length>25)delete IMG.prompts[ks.shift()];
+    ls.set("imgia_p",IMG.prompts);
+    return v;
+  }).finally(()=>IMG.pq.delete(k));
+  IMG.pq.set(k,q);return q;
+}
+// (ce créateur d'images ne comprend pas les « sans… » : on dit seulement ce qu'on veut voir)
+const imgText=(P,i)=>`${P.p[i]} ${P.d?"Scene: "+P.d.replace(/[.\s]+$/,"")+". ":""}Realistic food photography for a step-by-step cookbook, still life with only food and kitchenware in the frame, natural light, natural colors, sharp focus, subject centered.`.slice(0,1400);
+const imgSeed=(id,i)=>parseInt(hstr(id+":"+i),36)%2147483647;
+// l'image reçue (carrée) devient une photo d'étape 4:3 légère : c'est le cadre des vignettes, et elle pèse peu sur l'appareil et sur le compte
+async function imgFit(b,W=768){
+  let bm,u=null;
+  try{bm=await createImageBitmap(b)}catch{u=URL.createObjectURL(b);bm=await new Promise((ok,ko)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ko({code:"api_error"});im.src=u})}
+  try{
+    const w=bm.width||bm.naturalWidth,h=bm.height||bm.naturalHeight;if(!w||!h)throw {code:"api_error"};
+    const cw=Math.min(w,h*4/3),ch=cw*3/4,ow=Math.min(W,Math.round(cw)),oh=Math.round(ow*3/4);
+    const c=document.createElement("canvas");c.width=ow;c.height=oh;
+    const x=c.getContext("2d");x.imageSmoothingQuality="high";x.drawImage(bm,(w-cw)/2,(h-ch)/2,cw,ch,0,0,ow,oh);
+    const out=await new Promise(ok=>c.toBlob(ok,"image/jpeg",.8));c.width=c.height=0;
+    if(!out)throw {code:"api_error"};
+    return out;
+  }finally{bm.close?.();if(u)URL.revokeObjectURL(u)}
+}
+// L'image a pris du temps : on repart de la recette telle qu'elle est maintenant, et elle ne va que sur l'étape restée sans photo
+// (une photo, un schéma ou une astuce ont pu être ajoutés pendant que l'image se créait).
+async function imgPut(id,was,at,aid){
+  if(!recRaw.some(x=>x.id===id))return false;
+  const raw=freshRaw({id}),E=arr(raw.etapes),fits=k=>!!E[k]&&!stepIds(E[k]).length&&E[k].titre===was.titre&&E[k].texte===was.texte;
+  const i=fits(at)?at:E.findIndex((e,k)=>fits(k));if(i<0)return false;
+  const etapes=E.map((e,k)=>k===i?{...e,image:aid}:{...e}),imgIA=[...new Set([...arr(raw.imgIA),aid])];
+  await db.collection("recettes").doc(id).update({etapes,imgIA});
+  stepPicsSync(loc({...raw,etapes,imgIA}));
+  return true;
+}
+// souci passager (lecture ou service occupés, réseau) : nouvel essai un peu plus tard ; au troisième de suite, on laisse passer quelques minutes
+const imgLater=ms=>{IMG.down=Date.now()+(++IMG.fails>=3?300000:ms)};
+const imgMidnight=()=>{const d=new Date();return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1,0,2)}; // le quota gratuit repart à minuit UTC
+function imgStop(e){
+  const c=e?.code;
+  if(c==="quota"){IMG.wait=imgMidnight();ls.set("imgia_wait",IMG.wait);return true}
+  if(c==="off"){IMG.off=true;return true} // service pas branché : on n'insiste pas
+  return false;
+}
+async function imgOne({id,i}){
+  const raw=recRaw.find(x=>x.id===id),e=raw&&arr(raw.etapes)[i];if(!e)return false;
+  const key=id+":"+stepKey(e);let aid=null,P,got;
+  try{P=await imgPrompts(raw)}
+  catch(err){
+    const c=err?.code;
+    // réponse illisible pour cette recette : elle attend deux minutes, puis on ne la retente plus avant la prochaine ouverture de l'appli
+    if(c==="invalid_json"||c==="prompt_too_large"){const n=(IMG.tries.get(id)||0)+1;IMG.tries.set(id,n);IMG.later.set(id,n>=2?Infinity:Date.now()+120000);return false}
+    // lecture occupée : on attend une minute ; autre souci passager (réseau, serveur) : un quart de minute
+    imgLater(c==="rate_limited"?60000:15000);
+    return false;
+  }
+  if(!String(P.p[i]||"").trim()){IMG.bad.add(key);return false}
+  try{got=await sample.image(imgText(P,i),{seed:imgSeed(id,i)})}
+  catch(err){
+    if(imgStop(err)){if(err?.code==="quota"&&openId&&IMG.told!==IMG.wait){IMG.told=IMG.wait;toast(IMG_QUOTA())}return false}
+    if(err?.code==="refused"){IMG.bad.add(key);return false}
+    imgLater(15000); // service occupé, réseau
+    return false;
+  }
+  IMG.fails=0; // le service répond
+  // Chaque image reçue compte dans le quota gratuit du jour : quoi qu'il arrive ensuite, cette étape n'en redemande pas d'autre
+  // toute seule avant la prochaine ouverture de l'appli (« Créer les images » la redemande).
+  try{
+    const fit=await imgFit(got);
+    aid=(await assets.upload(fit,{type:"image/jpeg"})).id;
+    const put=await imgPut(id,e,i,aid);
+    IMG.bad.add(key);
+    // l'étape a reçu une photo entre-temps, ou la recette a été supprimée : l'image n'est pas gardée
+    if(!put){try{await assets.delete(aid)}catch{}stepPicsSync()}
+    return put;
+  }catch(err){
+    IMG.bad.add(key);
+    if(aid){try{await assets.delete(aid)}catch{}}
+    // l'image n'a pas pu être rangée (plus de place sur l'appareil, image illisible…) : au troisième raté de ce genre, on arrête pour cette fois
+    if(err?.name==="QuotaExceededError"||++IMG.lost>=3)IMG.off=true;
+    stepPicsSync();
+    return false;
+  }
+}
+// « Créer les images » sur une recette : aussi quand le réglage est coupé, et pour les étapes dont l'image avait été retirée
+function imgAsk(r){
+  const raw=freshRaw(r);if(!imgOpen())return;
+  if(imgQuota()){toast(IMG_QUOTA());return}
+  if(navigator.onLine===false){toast(L("Pas de connexion : les images se créeront au retour d'internet.","No connection: the pictures will be made when you're back online."));return}
+  IMG.force.add(raw.id);IMG.later.delete(raw.id);IMG.tries.delete(raw.id);IMG.down=0;IMG.fails=0;
+  for(const k of [...IMG.bad])if(k.startsWith(raw.id+":"))IMG.bad.delete(k);
+  stepPicsSync();imgSoon(100);
+}
+// « Refaire l'image » : même étape, autre tirage ; l'ancienne image reste sur l'appareil, « Annuler » la remet
+async function imgRedo(r,i,old){
+  const raw=freshRaw(r),e=arr(raw.etapes)[i];if(!e||!imgOpen())return;
+  if(imgQuota()){toast(IMG_QUOTA());return}
+  const oops=()=>toast(L("L'image n'a pas pu être refaite, réessaie dans un instant","The picture could not be redone, try again in a moment"));
+  toast(L("Nouvelle image en cours…","New picture on its way…"));
+  let aid=null;
+  try{
+    const P=await imgPrompts(raw);if(!String(P.p[i]||"").trim())return oops();
+    const fit=await imgFit(await sample.image(imgText(P,i),{seed:Math.floor(Math.random()*2147483647)}));
+    aid=(await assets.upload(fit,{type:"image/jpeg"})).id;
+    let done=false;
+    await stepSetPics(r,i,l=>{if(!l.includes(old)||l.includes(aid))return l;done=true;return l.map(x=>x===old?aid:x)},x=>({imgIA:[...new Set([...arr(x.imgIA),aid])]}),true);
+    if(!done){try{await assets.delete(aid)}catch{}return}
+    toast(L("Image refaite","Picture redone"),{ms:7000,fn:async()=>{try{await stepSetPics(r,i,l=>l.includes(aid)&&!l.includes(old)?l.map(x=>x===aid?old:x):l,null,true)}catch{toast(L("Impossible de la remettre","Couldn't bring it back"))}}});
+  }catch(err){
+    if(aid){try{await assets.delete(aid)}catch{}}
+    if(imgStop(err)){imgUi();if(err.code==="quota"){toast(IMG_QUOTA());return}}
+    oops();
+  }
+}
+// Mon compte : le réglage et l'avancement des images d'étapes
+function imgAccHTML(){
+  if(!imgOpen())return "";
+  let total=0,done=0,left=0;
+  for(const r of recRaw)arr(r.etapes).forEach((e,i)=>{total++;if(stepIds(e).length)done++;else if(imgNeeds(r,i))left++});
+  const state=!imgAuto()?"":imgQuota()?IMG_QUOTA():total&&!left?(done===total?L("Toutes les images sont créées.","All the pictures are made."):L("Rien d'autre à créer pour l'instant.","Nothing else to make for now.")):navigator.onLine===false?L("En pause : pas de connexion.","Paused: no connection."):IMG.fails>=3?L("En pause : le service d'images ne répond pas pour l'instant. Nouvel essai dans quelques minutes.","Paused: the picture service isn't answering right now. Trying again in a few minutes."):IMG.run?L("Création en cours…","Making pictures…"):"";
+  return `<section class="acc"><h2>${L("Images des étapes","Step pictures")}</h2>
+    <p class="note" style="margin:0">${L("Mijonote crée toute seule une image réaliste sous chaque étape de tes recettes, quand l'appli est ouverte. C'est gratuit, avec un nombre limité d'images par jour : un grand carnet se remplit en quelques jours. Ces images sont créées par une IA à partir du texte de l'étape : elles donnent une idée, ce ne sont pas des photos de ta recette.","Mijonote makes a realistic picture under each step of your recipes by itself, while the app is open. It's free, with a limited number of pictures per day: a big cookbook fills up in a few days. These pictures are made by an AI from the step's text: they give an idea, they are not photos of your recipe.")}</p>
+    <label class="row" style="gap:.5rem;cursor:pointer;flex-wrap:nowrap"><input type="checkbox" id="imgAuto" ${imgAuto()?"checked":""} style="width:18px;height:18px;flex:none;accent-color:var(--basil)">${L("Créer les images toutes seules","Make the pictures automatically")}</label>
+    ${total?`<div class="kv"><span>${L("Étapes avec une image","Steps with a picture")}</span><b>${done} / ${total}</b></div>`:""}
+    ${state?`<p class="note" style="margin:0">${esc(state)}</p>`:""}
+  </section>`;
+}
+// de retour devant l'appli ou sur internet : on réessaie sans attendre la fin d'une pause
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){IMG.down=0;imgSoon(2500)}});
+addEventListener("online",()=>{IMG.down=0;IMG.fails=0;imgUi();imgSoon(2500)});
+addEventListener("offline",()=>imgUi());
 /* ---------- Courses : ingrédients manquants -> panier Carrefour (drive ou livraison) ---------- */
 const CF="Carrefour", haves=new Map();
 const haveOf=r=>{const k=r.id||r.titre;if(!haves.has(k))haves.set(k,new Set());return haves.get(k)};
@@ -4254,7 +4577,7 @@ async function famSync(){
   try{
     for(const r of famille.partage?recRaw.filter(famOk):[]){
       seen.add(r.id);
-      const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,...rec}=r;
+      const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,imgIA,imgNon,...rec}=r;
       rec.etapes=arr(rec.etapes).map(({image,images,...e})=>e);
       const h=hstr(JSON.stringify(rec)+"|"+(photo||"")+"|"+prenomMoi());if(cache[id]===h)continue;
       let ph=null;
@@ -4331,7 +4654,7 @@ const lienUrl=t=>APP_URL+"recette.html#"+t;
 const newToken=()=>{const a=new Uint8Array(16);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,"0")).join("")};
 // la recette telle qu'elle part : jamais les notes perso, le journal, les voix ni les vidéos
 function packShare(r){
-  const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,partageePar,ajoute,origine,_raw,_preview,...rec}=r;
+  const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,partageePar,ajoute,origine,imgIA,imgNon,_raw,_preview,...rec}=r;
   rec.etapes=arr(rec.etapes).map(({image,images,...e})=>e);
   return rec;
 }
@@ -4690,7 +5013,7 @@ function drawCook(){
       <h2>${esc(e.titre)}</h2>
       ${vSeg(r,ck.i)?`<div class="vstep"><video id="ckV" src="${pic(r.videoAsset)}" playsinline muted autoplay preload="auto"></video><button id="ckRe">${L("↺ Revoir","↺ Replay")}</button></div>`
         :""}
-      ${!vSeg(r,ck.i)||arr(e.images).length?stepPicsHTML(e,ck.i,true):""}
+      ${ckPicsHTML()}
       ${ck.i===0&&(recRaw.find(x=>x.id===r.id)||{}).maNote?`<div class="cknote">${emo("✍️")} <span><b>${L("Ta note","Your note")} :</b> ${esc(recRaw.find(x=>x.id===r.id).maNote)}</span></div>`:""}
       <div class="txt">${esc(scaleText(e.texte,ck.f))}</div>
       ${arr(e.ingredients).length?`<div class="use">${e.ingredients.map(x=>`<span>${esc(scaleText(x,ck.f))}</span>`).join("")}</div>`:""}
@@ -4699,8 +5022,7 @@ function drawCook(){
     </div>
     <div class="nav"><button class="prev" id="ckP" ${ck.i===0?"disabled":""}>Précédente</button><button id="ckN">${ck.i===n-1?"Terminé":"Suivante"}</button></div>`;
   $("#ckX").onclick=stopCook;
-  c.querySelectorAll("[data-steppic]").forEach(b=>b.onclick=()=>stepViewer(r,ck.i,+b.dataset.steppic.split(":")[1],false,e));
-  stepPicsWatch(c);
+  ckPicsBind(c,r,e);
   $("#ckP").onclick=()=>{if(ck.i>0){ck.i--;drawCook()}};
   $("#ckN").onclick=async()=>{if(ck.i<n-1){ck.i++;drawCook()}else{stopCook();const ok=await markMade(r,true);toast(ok?L("Bon appétit, c'est noté dans ton carnet","Enjoy! Noted in your cookbook"):"Bon appétit");if(ok&&cur&&cur.r.id===r.id)showRecipe(cur.r,{...cur.opt,refresh:true})}};
   const tb=$("#tmBtn");if(tb)tb.onclick=()=>toggleTimer(e.duree_min);
