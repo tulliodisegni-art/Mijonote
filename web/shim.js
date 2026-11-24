@@ -225,7 +225,12 @@ async function image(prompt,o={}){
   try{r=await fetch(IMG_URL,{method:"POST",signal:o.signal,headers:{"content-type":"application/json",apikey:IA.key},
     body:JSON.stringify({prompt:String(prompt||"").slice(0,1500),...(Number.isInteger(o.seed)?{seed:o.seed}:{})})})}
   catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");throw err("network")}
-  if(r.ok&&/^image\//.test(r.headers.get("content-type")||"")){const b=await r.blob();if(b.size>500)return b;throw err("api_error")}
+  if(r.ok&&/^image\//.test(r.headers.get("content-type")||"")){
+    let b;
+    // la connexion peut tomber pendant que l'image arrive : même erreur que si la demande n'était pas partie
+    try{b=await r.blob()}catch(e){throw err(o.signal&&o.signal.aborted?"cancelled":"network")}
+    if(b.size>500)return b;throw err("api_error");
+  }
   const out=await r.json().catch(()=>({}));
   // quota = plus d'images aujourd'hui · off = service pas branché · busy = réessayer plus tard · refused = cette image-là est refusée
   const c=typeof out.code==="string"?out.code:"";

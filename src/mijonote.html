@@ -3897,20 +3897,22 @@ async function imgRun(){
 }
 // les descriptions des photos d'une recette, écrites une fois par la lecture gratuite du serveur (jamais avec la clé de la personne)
 function imgPrompts(raw){
-  const steps=arr(raw.etapes),h=hstr(JSON.stringify(steps.map(e=>[e.titre||"",e.texte||""])));
+  const cut=(t,n)=>{t=String(t??"").replace(/\s+/g," ").trim();return t.length>n?t.slice(0,n)+"…":t};
+  const steps=arr(raw.etapes),titre=cut(raw.titre,140);
+  const ing=cut(arr(raw.ingredients).flatMap(g=>arr(g.items).map(x=>x.nom)).filter(Boolean).slice(0,40).join(", "),900);
+  // les descriptions gardées valent pour tout ce que la demande reprend de la recette : titre, ingrédients, étapes
+  const h=hstr(JSON.stringify([titre,ing,steps.map(e=>[e.titre||"",e.texte||""])]));
   const c=IMG.prompts[raw.id];if(c&&c.h===h&&arr(c.p).length===steps.length)return Promise.resolve(c);
   const k=raw.id+":"+h;if(IMG.pq.has(k))return IMG.pq.get(k);
-  const cut=(t,n)=>{t=String(t??"").replace(/\s+/g," ").trim();return t.length>n?t.slice(0,n)+"…":t};
   const max=Math.max(160,Math.floor(20000/Math.max(1,steps.length)));
-  const ing=arr(raw.ingredients).flatMap(g=>arr(g.items).map(x=>x.nom)).filter(Boolean).slice(0,40).join(", ");
-  const q=sample.json(`Tu prépares les photos d'un livre de cuisine pas à pas. Pour chaque étape de la recette « ${cut(raw.titre,140)} », écris en ANGLAIS la description d'une photo réaliste qui montre le moment clé de l'étape : ce qu'on voit sur le plan de travail, sur le feu ou dans le four à ce moment-là.
+  const q=sample.json(`Tu prépares les photos d'un livre de cuisine pas à pas. Pour chaque étape de la recette « ${titre} », écris en ANGLAIS la description d'une photo réaliste qui montre le moment clé de l'étape : ce qu'on voit sur le plan de travail, sur le feu ou dans le four à ce moment-là.
 Règles :
 - une phrase de 25 à 45 mots par étape, concrète : le récipient ou l'ustensile principal, ce qu'il contient avec sa couleur et sa texture à CE stade de la recette (cru, coupé, fondu, monté, doré…), et l'angle de vue (vue de dessus ou de trois quarts) ;
 - montre la préparation telle qu'elle est à ce stade : le plat fini n'apparaît qu'à la dernière étape ;
 - jamais de personne, de visage ni de main ; jamais de texte, d'étiquette, de marque ni de nom propre ;
 - garde les mêmes récipients d'une étape à l'autre, et redis à chaque fois leur matière et leur couleur : chaque description doit se comprendre toute seule, sans les autres.
 Écris aussi « decor » : une courte phrase en anglais qui décrit seulement le plan de travail, l'arrière-plan et la lumière, les mêmes pour toutes les photos (exemple : "light oak countertop, pale linen cloth in the background, soft daylight from a window").
-Ingrédients : ${cut(ing,900)||"(non précisés)"}
+Ingrédients : ${ing||"(non précisés)"}
 Étapes :
 ${steps.map((e,i)=>`${i+1}. ${cut(e.titre,120)} : ${cut(e.texte,max)}`).join("\n")}
 Réponds UNIQUEMENT avec ce JSON : {"decor":"…","photos":[ une description (chaîne) par étape, dans l'ordre, ${steps.length} au total ]}`,{modelTier:"quick",cache:false,noLang:true,serveur:true}).then(out=>{
