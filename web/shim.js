@@ -169,8 +169,10 @@ async function callServer(input,o){
   let r;
   try{r=await send(1568,.82)}
   catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");
+    // une photo illisible le restera : on le dit tel quel, sans parler du serveur
+    if(e&&e.code==="image_rejected")throw e;
     // deuxième essai avec des images plus légères
-    try{r=await send(1024,.75)}catch(e2){if(o.signal&&o.signal.aborted)throw err("cancelled");throw err("network",navigator.onLine===false?"Pas de connexion. Vérifie internet et réessaie.":"Le serveur de lecture n'a pas répondu. Réessaie avec moins d'images, ou dans un instant.")}}
+    try{r=await send(1024,.75)}catch(e2){if(o.signal&&o.signal.aborted)throw err("cancelled");if(e2&&e2.code==="image_rejected")throw e2;throw err("network",navigator.onLine===false?"Pas de connexion. Vérifie internet et réessaie.":"Le serveur de lecture n'a pas répondu. Réessaie avec moins d'images, ou dans un instant.")}}
   const out=await r.json().catch(()=>({}));
   if(!r.ok){const st=out.status||r.status;if(st===429)throw err("rate_limited");if(r.status===400)throw err("prompt_too_large");throw err("api_error","La lecture n'a pas marché ("+st+"). Réessaie dans un instant.")}
   const text=String(out.text||"");o.onText&&o.onText({text,delta:text});
@@ -232,6 +234,7 @@ async function image(prompt,o={}){
     if(b.size>500)return b;throw err("api_error");
   }
   const out=await r.json().catch(()=>({}));
+  if(o.signal&&o.signal.aborted)throw err("cancelled");
   // quota = plus d'images aujourd'hui · off = service pas branché · busy = réessayer plus tard · refused = cette image-là est refusée
   const c=typeof out.code==="string"?out.code:"";
   throw err(["quota","off","busy","refused"].includes(c)?c:r.status===404||r.status===401||r.status===403?"off":r.status===429||r.status>=500?"busy":"api_error");
