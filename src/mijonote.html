@@ -433,6 +433,7 @@ section.block>h2 .hand{color:var(--saffron);font-size:1.2rem}
 .steppics.wait.big span{width:min(320px,74vw);height:min(240px,55.5vw)}
 .steppics.wait i{position:relative;font-style:normal;opacity:.62}
 .steppics.wait span::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.42) 50%,transparent 70%);transform:translateX(-100%);animation:picwait 1.9s ease-in-out infinite}
+:root[data-theme="dark"] .steppics.wait span::before{background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.09) 50%,transparent 70%)}
 @keyframes picwait{to{transform:translateX(100%)}}
 @media (prefers-reduced-motion:reduce){.steppics.wait span::before{animation:none}}
 .imgnote{margin:-.2rem 0 .9rem}
