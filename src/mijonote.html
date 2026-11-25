@@ -3539,7 +3539,7 @@ function openRecipe(id,refresh){
   showRecipe(r,{refresh});
 }
 function showRecipe(r,opt={}){
-  if(!opt.refresh){factor=1;partSel=null;IMG.noteFor=null;if(!opt.temp)maybeRecipeTour()}
+  if(!opt.refresh){factor=1;partSel=null;IMG.noteFor=null;if(!opt.temp){imgSlowAgain(r.id);maybeRecipeTour()}}
   const full=r,parts=partsOf(full);if(partSel!=null&&!parts.some(p=>p.i===partSel))partSel=null;
   const R=onlyPart(full,partSel);
   cur={r,opt};openId=opt.temp?null:r.id;
@@ -3766,7 +3766,7 @@ Réponds UNIQUEMENT avec ce JSON : {"schemas":[ un SVG (chaîne) par étape, dan
 const IMG_LANES=3,IMG_BACK=2;
 const IMG={run:false,off:false,wait:Number(ls.get("imgia_wait",0))||0,down:0,fails:0,lost:0,told:0,t:null,at:0,force:new Set(),bad:new Set(),later:new Map(),tries:new Map(),pq:new Map(),
   T:{read:30000,image:25000,job:150000},
-  live:new Map(),reading:new Set(),calls:new Set(),slow:new Map(),slowRun:0,slowUndo:[],hid:0,poke:null,putq:Promise.resolve(),noteFor:null,
+  live:new Map(),reading:new Set(),calls:new Set(),slow:new Map(),slowRun:0,slowUndo:[],slowBad:new Set(),slowLaps:new Map(),hid:0,poke:null,putq:Promise.resolve(),noteFor:null,
   // les étapes dont l'image est refusée par le service, même redite autrement : on ne la redemande pas à chaque ouverture de l'appli
   no:new Set(arr(ls.get("imgia_no",[])).filter(k=>typeof k==="string")),
   prompts:(p=>p&&typeof p==="object"&&!Array.isArray(p)?p:{})(ls.get("imgia_p",{}))};
@@ -4059,8 +4059,19 @@ function imgSlow(key,giveUp,undo){
   if(++IMG.slowRun>=3){IMG.slowRun=0;for(const u of IMG.slowUndo)u();IMG.slowUndo=[];IMG.slow.clear();imgLater(15000)}
   else if(n>=2){giveUp();IMG.slowUndo.push(undo)}
 }
-// une réponse est arrivée (lecture ou image) : le service ne rame pas, ce qui a été écarté pour lenteur le reste
+// une réponse est arrivée (lecture ou image) : le service ne rame pas, ce qui a été écarté pour lenteur le reste pour l'instant
 const imgAnswered=()=>{IMG.slowRun=0;IMG.slowUndo=[]};
+// Écartée pour lenteur ne veut pas dire perdue : sur un téléphone, l'appli reste ouverte des jours sans être relancée. Une étape écartée
+// a droit à un nouvel essai quand on rouvre sa recette (id) ou qu'on revient dans l'appli, trois fois au plus (une demande muette
+// peut quand même compter dans le quota du jour). La recette dont la lecture traînait est relue tout de suite quand on la rouvre.
+function imgSlowAgain(id){
+  for(const k of [...IMG.slowBad]){
+    if(id&&!k.startsWith(id+":"))continue;
+    const laps=(IMG.slowLaps.get(k)||0)+1;if(laps>3)continue;
+    IMG.slowLaps.set(k,laps);IMG.slowBad.delete(k);IMG.bad.delete(k);IMG.slow.delete(k);
+  }
+  if(id&&IMG.slow.has("r:"+id)){IMG.slow.delete("r:"+id);if(Number.isFinite(IMG.later.get(id)))IMG.later.delete(id)}
+}
 // (plusieurs images en route ratent souvent ensemble : c'est un seul raté)
 const imgLater=ms=>{const now=Date.now();if(now>=IMG.down)IMG.fails++;IMG.down=Math.max(IMG.down,now+(IMG.fails>=3?300000:ms))};
 const imgMidnight=()=>{const d=new Date();return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1,0,2)}; // le quota gratuit repart à minuit UTC
@@ -4093,7 +4104,7 @@ async function imgOne({id,i,key}){
     catch(err){
       if(err?.soft)return false;
       if(imgStop(err)){if(err?.code==="quota"&&openId&&IMG.told!==IMG.wait){IMG.told=IMG.wait;toast(IMG_QUOTA())}return false}
-      if(err?.code==="timeout"||err?.code==="slow"){imgSlow(key,()=>IMG.bad.add(key),()=>IMG.bad.delete(key));return false} // pas de réponse dans les temps
+      if(err?.code==="timeout"||err?.code==="slow"){imgSlow(key,()=>{IMG.bad.add(key);IMG.slowBad.add(key)},()=>{IMG.bad.delete(key);IMG.slowBad.delete(key)});return false} // pas de réponse dans les temps
       if(err?.code!=="refused"){imgLater(15000);return false} // service occupé, réseau
       imgAnswered(); // (un refus est une réponse : le service ne rame pas)
       // Refusée : on fait redire la scène avec d'autres mots, une fois. Encore refusée : l'étape reste sans image, et on s'en souvient
@@ -4133,6 +4144,7 @@ function imgAsk(r){
   if(navigator.onLine===false){toast(L("Pas de connexion : les images se créeront au retour d'internet.","No connection: the pictures will be made when you're back online."));return}
   IMG.force.add(raw.id);IMG.later.delete(raw.id);IMG.tries.delete(raw.id);IMG.down=0;IMG.fails=0;
   for(const k of [...IMG.bad])if(k.startsWith(raw.id+":"))IMG.bad.delete(k);
+  for(const k of [...IMG.slowBad])if(k.startsWith(raw.id+":")){IMG.slowBad.delete(k);IMG.slowLaps.delete(k);IMG.slow.delete(k)}
   let n=0;for(const k of [...IMG.no])if(k.startsWith(raw.id+":")){IMG.no.delete(k);n++}
   if(n)ls.set("imgia_no",[...IMG.no]);
   stepPicsSync();imgSoon(100);
@@ -4180,6 +4192,7 @@ document.addEventListener("visibilitychange",()=>{
   // les demandes parties avant la pause : le téléphone les a souvent coupées sans le dire. On leur laisse un instant pour arriver,
   // puis on les abandonne (sans compter de raté) et la création repart.
   setTimeout(()=>{for(const c of [...IMG.calls])if(Date.now()-c.t0>20000)c.stop(true)},1500);
+  imgSlowAgain();
   imgSoon(2500);
 });
 addEventListener("online",()=>{IMG.down=0;IMG.fails=0;imgUi();imgSoon(2500)});
