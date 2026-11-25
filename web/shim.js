@@ -161,11 +161,13 @@ async function jpeg64(blob,max=1568,q=.82){
     out=await new Promise(r=>c.toBlob(r,"image/jpeg",q))}catch{throw err("image_rejected")}
   return await new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=()=>ko(r.error);r.readAsDataURL(out)});
 }
+// rapide:true = petit travail de fond où la vitesse compte (descriptions des photos d'étapes) : la fonction commence par son modèle
+// le plus rapide et ne laisse aucun essai attendre longtemps. Une ancienne version de la fonction ignore ce champ.
 async function callServer(input,o){
   const prompt=typeof input==="string"?input:input.map(m=>(m.role==="assistant"?"Ta réponse précédente : ":"")+m.content).join("\n\n");
   if(prompt.length>30000)throw err("prompt_too_large");
   const send=async(max,q)=>{const images=[];for(const b of (o.images||[]).slice(0,6))images.push(await jpeg64(b,max,q));
-    return fetch(IA.url,{method:"POST",signal:o.signal,headers:{"content-type":"application/json",apikey:IA.key},body:JSON.stringify({prompt,images,web:false})})};
+    return fetch(IA.url,{method:"POST",signal:o.signal,headers:{"content-type":"application/json",apikey:IA.key},body:JSON.stringify({prompt,images,web:false,...(o.rapide?{rapide:true}:{})})})};
   let r;
   try{r=await send(1568,.82)}
   catch(e){if(o.signal&&o.signal.aborted)throw err("cancelled");
@@ -236,8 +238,9 @@ async function image(prompt,o={}){
   const out=await r.json().catch(()=>({}));
   if(o.signal&&o.signal.aborted)throw err("cancelled");
   // quota = plus d'images aujourd'hui · off = service pas branché · busy = réessayer plus tard · refused = cette image-là est refusée
+  // slow = le service d'images n'a pas répondu dans les temps (cette demande-là est à refaire, le reste marche)
   const c=typeof out.code==="string"?out.code:"";
-  throw err(["quota","off","busy","refused"].includes(c)?c:r.status===404||r.status===401||r.status===403?"off":r.status===429||r.status>=500?"busy":"api_error");
+  throw err(["quota","off","busy","refused","slow"].includes(c)?c:r.status===404||r.status===401||r.status===403?"off":r.status===429||r.status>=500?"busy":"api_error");
 }
 const JSON_NOTE="\n\nRéponds uniquement avec le JSON demandé, sans texte autour ni balises de code.";
 const sample=Object.freeze(Object.assign((i,o)=>call(i,o),{

@@ -3539,7 +3539,7 @@ function openRecipe(id,refresh){
   showRecipe(r,{refresh});
 }
 function showRecipe(r,opt={}){
-  if(!opt.refresh){factor=1;partSel=null;if(!opt.temp)maybeRecipeTour()}
+  if(!opt.refresh){factor=1;partSel=null;IMG.noteFor=null;if(!opt.temp){imgSlowAgain(r.id);maybeRecipeTour()}}
   const full=r,parts=partsOf(full);if(partSel!=null&&!parts.some(p=>p.i===partSel))partSel=null;
   const R=onlyPart(full,partSel);
   cur={r,opt};openId=opt.temp?null:r.id;
@@ -3645,7 +3645,7 @@ function showRecipe(r,opt={}){
   const hd=$("#stepsHead");if(hd)hd._h=headH;stepsHeadBind();
   sh.querySelectorAll("[data-stepimg]").forEach(inp=>inp.onchange=()=>stepPhoto(r,+inp.dataset.stepimg,inp));
   stepPicsBind(sh);
-  if(!opt.temp&&!opt.refresh)imgSoon(200); // les images de cette recette passent en premier
+  if(!opt.temp&&!opt.refresh)imgSoon(50); // les images de cette recette passent en premier, tout de suite
   const si=$("#saveIdea");if(si)si.onclick=async()=>{si.disabled=true;si.textContent="Ajout…";
     if(opt.lien){try{const L0=opt.lien;await addShared(arr(L0.d.recettes)[0],L0.d.de);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"));if(L0.recu)recuDrop(L0.tok,true)}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
     if(opt.fam){try{await saveFamRecipe(r,opt.fam);closeSheet();toast(L("Ajoutée à ton carnet","Added to your cookbook"))}catch{si.disabled=false;si.textContent=L("Réessayer","Retry")}return}
@@ -3721,11 +3721,12 @@ function stepViewer(r,i,k,edit,shown){
     }catch{oops()}};
 }
 // recettes dont les schémas sont en train d'être dessinés : le bouton reste occupé même si la fiche se redessine entre-temps
-const drawing=new Set();
+// (drawFail : le dernier dessin a raté, le bouton propose de réessayer, là aussi même si la fiche se redessine)
+const drawing=new Set(),drawFail=new Set();
 async function drawSchemas(r){
   if(!sample||!assets||!db||drawing.has(r.id))return;
   const btn=()=>openId===r.id?$("#drawSteps"):null,say=(t,busy)=>{const b=btn();if(b){b.classList.toggle("busy",busy);b.lastChild.textContent=" "+t}};
-  drawing.add(r.id);say("Claude dessine…",true);
+  drawing.add(r.id);drawFail.delete(r.id);say("Claude dessine…",true);
   const steps=arr((r._raw||r).etapes);
   const prompt=`Tu es illustrateur culinaire. Pour la recette « ${r.titre} », dessine un schéma SVG simple et clair pour chaque étape ci-dessous, comme dans un livre de cuisine pédagogique.
 Style : dessin plat et propre, traits arrondis épaisseur 3 à 4, couleur de trait #3a2a20, aplats doux parmi #ffe9d6 #e6f2df #ffe5dc #fff0d1 #f0e3d2, accents #e0553a #3f7a4a #e39b1c. Fond #fffaf3 sur tout le cadre.
@@ -3752,16 +3753,31 @@ Réponds UNIQUEMENT avec ce JSON : {"schemas":[ un SVG (chaîne) par étape, dan
     drawing.delete(r.id);
     if(openId===r.id)showRecipe(loc(n?{...raw,etapes}:raw),{refresh:true});
     if(n)toast(n+" schéma"+(n>1?"s":"")+" ajouté"+(n>1?"s":""));
-  }catch(e){drawing.delete(r.id);say("Réessayer les schémas",false);toast(errText(e))}
+  }catch(e){drawing.delete(r.id);drawFail.add(r.id);say("Réessayer les schémas",false);toast(errText(e))}
 }
 /* ---------- 🖼️ une image réaliste sous chaque étape, créée toute seule (appli installée uniquement) ----------
    Le texte des étapes devient une courte description (lecture gratuite du serveur), puis le serveur de Mijonote crée l'image.
    Offre gratuite uniquement : un nombre limité d'images par jour pour tout le monde ; quand il est atteint, la suite reprend le lendemain.
    L'image va sur une étape restée sans photo. Ses identifiants sont notés dans imgIA (mention « créée par l'IA », bouton « Refaire »,
    hors sauvegarde et partage : elle se recrée toute seule). imgNon = les étapes dont la personne a retiré l'image exprès. */
+// Plusieurs images se créent en même temps (IMG_LANES) : la recette ouverte ou cuisinée passe toujours devant, le reste du carnet
+// avance derrière (IMG_BACK à la fois au plus). Aucune demande ne reste en l'air : passé son délai (T, en millisecondes : la lecture
+// des descriptions, une image, une étape entière), elle est abandonnée et la suite passe.
+const IMG_LANES=3,IMG_BACK=2;
 const IMG={run:false,off:false,wait:Number(ls.get("imgia_wait",0))||0,down:0,fails:0,lost:0,told:0,t:null,at:0,force:new Set(),bad:new Set(),later:new Map(),tries:new Map(),pq:new Map(),
+  T:{read:30000,image:25000,job:150000},
+  live:new Map(),reading:new Set(),calls:new Set(),slow:new Map(),slowRun:0,slowUndo:[],slowBad:new Set(),slowLaps:new Map(),hid:0,poke:null,putq:Promise.resolve(),noteFor:null,
+  // les étapes dont l'image est refusée par le service, même redite autrement : on ne la redemande pas à chaque ouverture de l'appli
+  no:new Set(arr(ls.get("imgia_no",[])).filter(k=>typeof k==="string")),
   prompts:(p=>p&&typeof p==="object"&&!Array.isArray(p)?p:{})(ls.get("imgia_p",{}))};
 const imgAvail=()=>!!(sample&&sample.image&&db&&assets);
+// Le quota gratuit du jour sert d'abord à la recette qu'on ouvre ou qu'on cuisine : le reste du carnet (travail de fond) n'en prend pas
+// plus de IMG_DAY_BACK par jour, pour qu'il en reste pour elle plus tard dans la journée. Le jour est celui du quota (UTC) ; dans ses
+// trois dernières heures, ce qui reste ne servirait plus à personne : le carnet peut le prendre. (Compté sur cet appareil : c'est une réserve, pas une mesure.)
+const IMG_DAY_BACK=120;
+const imgDay=()=>{const d=new Date().toISOString().slice(0,10),s=ls.get("imgia_day",null);return s&&s.d===d&&Number.isFinite(s.n)?s:{d,n:0}};
+const imgCounted=()=>{const s=imgDay();ls.set("imgia_day",{d:s.d,n:s.n+1})};
+const imgBackFull=(going=0)=>new Date().getUTCHours()<21&&imgDay().n+going>=IMG_DAY_BACK;
 const imgAuto=()=>ls.get("imgia",true)!==false;
 // le service existe et n'a pas dit qu'il était fermé
 const imgOpen=()=>imgAvail()&&!IMG.off;
@@ -3773,7 +3789,8 @@ const stepKey=e=>hstr((e?.titre||"")+"\n"+(e?.texte||""));
 // cette recette est-elle illustrée toute seule (réglage) ou parce qu'on vient de le demander ?
 const imgFor=raw=>imgAuto()||IMG.force.has(raw.id);
 // l'étape i de la recette (telle qu'elle est enregistrée) attend-elle une image ?
-const imgNeeds=(raw,i)=>{const e=arr(raw.etapes)[i];return !!e&&!stepIds(e).length&&String(e.texte||e.titre||"").trim().length>2&&!IMG.bad.has(raw.id+":"+stepKey(e))&&(IMG.force.has(raw.id)||!arr(raw.imgNon).includes(stepKey(e)))};
+const imgNeeds=(raw,i)=>{const e=arr(raw.etapes)[i];if(!e||stepIds(e).length||String(e.texte||e.titre||"").trim().length<=2)return false;
+  const s=stepKey(e),k=raw.id+":"+s;return !IMG.bad.has(k)&&!IMG.no.has(k)&&(IMG.force.has(raw.id)||!arr(raw.imgNon).includes(s))};
 const imgHeld=id=>(IMG.later.get(id)||0)>Date.now();
 // une image va bientôt arriver sous l'étape i de la recette affichée : on lui garde sa place
 // (après trois ratés de suite, plus de place gardée tant qu'une image n'est pas arrivée : rien ne clignote si le service est en panne)
@@ -3785,12 +3802,23 @@ const IMG_QUOTA=()=>L("Plus d'images pour aujourd'hui : la suite se crée demain
 function stepsHeadHTML(r,opt){
   if(opt.temp||!db||!assets)return "";
   const raw=r._raw||r,E=arr(raw.etapes),miss=E.map((e,i)=>i).filter(i=>!stepIds(E[i]).length);
-  if(!miss.length)return "";
   const auto=imgOpen()&&imgFor(raw),non=miss.filter(i=>arr(raw.imgNon).includes(stepKey(E[i])));
+  if(!miss.length&&!(auto&&IMG.noteFor===raw.id))return "";
   const gen=imgOpen()&&!IMG.force.has(raw.id)&&(!auto||non.length)?`<button class="stepadd draw" id="genSteps">${emo("🎨")} ${miss.length===E.length?L("Créer les images des étapes","Create the step pictures"):L("Créer les images qui manquent","Create the missing pictures")}</button>`:"";
   // les images réalistes se créent toutes seules : pas de schémas en plus, les deux se marcheraient dessus
-  if(auto)return (imgQuota()&&miss.length>non.length?`<p class="note imgnote">${IMG_QUOTA()}</p>`:"")+gen;
-  return (sample?`<button class="stepadd draw${drawing.has(r.id)?" busy":""}" id="drawSteps">${emo("✏️")} ${drawing.has(r.id)?"Claude dessine…":"Dessiner les schémas des étapes"}</button>`:"")+gen;
+  if(auto){
+    // pendant que les images arrivent : où on en est, et le conseil qui compte (l'appli doit rester ouverte). Un mot reste ensuite
+    // à cette place jusqu'à la fermeture de la fiche (jamais plus long que le premier) : rien ne bouge sous les yeux de la personne qui lit.
+    const wait=miss.filter(i=>imgPending(r,i)).length,ia=new Set(arr(raw.imgIA));
+    if(wait)IMG.noteFor=raw.id;
+    const note=imgQuota()&&miss.length>non.length?IMG_QUOTA()
+      :wait?L(`Les images arrivent : ${E.length-miss.length} sur ${E.length}. Garde Mijonote ouverte.`,`Pictures are on their way: ${E.length-miss.length} of ${E.length}. Keep Mijonote open.`)
+      :IMG.noteFor!==raw.id?""
+      :miss.some(i=>imgNeeds(raw,i))?L("Images en pause : la suite arrive toute seule.","Pictures paused: the rest comes by itself.")
+      :E.some(e=>stepIds(e).some(x=>ia.has(x)))?L("Images créées par l'IA, pour donner une idée.","AI-made pictures, to give an idea."):"";
+    return (note?`<p class="note imgnote" role="status">${note}</p>`:"")+gen;
+  }
+  return (sample?`<button class="stepadd draw${drawing.has(r.id)?" busy":""}" id="drawSteps">${emo("✏️")} ${drawing.has(r.id)?"Claude dessine…":drawFail.has(r.id)?"Réessayer les schémas":"Dessiner les schémas des étapes"}</button>`:"")+gen;
 }
 function stepsHeadBind(){
   const ds=$("#drawSteps");if(ds)ds.onclick=()=>{if(cur)drawSchemas(cur.r)};
@@ -3844,7 +3872,12 @@ function stepPicsSync(nr){
     });
     stepPicsBind(sh);
     const hd=$("#stepsHead"),h=hd?stepsHeadHTML(r,cur.opt):"";
-    if(hd&&hd._h!==h){hd.innerHTML=h;hd._h=h;stepsHeadBind()}
+    if(hd&&hd._h!==h){
+      const n0=hd.querySelector(".imgnote"),h0=n0?n0.offsetHeight:0;
+      hd.innerHTML=h;hd._h=h;
+      const n1=hd.querySelector(".imgnote");if(n1&&h0)n1.style.minHeight=h0+"px";
+      stepsHeadBind();
+    }
     }
   }
   const c=$("#cook");
@@ -3861,39 +3894,82 @@ function ckPicsBind(c,r,e){
 }
 // ce qui s'affiche autour des images (places gardées, mot d'attente, compteur de Mon compte) suit l'état du service
 function imgUi(){stepPicsSync();if(st.view==="compte")render()}
-function imgSoon(ms=4000){
-  if(!imgOpen()||IMG.run)return;
+function imgSoon(ms=2500){
+  if(!imgOpen())return;
+  // déjà au travail : on lui fait juste revoir qui passe devant (une recette vient de s'ouvrir, une place s'est libérée)
+  if(IMG.run){if(IMG.poke)IMG.poke();return}
   const at=Date.now()+ms;if(IMG.t&&IMG.at<=at)return;
   clearTimeout(IMG.t);IMG.at=at;IMG.t=setTimeout(()=>{IMG.t=null;imgRun()},ms);
 }
-// la prochaine image à créer : d'abord la recette ouverte (ou celle qu'on cuisine) et celles demandées à la main, puis tout le carnet, les plus récentes d'abord
+// La prochaine image à créer, parmi celles qui ne sont pas déjà en route : d'abord la recette qu'on cuisine (l'étape affichée, puis les suivantes),
+// la recette ouverte et celles demandées à la main ; ensuite tout le carnet, les plus récentes d'abord (back : pas plus de IMG_BACK à la fois).
+// Une recette dont les descriptions sont en train de s'écrire n'occupe qu'une place : ses autres images partent dès qu'elles sont là.
 function imgNext(){
-  const pick=raw=>{if(!raw||!imgFor(raw)||imgHeld(raw.id))return null;const E=arr(raw.etapes);for(let i=0;i<E.length;i++)if(imgNeeds(raw,i))return {id:raw.id,i};return null};
-  const c=$("#cook");
-  for(const id of [openId,ck.r&&c&&!c.hidden?ck.r.id:null,...IMG.force]){const j=id&&pick(recRaw.find(x=>x.id===id));if(j)return j}
+  const pick=(raw,from=0)=>{
+    if(!raw||!imgFor(raw)||imgHeld(raw.id)||IMG.reading.has(raw.id))return null;
+    const E=arr(raw.etapes),n=E.length;
+    for(let k=0;k<n;k++){const i=(from+k)%n;if(!imgNeeds(raw,i))continue;const key=raw.id+":"+stepKey(E[i]);if(!IMG.live.has(key))return {id:raw.id,i,key}}
+    return null;
+  };
+  const c=$("#cook"),cook=ck.r&&c&&!c.hidden?ck.r:null;
+  if(cook){
+    const at=cur&&cur.r&&!cur.opt.temp&&cur.r.id===cook.id?arr(cur.r.etapes).indexOf(arr(cook.etapes)[ck.i]):-1;
+    const j=pick(recRaw.find(x=>x.id===cook.id),Math.max(0,at));if(j)return j;
+  }
+  const front=[cook&&cook.id,openId,...IMG.force].filter(Boolean);
+  for(const id of front){const j=pick(recRaw.find(x=>x.id===id));if(j)return j}
   // le reste du carnet attend pendant qu'on ajoute une recette (sa lecture passe avant) ou qu'on met en page le livre (rien ne doit bouger sous les doigts)
   if(!imgAuto()||st.view==="scan"||st.view==="album")return null;
-  for(const raw of [...recRaw].sort((a,b)=>(b.ajoute||0)-(a.ajoute||0))){const j=pick(raw);if(j)return j}
+  // la recette ouverte attend ses descriptions : les places lui sont gardées, ses images partiront toutes ensemble
+  if(front.some(id=>IMG.reading.has(id)))return null;
+  let back=0;for(const j of IMG.live.values())if(j.back)back++;
+  if(back>=IMG_BACK||imgBackFull(back))return null; // (les images du carnet déjà en route comptent dans sa part du jour)
+  for(const raw of [...recRaw].sort((a,b)=>(b.ajoute||0)-(a.ajoute||0))){
+    if(IMG.reading.size&&!IMG.prompts[raw.id])continue; // une seule lecture à la fois pour le reste du carnet
+    const j=pick(raw);if(j)return {...j,back:true};
+  }
   return null;
 }
+// p, ou late si p n'a pas répondu au bout de ms
+const imgWithin=(ms,p,late)=>{let t;return Promise.race([p,new Promise(z=>{t=setTimeout(()=>z(late),ms)})]).finally(()=>clearTimeout(t))};
 async function imgRun(){
   if(IMG.run||!loaded)return;
   IMG.run=true;
+  const live=new Set();
   try{
-    stepPicsSync();
+    try{stepPicsSync()}catch(e){console.error(e)}
     for(;;){
-      if(!imgNow()||document.visibilityState==="hidden")break;
-      const job=imgNext();if(!job)break;
-      const ok=await imgOne(job);
-      if(!imgNow())break; // quota du jour atteint, service fermé ou nouvel essai prévu : l'écran le dit tout de suite
-      await new Promise(z=>setTimeout(z,ok?400:1500));
+      while(live.size<IMG_LANES&&imgNow()&&document.visibilityState!=="hidden"){
+        const job=imgNext();if(!job)break;
+        IMG.live.set(job.key,job);
+        // (une image qui ne répondrait jamais ne garde pas sa place : au bout du délai, la suite passe)
+        const p=imgWithin(IMG.T.job,imgOne(job),null).then(r=>{if(r===null)IMG.bad.add(job.key)},e=>{console.error(e)}).then(()=>{IMG.live.delete(job.key);live.delete(p)});
+        live.add(p);
+      }
+      if(!live.size)break;
+      // une image est arrivée ou a raté, ou la personne vient d'ouvrir une recette : on revoit qui passe devant
+      await Promise.race([...live,new Promise(z=>{IMG.poke=z})]);
+      IMG.poke=null;
+      await new Promise(z=>setTimeout(z,120));
     }
   }finally{
-    IMG.run=false;imgUi();
+    IMG.run=false;IMG.poke=null;
+    try{imgUi()}catch(e){console.error(e)}
     // un nouvel essai est prévu (lecture occupée, souci passager) : on reprend à ce moment-là
     const next=Math.min(IMG.down>Date.now()?IMG.down:Infinity,...[...IMG.later.values()].filter(t=>t>Date.now()));
     if(next<Infinity&&imgOpen()&&!imgQuota())imgSoon(next-Date.now()+500);
   }
+}
+// Une demande partie au serveur ne reste jamais en l'air : passé son délai, ou au retour dans l'appli après une pause (le téléphone coupe
+// les demandes en cours quand on change d'appli, parfois sans le dire), elle est abandonnée. soft = sans compter de raté : on recommence aussitôt.
+// Pareil pour une demande coupée ou trop longue alors que l'appli est passée à l'arrière-plan entre-temps : ce n'est pas le service qui a raté.
+function imgCall(ms,fn){
+  const ctl=typeof AbortController==="function"?new AbortController():null,call={t0:Date.now(),stop:null};let t;
+  const gone=new Promise((_,ko)=>{call.stop=soft=>{try{if(ctl)ctl.abort()}catch{}ko({code:"timeout",soft:!!soft})};t=setTimeout(()=>call.stop(false),ms)});
+  IMG.calls.add(call);
+  return Promise.race([Promise.resolve().then(()=>fn(ctl?ctl.signal:undefined)),gone])
+    .catch(e=>{throw e&&!e.soft&&(e.code==="network"||e.code==="timeout")&&IMG.hid>=call.t0?{code:"timeout",soft:true}:e})
+    .finally(()=>{clearTimeout(t);IMG.calls.delete(call)});
 }
 // les descriptions des photos d'une recette, écrites une fois par la lecture gratuite du serveur (jamais avec la clé de la personne)
 function imgPrompts(raw){
@@ -3901,21 +3977,24 @@ function imgPrompts(raw){
   const steps=arr(raw.etapes),titre=cut(raw.titre,140);
   const ing=cut(arr(raw.ingredients).flatMap(g=>arr(g.items).map(x=>x.nom)).filter(Boolean).slice(0,40).join(", "),900);
   // les descriptions gardées valent pour tout ce que la demande reprend de la recette : titre, ingrédients, étapes
-  const h=hstr(JSON.stringify([titre,ing,steps.map(e=>[e.titre||"",e.texte||""])]));
+  // (le 2 : les consignes d'écriture ont changé, les descriptions gardées avant ne servent plus)
+  const h=hstr(JSON.stringify([2,titre,ing,steps.map(e=>[e.titre||"",e.texte||""])]));
   const c=IMG.prompts[raw.id];if(c&&c.h===h&&arr(c.p).length===steps.length)return Promise.resolve(c);
   const k=raw.id+":"+h;if(IMG.pq.has(k))return IMG.pq.get(k);
   const max=Math.max(160,Math.floor(20000/Math.max(1,steps.length)));
-  const q=sample.json(`Tu prépares les photos d'un livre de cuisine pas à pas. Pour chaque étape de la recette « ${titre} », écris en ANGLAIS la description d'une photo réaliste qui montre le moment clé de l'étape : ce qu'on voit sur le plan de travail, sur le feu ou dans le four à ce moment-là.
+  const q=imgCall(IMG.T.read,signal=>sample.json(`Tu prépares les photos d'un livre de cuisine pas à pas. Pour chaque étape de la recette « ${titre} », écris en ANGLAIS la description d'une photo réaliste qui montre le moment clé de l'étape : ce qu'on voit sur le plan de travail, sur le feu ou dans le four à ce moment-là.
 Règles :
 - une phrase de 25 à 45 mots par étape, concrète : le récipient ou l'ustensile principal, ce qu'il contient avec sa couleur et sa texture à CE stade de la recette (cru, coupé, fondu, monté, doré…), et l'angle de vue (vue de dessus ou de trois quarts) ;
 - montre la préparation telle qu'elle est à ce stade : le plat fini n'apparaît qu'à la dernière étape ;
 - jamais de personne, de visage ni de main ; jamais de texte, d'étiquette, de marque ni de nom propre ;
+- aucun mot qui désigne aussi le corps, la peau ou la nudité (breast, thigh, leg, rump, skin, naked, bare, strip, rub…) : un filtre automatique refuserait la photo. Écris plutôt « chicken fillet », « poultry pieces », « peeled », « coated » ;
 - garde les mêmes récipients d'une étape à l'autre, et redis à chaque fois leur matière et leur couleur : chaque description doit se comprendre toute seule, sans les autres.
 Écris aussi « decor » : une courte phrase en anglais qui décrit seulement le plan de travail, l'arrière-plan et la lumière, les mêmes pour toutes les photos (exemple : "light oak countertop, pale linen cloth in the background, soft daylight from a window").
 Ingrédients : ${ing||"(non précisés)"}
 Étapes :
 ${steps.map((e,i)=>`${i+1}. ${cut(e.titre,120)} : ${cut(e.texte,max)}`).join("\n")}
-Réponds UNIQUEMENT avec ce JSON : {"decor":"…","photos":[ une description (chaîne) par étape, dans l'ordre, ${steps.length} au total ]}`,{modelTier:"quick",cache:false,noLang:true,serveur:true}).then(out=>{
+Réponds UNIQUEMENT avec ce JSON : {"decor":"…","photos":[ une description (chaîne) par étape, dans l'ordre, ${steps.length} au total ]}`,{modelTier:"quick",cache:false,noLang:true,serveur:true,rapide:true,signal})).then(out=>{
+    imgAnswered(); // la lecture répond
     const p=arr(out?.photos).map(x=>typeof x==="string"?cut(x,420):"");
     if(p.length!==steps.length||!p.some(Boolean))throw {code:"invalid_json"};
     const v={h,d:typeof out.decor==="string"?cut(out.decor,220):"",p};
@@ -3923,12 +4002,23 @@ Réponds UNIQUEMENT avec ce JSON : {"decor":"…","photos":[ une description (ch
     const ks=Object.keys(IMG.prompts);while(ks.length>25)delete IMG.prompts[ks.shift()];
     ls.set("imgia_p",IMG.prompts);
     return v;
-  }).finally(()=>IMG.pq.delete(k));
-  IMG.pq.set(k,q);return q;
+  }).finally(()=>{IMG.pq.delete(k);IMG.reading.delete(raw.id);if(IMG.poke)IMG.poke()});
+  IMG.pq.set(k,q);IMG.reading.add(raw.id);return q;
 }
 // (ce créateur d'images ne comprend pas les « sans… » : on dit seulement ce qu'on veut voir)
-const imgText=(P,i)=>`${P.p[i]} ${P.d?"Scene: "+P.d.replace(/[.\s]+$/,"")+". ":""}Realistic food photography for a step-by-step cookbook, still life with only food and kitchenware in the frame, natural light, natural colors, sharp focus, subject centered.`.slice(0,1400);
+const imgText=(P,i,t)=>`${t??P.p[i]} ${P.d?"Scene: "+P.d.replace(/[.\s]+$/,"")+". ":""}Realistic food photography for a step-by-step cookbook, still life with only food and kitchenware in the frame, natural light, natural colors, sharp focus, subject centered.`.slice(0,1400);
 const imgSeed=(id,i)=>parseInt(hstr(id+":"+i),36)%2147483647;
+// Le filtre du service d'images prend parfois un mot de cuisine pour autre chose et refuse la photo : la lecture gratuite redit la même scène autrement.
+async function imgSofter(text){
+  const out=await imgCall(IMG.T.read,signal=>sample.json(`Cette description d'une photo de cuisine a été refusée par erreur par le filtre automatique d'un créateur d'images : un mot de cuisine a été pris pour autre chose. Récris-la en ANGLAIS : la même scène, avec d'autres mots. N'emploie aucun mot qui désigne aussi le corps, la peau ou la nudité (breast, thigh, leg, rump, skin, naked, bare, strip, rub…) : écris plutôt « chicken fillet », « poultry pieces », « peeled », « coated ». Une seule phrase de 20 à 40 mots : le récipient ou l'ustensile, ce qu'il contient, l'angle de vue.
+Description refusée : ${text}
+Réponds UNIQUEMENT avec ce JSON : {"photo":"…"}`,{modelTier:"quick",cache:false,noLang:true,serveur:true,rapide:true,signal}));
+  imgAnswered();
+  const t=typeof out?.photo==="string"?out.photo.replace(/\s+/g," ").trim().slice(0,420):"";
+  if(t.length<12||t===text)throw {code:"invalid_json"};
+  return t;
+}
+const imgNo=key=>{IMG.no.add(key);ls.set("imgia_no",[...IMG.no].slice(-400))};
 // l'image reçue (carrée) devient une photo d'étape 4:3 légère : c'est le cadre des vignettes, et elle pèse peu sur l'appareil et sur le compte
 async function imgFit(b,W=768){
   let bm,u=null;
@@ -3943,19 +4033,47 @@ async function imgFit(b,W=768){
     return out;
   }finally{bm.close?.();if(u)URL.revokeObjectURL(u)}
 }
-// L'image a pris du temps : on repart de la recette telle qu'elle est maintenant, et elle ne va que sur l'étape restée sans photo
-// (une photo, un schéma ou une astuce ont pu être ajoutés pendant que l'image se créait).
-async function imgPut(id,was,at,aid){
-  if(!recRaw.some(x=>x.id===id))return false;
-  const raw=freshRaw({id}),E=arr(raw.etapes),fits=k=>!!E[k]&&!stepIds(E[k]).length&&E[k].titre===was.titre&&E[k].texte===was.texte;
-  const i=fits(at)?at:E.findIndex((e,k)=>fits(k));if(i<0)return false;
-  const etapes=E.map((e,k)=>k===i?{...e,image:aid}:{...e}),imgIA=[...new Set([...arr(raw.imgIA),aid])];
-  await db.collection("recettes").doc(id).update({etapes,imgIA});
-  stepPicsSync(loc({...raw,etapes,imgIA}));
-  return true;
+// L'image a pris du temps : on repart de la recette telle qu'elle est enregistrée maintenant, et elle ne va que sur l'étape restée sans photo
+// (une photo, un schéma ou une astuce ont pu être ajoutés pendant que l'image se créait). Plusieurs images arrivent parfois ensemble pour
+// la même recette : elles sont rangées l'une après l'autre, chacune à partir de ce que la précédente a écrit.
+function imgPut(id,was,at,aid){
+  const go=async()=>{
+    if(!recRaw.some(x=>x.id===id))return false;
+    const snap=await db.collection("recettes").doc(id).get();if(!snap.exists)return false;
+    const raw={id,...snap.data()},E=arr(raw.etapes),fits=k=>!!E[k]&&!stepIds(E[k]).length&&E[k].titre===was.titre&&E[k].texte===was.texte;
+    const i=fits(at)?at:E.findIndex((e,k)=>fits(k));if(i<0)return false;
+    const etapes=E.map((e,k)=>k===i?{...e,image:aid}:{...e}),imgIA=[...new Set([...arr(raw.imgIA),aid])];
+    await db.collection("recettes").doc(id).update({etapes,imgIA});
+    try{stepPicsSync(loc({...raw,etapes,imgIA}))}catch(e){console.error(e)}
+    return true;
+  };
+  const p=IMG.putq.then(go,go);IMG.putq=p.catch(()=>{});
+  return p;
 }
 // souci passager (lecture ou service occupés, réseau) : nouvel essai un peu plus tard ; au troisième de suite, on laisse passer quelques minutes
-const imgLater=ms=>{IMG.down=Date.now()+(++IMG.fails>=3?300000:ms)};
+// Pas de réponse dans les temps : le service garde parfois une demande en l'air pendant des minutes. On redemande une fois tout de suite
+// et le reste continue ; une 2e fois, cette image (ou cette recette) est écartée. Trois fois de suite sans rien recevoir du tout : c'est
+// le service qui rame, pas ces images-là. Celles qu'on venait d'écarter reviennent, et tout le monde fait une vraie pause.
+function imgSlow(key,giveUp,undo){
+  const n=(IMG.slow.get(key)||0)+1;IMG.slow.set(key,n);
+  if(++IMG.slowRun>=3){IMG.slowRun=0;for(const u of IMG.slowUndo)u();IMG.slowUndo=[];IMG.slow.clear();imgLater(15000)}
+  else if(n>=2){giveUp();IMG.slowUndo.push(undo)}
+}
+// une réponse est arrivée (lecture ou image) : le service ne rame pas, ce qui a été écarté pour lenteur le reste pour l'instant
+const imgAnswered=()=>{IMG.slowRun=0;IMG.slowUndo=[]};
+// Écartée pour lenteur ne veut pas dire perdue : sur un téléphone, l'appli reste ouverte des jours sans être relancée. Une étape écartée
+// a droit à un nouvel essai quand on rouvre sa recette (id) ou qu'on revient dans l'appli, trois fois au plus (une demande muette
+// peut quand même compter dans le quota du jour). La recette dont la lecture traînait est relue tout de suite quand on la rouvre.
+function imgSlowAgain(id){
+  for(const k of [...IMG.slowBad]){
+    if(id&&!k.startsWith(id+":"))continue;
+    const laps=(IMG.slowLaps.get(k)||0)+1;if(laps>3)continue;
+    IMG.slowLaps.set(k,laps);IMG.slowBad.delete(k);IMG.bad.delete(k);IMG.slow.delete(k);
+  }
+  if(id&&IMG.slow.has("r:"+id)){IMG.slow.delete("r:"+id);if(Number.isFinite(IMG.later.get(id)))IMG.later.delete(id)}
+}
+// (plusieurs images en route ratent souvent ensemble : c'est un seul raté)
+const imgLater=ms=>{const now=Date.now();if(now>=IMG.down)IMG.fails++;IMG.down=Math.max(IMG.down,now+(IMG.fails>=3?300000:ms))};
 const imgMidnight=()=>{const d=new Date();return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1,0,2)}; // le quota gratuit repart à minuit UTC
 function imgStop(e){
   const c=e?.code;
@@ -3963,27 +4081,43 @@ function imgStop(e){
   if(c==="off"){IMG.off=true;return true} // service pas branché : on n'insiste pas
   return false;
 }
-async function imgOne({id,i}){
+async function imgOne({id,i,key}){
   const raw=recRaw.find(x=>x.id===id),e=raw&&arr(raw.etapes)[i];if(!e)return false;
-  const key=id+":"+stepKey(e);let aid=null,P,got;
+  let aid=null,P,got,text;
   try{P=await imgPrompts(raw)}
   catch(err){
+    if(err?.soft)return false; // demande abandonnée au retour dans l'appli : on recommence aussitôt
     const c=err?.code;
     // réponse illisible pour cette recette : elle attend deux minutes, puis on ne la retente plus avant la prochaine ouverture de l'appli
-    if(c==="invalid_json"||c==="prompt_too_large"){const n=(IMG.tries.get(id)||0)+1;IMG.tries.set(id,n);IMG.later.set(id,n>=2?Infinity:Date.now()+120000);return false}
+    // (plusieurs images de la recette attendaient la même réponse : elle ne compte qu'une fois)
+    if(c==="invalid_json"||c==="prompt_too_large"){if(!imgHeld(id)){const n=(IMG.tries.get(id)||0)+1;IMG.tries.set(id,n);IMG.later.set(id,n>=2?Infinity:Date.now()+120000)}return false}
+    // pas de réponse dans les temps : nouvelle lecture tout de suite ; une 2e fois, la recette attend deux minutes
+    if(c==="timeout"){imgSlow("r:"+id,()=>IMG.later.set(id,Date.now()+120000),()=>IMG.later.delete(id));return false}
     // lecture occupée : on attend une minute ; autre souci passager (réseau, serveur) : un quart de minute
     imgLater(c==="rate_limited"?60000:15000);
     return false;
   }
-  if(!String(P.p[i]||"").trim()){IMG.bad.add(key);return false}
-  try{got=await sample.image(imgText(P,i),{seed:imgSeed(id,i)})}
-  catch(err){
-    if(imgStop(err)){if(err?.code==="quota"&&openId&&IMG.told!==IMG.wait){IMG.told=IMG.wait;toast(IMG_QUOTA())}return false}
-    if(err?.code==="refused"){IMG.bad.add(key);return false}
-    imgLater(15000); // service occupé, réseau
-    return false;
+  text=String(P.p[i]||"").trim();
+  if(!text){IMG.bad.add(key);return false}
+  for(let again=false;;again=true){
+    try{got=await imgCall(IMG.T.image,signal=>sample.image(imgText(P,i,text),{seed:imgSeed(id,i),signal}));break}
+    catch(err){
+      if(err?.soft)return false;
+      if(imgStop(err)){if(err?.code==="quota"&&openId&&IMG.told!==IMG.wait){IMG.told=IMG.wait;toast(IMG_QUOTA())}return false}
+      if(err?.code==="timeout"||err?.code==="slow"){imgSlow(key,()=>{IMG.bad.add(key);IMG.slowBad.add(key)},()=>{IMG.bad.delete(key);IMG.slowBad.delete(key)});return false} // pas de réponse dans les temps
+      if(err?.code!=="refused"){imgLater(15000);return false} // service occupé, réseau
+      imgAnswered(); // (un refus est une réponse : le service ne rame pas)
+      // Refusée : on fait redire la scène avec d'autres mots, une fois. Encore refusée : l'étape reste sans image, et on s'en souvient
+      // d'une ouverture de l'appli à l'autre (« Créer les images » la redemande, comme un changement du texte de l'étape).
+      if(again){imgNo(key);return false}
+      try{text=await imgSofter(text)}
+      catch(e2){if(!e2?.soft)IMG.bad.add(key);return false} // pas de nouvelle description pour l'instant : on y revient à la prochaine ouverture
+    }
   }
-  IMG.fails=0; // le service répond
+  // la description qui est passée remplace l'autre (« Refaire l'image » s'en sert)
+  if(text!==P.p[i]&&IMG.prompts[id]===P){P.p[i]=text;ls.set("imgia_p",IMG.prompts)}
+  IMG.fails=0;imgAnswered(); // le service répond
+  imgCounted();
   // Chaque image reçue compte dans le quota gratuit du jour : quoi qu'il arrive ensuite, cette étape n'en redemande pas d'autre
   // toute seule avant la prochaine ouverture de l'appli (« Créer les images » la redemande).
   try{
@@ -4010,6 +4144,9 @@ function imgAsk(r){
   if(navigator.onLine===false){toast(L("Pas de connexion : les images se créeront au retour d'internet.","No connection: the pictures will be made when you're back online."));return}
   IMG.force.add(raw.id);IMG.later.delete(raw.id);IMG.tries.delete(raw.id);IMG.down=0;IMG.fails=0;
   for(const k of [...IMG.bad])if(k.startsWith(raw.id+":"))IMG.bad.delete(k);
+  for(const k of [...IMG.slowBad])if(k.startsWith(raw.id+":")){IMG.slowBad.delete(k);IMG.slowLaps.delete(k);IMG.slow.delete(k)}
+  let n=0;for(const k of [...IMG.no])if(k.startsWith(raw.id+":")){IMG.no.delete(k);n++}
+  if(n)ls.set("imgia_no",[...IMG.no]);
   stepPicsSync();imgSoon(100);
 }
 // « Refaire l'image » : même étape, autre tirage ; l'ancienne image reste sur l'appareil, « Annuler » la remet
@@ -4021,7 +4158,9 @@ async function imgRedo(r,i,old){
   let aid=null;
   try{
     const P=await imgPrompts(raw);if(!String(P.p[i]||"").trim())return oops();
-    const fit=await imgFit(await sample.image(imgText(P,i),{seed:Math.floor(Math.random()*2147483647)}));
+    const got=await imgCall(IMG.T.image,signal=>sample.image(imgText(P,i),{seed:Math.floor(Math.random()*2147483647),signal}));
+    imgCounted();
+    const fit=await imgFit(got);
     aid=(await assets.upload(fit,{type:"image/jpeg"})).id;
     let done=false;
     await stepSetPics(r,i,l=>{if(!l.includes(old)||l.includes(aid))return l;done=true;return l.map(x=>x===old?aid:x)},x=>({imgIA:[...new Set([...arr(x.imgIA),aid])]}),true);
@@ -4038,7 +4177,7 @@ function imgAccHTML(){
   if(!imgOpen())return "";
   let total=0,done=0,left=0;
   for(const r of recRaw)arr(r.etapes).forEach((e,i)=>{total++;if(stepIds(e).length)done++;else if(imgNeeds(r,i))left++});
-  const state=!imgAuto()?"":imgQuota()?IMG_QUOTA():total&&!left?(done===total?L("Toutes les images sont créées.","All the pictures are made."):L("Rien d'autre à créer pour l'instant.","Nothing else to make for now.")):navigator.onLine===false?L("En pause : pas de connexion.","Paused: no connection."):IMG.fails>=3?L("En pause : le service d'images ne répond pas pour l'instant. Nouvel essai dans quelques minutes.","Paused: the picture service isn't answering right now. Trying again in a few minutes."):IMG.run?L("Création en cours…","Making pictures…"):"";
+  const state=!imgAuto()?"":imgQuota()?IMG_QUOTA():total&&!left?(done===total?L("Toutes les images sont créées.","All the pictures are made."):L("Rien d'autre à créer pour l'instant.","Nothing else to make for now.")):navigator.onLine===false?L("En pause : pas de connexion.","Paused: no connection."):left&&!IMG.run&&imgBackFull()?L("Le reste du carnet continue demain. Les images qui restent aujourd'hui sont gardées pour la recette que tu ouvres.","The rest of the cookbook continues tomorrow. Today's remaining pictures are kept for the recipe you open."):IMG.fails>=3?L("En pause : le service d'images ne répond pas pour l'instant. Nouvel essai dans quelques minutes.","Paused: the picture service isn't answering right now. Trying again in a few minutes."):IMG.run?L("Création en cours…","Making pictures…"):"";
   return `<section class="acc"><h2>${L("Images des étapes","Step pictures")}</h2>
     <p class="note" style="margin:0">${L("Mijonote crée toute seule une image réaliste sous chaque étape de tes recettes, quand l'appli est ouverte. C'est gratuit, avec un nombre limité d'images par jour : un grand carnet se remplit en quelques jours. Ces images sont créées par une IA à partir du texte de l'étape : elles donnent une idée, ce ne sont pas des photos de ta recette.","Mijonote makes a realistic picture under each step of your recipes by itself, while the app is open. It's free, with a limited number of pictures per day: a big cookbook fills up in a few days. These pictures are made by an AI from the step's text: they give an idea, they are not photos of your recipe.")}</p>
     <label class="row" style="gap:.5rem;cursor:pointer;flex-wrap:nowrap"><input type="checkbox" id="imgAuto" ${imgAuto()?"checked":""} style="width:18px;height:18px;flex:none;accent-color:var(--basil)">${L("Créer les images toutes seules","Make the pictures automatically")}</label>
@@ -4047,7 +4186,15 @@ function imgAccHTML(){
   </section>`;
 }
 // de retour devant l'appli ou sur internet : on réessaie sans attendre la fin d'une pause
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){IMG.down=0;imgSoon(2500)}});
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState!=="visible"){IMG.hid=Date.now();return}
+  IMG.down=0;
+  // les demandes parties avant la pause : le téléphone les a souvent coupées sans le dire. On leur laisse un instant pour arriver,
+  // puis on les abandonne (sans compter de raté) et la création repart.
+  setTimeout(()=>{for(const c of [...IMG.calls])if(Date.now()-c.t0>20000)c.stop(true)},1500);
+  imgSlowAgain();
+  imgSoon(2500);
+});
 addEventListener("online",()=>{IMG.down=0;IMG.fails=0;imgUi();imgSoon(2500)});
 addEventListener("offline",()=>imgUi());
 /* ---------- Courses : ingrédients manquants -> panier Carrefour (drive ou livraison) ---------- */
