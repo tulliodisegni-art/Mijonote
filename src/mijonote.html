@@ -3721,11 +3721,12 @@ function stepViewer(r,i,k,edit,shown){
     }catch{oops()}};
 }
 // recettes dont les schémas sont en train d'être dessinés : le bouton reste occupé même si la fiche se redessine entre-temps
-const drawing=new Set();
+// (drawFail : le dernier dessin a raté, le bouton propose de réessayer, là aussi même si la fiche se redessine)
+const drawing=new Set(),drawFail=new Set();
 async function drawSchemas(r){
   if(!sample||!assets||!db||drawing.has(r.id))return;
   const btn=()=>openId===r.id?$("#drawSteps"):null,say=(t,busy)=>{const b=btn();if(b){b.classList.toggle("busy",busy);b.lastChild.textContent=" "+t}};
-  drawing.add(r.id);say("Claude dessine…",true);
+  drawing.add(r.id);drawFail.delete(r.id);say("Claude dessine…",true);
   const steps=arr((r._raw||r).etapes);
   const prompt=`Tu es illustrateur culinaire. Pour la recette « ${r.titre} », dessine un schéma SVG simple et clair pour chaque étape ci-dessous, comme dans un livre de cuisine pédagogique.
 Style : dessin plat et propre, traits arrondis épaisseur 3 à 4, couleur de trait #3a2a20, aplats doux parmi #ffe9d6 #e6f2df #ffe5dc #fff0d1 #f0e3d2, accents #e0553a #3f7a4a #e39b1c. Fond #fffaf3 sur tout le cadre.
@@ -3752,7 +3753,7 @@ Réponds UNIQUEMENT avec ce JSON : {"schemas":[ un SVG (chaîne) par étape, dan
     drawing.delete(r.id);
     if(openId===r.id)showRecipe(loc(n?{...raw,etapes}:raw),{refresh:true});
     if(n)toast(n+" schéma"+(n>1?"s":"")+" ajouté"+(n>1?"s":""));
-  }catch(e){drawing.delete(r.id);say("Réessayer les schémas",false);toast(errText(e))}
+  }catch(e){drawing.delete(r.id);drawFail.add(r.id);say("Réessayer les schémas",false);toast(errText(e))}
 }
 /* ---------- 🖼️ une image réaliste sous chaque étape, créée toute seule (appli installée uniquement) ----------
    Le texte des étapes devient une courte description (lecture gratuite du serveur), puis le serveur de Mijonote crée l'image.
@@ -3817,7 +3818,7 @@ function stepsHeadHTML(r,opt){
       :E.some(e=>stepIds(e).some(x=>ia.has(x)))?L("Images créées par l'IA, pour donner une idée.","AI-made pictures, to give an idea."):"";
     return (note?`<p class="note imgnote" role="status">${note}</p>`:"")+gen;
   }
-  return (sample?`<button class="stepadd draw${drawing.has(r.id)?" busy":""}" id="drawSteps">${emo("✏️")} ${drawing.has(r.id)?"Claude dessine…":"Dessiner les schémas des étapes"}</button>`:"")+gen;
+  return (sample?`<button class="stepadd draw${drawing.has(r.id)?" busy":""}" id="drawSteps">${emo("✏️")} ${drawing.has(r.id)?"Claude dessine…":drawFail.has(r.id)?"Réessayer les schémas":"Dessiner les schémas des étapes"}</button>`:"")+gen;
 }
 function stepsHeadBind(){
   const ds=$("#drawSteps");if(ds)ds.onclick=()=>{if(cur)drawSchemas(cur.r)};
