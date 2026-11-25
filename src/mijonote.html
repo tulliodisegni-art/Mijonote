@@ -3216,9 +3216,9 @@ const stepSrcs=e=>{const l=stepIds(e).map(pic);return l.length?l:(e&&e._prev?[e.
 const MAX_STEP_PICS=12;
 const stepPicsHTML=(e,i,big)=>{const l=stepSrcs(e);return l.length?`<div class="steppics${l.length===1?" one":""}${big?" big":""}">${l.map((u,k)=>`<button type="button" data-steppic="${i}:${k}" aria-label="${L("Agrandir la photo","Enlarge photo")} ${k+1}"><img src="${u}" alt="${L("Photo","Photo")} ${k+1} : ${esc(e.titre)}" loading="lazy"></button>`).join("")}</div>`:""};
 // la recette sans les images de ses étapes : quand rien d'autre n'a changé, on remplace les images à l'écran sans redessiner la fiche
-const noPics=r=>JSON.stringify({...r,imgIA:0,imgNon:0,etapes:arr(r.etapes).map(({image,images,...e})=>e)});
+const noPics=r=>JSON.stringify({...r,imgIA:0,imgNon:0,imgGen:0,etapes:arr(r.etapes).map(({image,images,...e})=>e)});
 // la recette sans ses images créées par l'IA (elles se recréent toutes seules) : pour le fichier de sauvegarde et les envois
-const sansIA=r=>{const g=new Set(arr(r.imgIA));if(!g.size&&r.imgIA===undefined&&r.imgNon===undefined)return r;const {imgIA,imgNon,...x}=r;
+const sansIA=r=>{const g=new Set(arr(r.imgIA));if(!g.size&&r.imgIA===undefined&&r.imgNon===undefined&&r.imgGen===undefined)return r;const {imgIA,imgNon,imgGen,...x}=r;
   return {...x,etapes:arr(r.etapes).map(e=>{const ids=stepIds(e).filter(id=>!g.has(id)),{image,images,...y}=e;return {...y,...(ids[0]?{image:ids[0]}:{}),...(ids.length>1?{images:ids.slice(1)}:{})}})}};
 // une photo qui ne s'affiche pas (pas encore arrivée sur cet appareil) laisse une case douce, qu'on peut toujours ouvrir
 const stepPicsWatch=root=>root.querySelectorAll(".steppics img").forEach(im=>{im.onerror=()=>im.parentNode.classList.add("miss")});
@@ -3764,17 +3764,24 @@ Réponds UNIQUEMENT avec ce JSON : {"schemas":[ un SVG (chaîne) par étape, dan
 // avance derrière (IMG_BACK à la fois au plus). Aucune demande ne reste en l'air : passé son délai (T, en millisecondes : la lecture
 // des descriptions, une image, une étape entière), elle est abandonnée et la suite passe.
 const IMG_LANES=3,IMG_BACK=2;
+// La génération des images. 3 : chaque image montre le GESTE de l'étape, les mains en train de le faire (avant : les aliments posés, sans mains).
+// Chaque image de l'IA note sa génération dans imgGen (par identifiant). Une image d'une génération d'avant est refaite toute seule :
+// elle reste en place jusqu'à ce que la nouvelle soit là, puis la nouvelle prend sa place.
+const IMG_GEN=3;
 const IMG={run:false,off:false,wait:Number(ls.get("imgia_wait",0))||0,down:0,fails:0,lost:0,told:0,t:null,at:0,force:new Set(),bad:new Set(),later:new Map(),tries:new Map(),pq:new Map(),
   T:{read:30000,image:25000,job:150000},
   live:new Map(),reading:new Set(),calls:new Set(),slow:new Map(),slowRun:0,slowUndo:[],slowBad:new Set(),slowLaps:new Map(),hid:0,poke:null,putq:Promise.resolve(),noteFor:null,
   // les étapes dont l'image est refusée par le service, même redite autrement : on ne la redemande pas à chaque ouverture de l'appli
   no:new Set(arr(ls.get("imgia_no",[])).filter(k=>typeof k==="string")),
   prompts:(p=>p&&typeof p==="object"&&!Array.isArray(p)?p:{})(ls.get("imgia_p",{}))};
+// les étapes refusées avec les descriptions d'une génération d'avant ont droit à un nouvel essai avec les nouvelles
+if(ls.get("imgia_gen",0)!==IMG_GEN){if(IMG.no.size){IMG.no.clear();ls.set("imgia_no",[])}ls.set("imgia_gen",IMG_GEN)}
 const imgAvail=()=>!!(sample&&sample.image&&db&&assets);
 // Le quota gratuit du jour sert d'abord à la recette qu'on ouvre ou qu'on cuisine : le reste du carnet (travail de fond) n'en prend pas
 // plus de IMG_DAY_BACK par jour, pour qu'il en reste pour elle plus tard dans la journée. Le jour est celui du quota (UTC) ; dans ses
 // trois dernières heures, ce qui reste ne servirait plus à personne : le carnet peut le prendre. (Compté sur cet appareil : c'est une réserve, pas une mesure.)
-const IMG_DAY_BACK=120;
+// (Le service gratuit s'arrête en vrai vers 80 images par jour, vu le 2026-11-25 : le carnet en laisse environ 25 à la recette qu'on ouvre.)
+const IMG_DAY_BACK=55;
 const imgDay=()=>{const d=new Date().toISOString().slice(0,10),s=ls.get("imgia_day",null);return s&&s.d===d&&Number.isFinite(s.n)?s:{d,n:0}};
 const imgCounted=()=>{const s=imgDay();ls.set("imgia_day",{d:s.d,n:s.n+1})};
 const imgBackFull=(going=0)=>new Date().getUTCHours()<21&&imgDay().n+going>=IMG_DAY_BACK;
@@ -3791,6 +3798,14 @@ const imgFor=raw=>imgAuto()||IMG.force.has(raw.id);
 // l'étape i de la recette (telle qu'elle est enregistrée) attend-elle une image ?
 const imgNeeds=(raw,i)=>{const e=arr(raw.etapes)[i];if(!e||stepIds(e).length||String(e.texte||e.titre||"").trim().length<=2)return false;
   const s=stepKey(e),k=raw.id+":"+s;return !IMG.bad.has(k)&&!IMG.no.has(k)&&(IMG.force.has(raw.id)||!arr(raw.imgNon).includes(s))};
+const imgGenOf=(raw,id)=>{const g=raw&&raw.imgGen;return (g&&typeof g==="object"&&Number(g[id]))||0};
+// la note des générations d'une recette, avec ces images-là à la génération du moment
+const imgGenSet=(raw,...ids)=>{const g={...(raw&&raw.imgGen&&typeof raw.imgGen==="object"&&!Array.isArray(raw.imgGen)?raw.imgGen:{})};for(const id of ids)g[id]=IMG_GEN;return g};
+// l'étape i porte-t-elle une image de l'IA d'une génération d'avant ? Son identifiant : elle sera refaite toute seule (sinon "")
+const imgOld=(raw,i)=>{const e=arr(raw.etapes)[i];if(!e||String(e.texte||e.titre||"").trim().length<=2)return "";
+  const ia=arr(raw.imgIA);if(!ia.length)return "";
+  const old=stepIds(e).find(x=>ia.includes(x)&&imgGenOf(raw,x)<IMG_GEN);if(!old)return "";
+  const k=raw.id+":"+stepKey(e);return IMG.bad.has(k)||IMG.no.has(k)?"":old};
 const imgHeld=id=>(IMG.later.get(id)||0)>Date.now();
 // une image va bientôt arriver sous l'étape i de la recette affichée : on lui garde sa place
 // (après trois ratés de suite, plus de place gardée tant qu'une image n'est pas arrivée : rien ne clignote si le service est en panne)
@@ -3803,18 +3818,22 @@ function stepsHeadHTML(r,opt){
   if(opt.temp||!db||!assets)return "";
   const raw=r._raw||r,E=arr(raw.etapes),miss=E.map((e,i)=>i).filter(i=>!stepIds(E[i]).length);
   const auto=imgOpen()&&imgFor(raw),non=miss.filter(i=>arr(raw.imgNon).includes(stepKey(E[i])));
-  if(!miss.length&&!(auto&&IMG.noteFor===raw.id))return "";
+  // les images d'une génération d'avant (sans le geste) que cette recette va voir refaites
+  const old=auto?E.filter((e,i)=>imgOld(raw,i)).length:0;
+  if(!miss.length&&!(auto&&(IMG.noteFor===raw.id||old)))return "";
   const gen=imgOpen()&&!IMG.force.has(raw.id)&&(!auto||non.length)?`<button class="stepadd draw" id="genSteps">${emo("🎨")} ${miss.length===E.length?L("Créer les images des étapes","Create the step pictures"):L("Créer les images qui manquent","Create the missing pictures")}</button>`:"";
   // les images réalistes se créent toutes seules : pas de schémas en plus, les deux se marcheraient dessus
   if(auto){
     // pendant que les images arrivent : où on en est, et le conseil qui compte (l'appli doit rester ouverte). Un mot reste ensuite
     // à cette place jusqu'à la fermeture de la fiche (jamais plus long que le premier) : rien ne bouge sous les yeux de la personne qui lit.
     const wait=miss.filter(i=>imgPending(r,i)).length,ia=new Set(arr(raw.imgIA));
-    if(wait)IMG.noteFor=raw.id;
-    const note=imgQuota()&&miss.length>non.length?IMG_QUOTA()
+    const redo=old&&IMG.fails<3&&imgNow(65000)&&!imgHeld(raw.id)&&recRaw.some(x=>x.id===raw.id)?old:0;
+    if(wait||redo)IMG.noteFor=raw.id;
+    const note=imgQuota()&&(miss.length>non.length||old)?IMG_QUOTA()
       :wait?L(`Les images arrivent : ${E.length-miss.length} sur ${E.length}. Garde Mijonote ouverte.`,`Pictures are on their way: ${E.length-miss.length} of ${E.length}. Keep Mijonote open.`)
+      :redo?L(`Images refaites pour montrer le geste : encore ${redo}. Garde Mijonote ouverte.`,`Redoing the pictures to show the gesture: ${redo} to go. Keep Mijonote open.`)
       :IMG.noteFor!==raw.id?""
-      :miss.some(i=>imgNeeds(raw,i))?L("Images en pause : la suite arrive toute seule.","Pictures paused: the rest comes by itself.")
+      :miss.some(i=>imgNeeds(raw,i))||old?L("Images en pause : la suite arrive toute seule.","Pictures paused: the rest comes by itself.")
       :E.some(e=>stepIds(e).some(x=>ia.has(x)))?L("Images créées par l'IA, pour donner une idée.","AI-made pictures, to give an idea."):"";
     return (note?`<p class="note imgnote" role="status">${note}</p>`:"")+gen;
   }
@@ -3859,7 +3878,7 @@ function stepPicsSync(nr){
       if(E.length!==N.length||E.some((e,i)=>!same(e,N[i]))||E.some((e,i)=>(stepIds(e).length>=MAX_STEP_PICS)!==(stepIds(N[i]).length>=MAX_STEP_PICS)))full=true;
       else{
         E.forEach((e,i)=>{if(sig(e)!==sig(N[i]))put(e,N[i]);const a=r._raw&&arr(r._raw.etapes)[i],b=nr._raw&&arr(nr._raw.etapes)[i];if(a&&b&&a!==e&&sig(a)!==sig(b))put(a,b)});
-        const a=r._raw||r,b=nr._raw||nr;for(const k of ["imgIA","imgNon"]){if(b[k]!==undefined)a[k]=b[k];else delete a[k]}
+        const a=r._raw||r,b=nr._raw||nr;for(const k of ["imgIA","imgNon","imgGen"]){if(b[k]!==undefined)a[k]=b[k];else delete a[k]}
       }
     }
     if(full)showRecipe(nr,{...cur.opt,refresh:true});
@@ -3903,12 +3922,15 @@ function imgSoon(ms=2500){
 }
 // La prochaine image à créer, parmi celles qui ne sont pas déjà en route : d'abord la recette qu'on cuisine (l'étape affichée, puis les suivantes),
 // la recette ouverte et celles demandées à la main ; ensuite tout le carnet, les plus récentes d'abord (back : pas plus de IMG_BACK à la fois).
+// Dans chaque recette : les étapes sans image, puis les images d'avant à refaire (old = celle que la nouvelle remplacera).
 // Une recette dont les descriptions sont en train de s'écrire n'occupe qu'une place : ses autres images partent dès qu'elles sont là.
 function imgNext(){
   const pick=(raw,from=0)=>{
     if(!raw||!imgFor(raw)||imgHeld(raw.id)||IMG.reading.has(raw.id))return null;
     const E=arr(raw.etapes),n=E.length;
     for(let k=0;k<n;k++){const i=(from+k)%n;if(!imgNeeds(raw,i))continue;const key=raw.id+":"+stepKey(E[i]);if(!IMG.live.has(key))return {id:raw.id,i,key}}
+    // puis ses images d'une génération d'avant : refaites une à une, chacune reste à l'écran jusqu'à ce que la nouvelle arrive
+    for(let k=0;k<n;k++){const i=(from+k)%n,old=imgOld(raw,i);if(!old)continue;const key=raw.id+":"+stepKey(E[i]);if(!IMG.live.has(key))return {id:raw.id,i,key,old}}
     return null;
   };
   const c=$("#cook"),cook=ck.r&&c&&!c.hidden?ck.r:null;
@@ -3977,25 +3999,34 @@ function imgPrompts(raw){
   const steps=arr(raw.etapes),titre=cut(raw.titre,140);
   const ing=cut(arr(raw.ingredients).flatMap(g=>arr(g.items).map(x=>x.nom)).filter(Boolean).slice(0,40).join(", "),900);
   // les descriptions gardées valent pour tout ce que la demande reprend de la recette : titre, ingrédients, étapes
-  // (le 2 : les consignes d'écriture ont changé, les descriptions gardées avant ne servent plus)
-  const h=hstr(JSON.stringify([2,titre,ing,steps.map(e=>[e.titre||"",e.texte||""])]));
+  // (la génération : quand les consignes d'écriture changent, les descriptions gardées avant ne servent plus)
+  const h=hstr(JSON.stringify([IMG_GEN,titre,ing,steps.map(e=>[e.titre||"",e.texte||""])]));
   const c=IMG.prompts[raw.id];if(c&&c.h===h&&arr(c.p).length===steps.length)return Promise.resolve(c);
   const k=raw.id+":"+h;if(IMG.pq.has(k))return IMG.pq.get(k);
   const max=Math.max(160,Math.floor(20000/Math.max(1,steps.length)));
-  const q=imgCall(IMG.T.read,signal=>sample.json(`Tu prépares les photos d'un livre de cuisine pas à pas. Pour chaque étape de la recette « ${titre} », écris en ANGLAIS la description d'une photo réaliste qui montre le moment clé de l'étape : ce qu'on voit sur le plan de travail, sur le feu ou dans le four à ce moment-là.
+  const q=imgCall(IMG.T.read,signal=>sample.json(`Tu prépares les photos d'un livre de cuisine pas à pas. Pour chaque étape de la recette « ${titre} », écris en ANGLAIS la description d'une photo réaliste qui montre le GESTE de l'étape en train de se faire : en regardant la photo, on doit comprendre ce qu'il faut faire de ses mains.
 Règles :
-- une phrase de 25 à 45 mots par étape, concrète : le récipient ou l'ustensile principal, ce qu'il contient avec sa couleur et sa texture à CE stade de la recette (cru, coupé, fondu, monté, doré…), et l'angle de vue (vue de dessus ou de trois quarts) ;
-- montre la préparation telle qu'elle est à ce stade : le plat fini n'apparaît qu'à la dernière étape ;
-- jamais de personne, de visage ni de main ; jamais de texte, d'étiquette, de marque ni de nom propre ;
-- aucun mot qui désigne aussi le corps, la peau ou la nudité (breast, thigh, leg, rump, skin, naked, bare, strip, rub…) : un filtre automatique refuserait la photo. Écris plutôt « chicken fillet », « poultry pieces », « peeled », « coated » ;
-- garde les mêmes récipients d'une étape à l'autre, et redis à chaque fois leur matière et leur couleur : chaque description doit se comprendre toute seule, sans les autres.
+- si l'étape demande un geste (couper, éplucher, décortiquer, hacher, mélanger, fouetter, verser, pétrir, étaler, façonner, retourner, râper, presser, arroser, égoutter…), la photo montre les deux mains de la personne qui cuisine en plein geste, cadrées de près. Commence par « Overhead close-up of two hands » (vue de dessus) ou « Close-up of two hands » (vue de trois quarts), puis dis ce que fait CHAQUE main : « one hand holds …, the other hand … » ;
+- UN seul geste par photo. Si l'étape en enchaîne plusieurs, garde le geste principal : celui qui donne son nom à l'étape, sinon celui qui transforme le plus la préparation ;
+- l'aliment est montré EN COURS de transformation : celui que les mains tiennent est à moitié fait (à moitié décortiqué, à moitié émincé, à moitié étalé…), avec à côté ce qui reste à faire et ce qui est déjà fait ;
+- si l'étape n'a aucun geste (laisser reposer, cuire au four, laisser mijoter, garder au frais), pas de mains : montre la préparation dans son récipient, là où elle se trouve à ce moment-là (dans le four, sur le feu, sur le plan de travail) ;
+- UN seul moment par photo : rien de ce qui se passe avant ou après. Le plat fini n'apparaît qu'à la dernière étape ;
+- une phrase de 30 à 55 mots par étape, avec seulement ce qui se voit : les mains et le geste, l'ustensile, le récipient, l'aliment avec sa couleur et sa texture à CE stade de la recette (cru, coupé, fondu, monté, doré…) ;
+- ne montre que ce que dit l'étape, avec les ingrédients de la recette, nommés en anglais courant (« large prawns » pour des gambas) ;
+- seulement des mains : jamais de visage, de corps ni de vêtement ; jamais de texte, d'étiquette, de marque ni de nom propre ;
+- aucun mot qui désigne aussi le corps, la peau ou la nudité (breast, thigh, leg, rump, skin, flesh, naked, bare, strip, rub, stroke, massage…) : un filtre automatique refuserait la photo. Écris plutôt « chicken fillet », « poultry pieces », « peeled », « coated », « shell » ;
+- garde les mêmes récipients et les mêmes ustensiles d'une étape à l'autre, et redis à chaque fois leur matière et leur couleur : chaque description doit se comprendre toute seule, sans les autres.
+Exemples de forme (à ne pas recopier) :
+"Overhead close-up of two hands peeling a hard-boiled egg over a white bowl: one hand holds the egg, the other hand pulls off a piece of brown shell; half of the egg is already white and smooth, shell fragments lie on the worktop."
+"Close-up of two hands over a steel saucepan on the stove: one hand holds the black handle, the other hand stirs a thick orange tomato sauce with a wooden spoon."
+"A golden gratin in a white ceramic dish on the middle rack of an oven, seen through the open oven door, the cheese crust bubbling."
 Écris aussi « decor » : une courte phrase en anglais qui décrit seulement le plan de travail, l'arrière-plan et la lumière, les mêmes pour toutes les photos (exemple : "light oak countertop, pale linen cloth in the background, soft daylight from a window").
 Ingrédients : ${ing||"(non précisés)"}
 Étapes :
 ${steps.map((e,i)=>`${i+1}. ${cut(e.titre,120)} : ${cut(e.texte,max)}`).join("\n")}
 Réponds UNIQUEMENT avec ce JSON : {"decor":"…","photos":[ une description (chaîne) par étape, dans l'ordre, ${steps.length} au total ]}`,{modelTier:"quick",cache:false,noLang:true,serveur:true,rapide:true,signal})).then(out=>{
     imgAnswered(); // la lecture répond
-    const p=arr(out?.photos).map(x=>typeof x==="string"?cut(x,420):"");
+    const p=arr(out?.photos).map(x=>typeof x==="string"?cut(x,520):"");
     if(p.length!==steps.length||!p.some(Boolean))throw {code:"invalid_json"};
     const v={h,d:typeof out.decor==="string"?cut(out.decor,220):"",p};
     delete IMG.prompts[raw.id];IMG.prompts[raw.id]=v;
@@ -4006,18 +4037,23 @@ Réponds UNIQUEMENT avec ce JSON : {"decor":"…","photos":[ une description (ch
   IMG.pq.set(k,q);IMG.reading.add(raw.id);return q;
 }
 // (ce créateur d'images ne comprend pas les « sans… » : on dit seulement ce qu'on veut voir)
-const imgText=(P,i,t)=>`${t??P.p[i]} ${P.d?"Scene: "+P.d.replace(/[.\s]+$/,"")+". ":""}Realistic food photography for a step-by-step cookbook, still life with only food and kitchenware in the frame, natural light, natural colors, sharp focus, subject centered.`.slice(0,1400);
+const imgText=(P,i,t)=>`${t??P.p[i]} ${P.d?"Scene: "+P.d.replace(/[.\s]+$/,"")+". ":""}Realistic photo for a step-by-step cookbook, natural light, natural colors, sharp focus, the action in the center of the frame.`.slice(0,1400);
 const imgSeed=(id,i)=>parseInt(hstr(id+":"+i),36)%2147483647;
 // Le filtre du service d'images prend parfois un mot de cuisine pour autre chose et refuse la photo : la lecture gratuite redit la même scène autrement.
 async function imgSofter(text){
-  const out=await imgCall(IMG.T.read,signal=>sample.json(`Cette description d'une photo de cuisine a été refusée par erreur par le filtre automatique d'un créateur d'images : un mot de cuisine a été pris pour autre chose. Récris-la en ANGLAIS : la même scène, avec d'autres mots. N'emploie aucun mot qui désigne aussi le corps, la peau ou la nudité (breast, thigh, leg, rump, skin, naked, bare, strip, rub…) : écris plutôt « chicken fillet », « poultry pieces », « peeled », « coated ». Une seule phrase de 20 à 40 mots : le récipient ou l'ustensile, ce qu'il contient, l'angle de vue.
+  const out=await imgCall(IMG.T.read,signal=>sample.json(`Cette description d'une photo de cuisine a été refusée par erreur par le filtre automatique d'un créateur d'images : un mot de cuisine a été pris pour autre chose. Récris-la en ANGLAIS : la même scène et le même geste, avec d'autres mots. N'emploie aucun mot qui désigne aussi le corps, la peau ou la nudité (breast, thigh, leg, rump, skin, flesh, naked, bare, strip, rub, stroke, massage…) : écris plutôt « chicken fillet », « poultry pieces », « peeled », « coated », « shell ». Si la description montre des mains, garde-les (« two hands », « one hand …, the other hand … »), sans aucune autre partie du corps. Une seule phrase de 25 à 50 mots : l'angle de vue, les mains et leur geste, l'ustensile, le récipient et ce qu'il contient.
 Description refusée : ${text}
 Réponds UNIQUEMENT avec ce JSON : {"photo":"…"}`,{modelTier:"quick",cache:false,noLang:true,serveur:true,rapide:true,signal}));
   imgAnswered();
-  const t=typeof out?.photo==="string"?out.photo.replace(/\s+/g," ").trim().slice(0,420):"";
+  const t=typeof out?.photo==="string"?out.photo.replace(/\s+/g," ").trim().slice(0,520):"";
   if(t.length<12||t===text)throw {code:"invalid_json"};
   return t;
 }
+// Avant de déranger la lecture : on retire nous-mêmes les mots de cuisine que le filtre prend le plus souvent pour autre chose
+// (la lecture en laisse passer malgré la consigne). Si rien ne change, c'est elle qui redit la scène.
+const IMG_PLAIN=[[/\b(chicken|turkey|duck|goose|poultry|hen)\s+breast(s?)\b/gi,"$1 fillet$2"],[/\bbreast(s?)\b/gi,"fillet$1"],[/\b(thighs?|drumsticks?|legs?|rumps?)\b/gi,"pieces"],[/\bskin(less|ned)\b/gi,"trimmed"],[/\bskin-on\b/gi,"whole"],[/\bskins?\b/gi,"peel"],[/\bflesh\b/gi,"inside"],
+  [/\b(naked|nude|bare)\b/gi,"plain"],[/\bstrip(s?)\b/gi,"slice$1"],[/\brub(s?)\b/gi,"coat$1"],[/\brubb(ed|ing)\b/gi,"coat$1"],[/\b(?:strok|massag)e?(s|d|ing)?\b/gi,(m,s)=>"work"+(s==="d"?"ed":s||"")],[/\b(extra[- ])?virgin\s+/gi,""],[/\bbutt\b/gi,"shoulder"]];
+const imgPlain=t=>IMG_PLAIN.reduce((x,[re,to])=>x.replace(re,to),String(t)).replace(/\s+/g," ").trim();
 const imgNo=key=>{IMG.no.add(key);ls.set("imgia_no",[...IMG.no].slice(-400))};
 // l'image reçue (carrée) devient une photo d'étape 4:3 légère : c'est le cadre des vignettes, et elle pèse peu sur l'appareil et sur le compte
 async function imgFit(b,W=768){
@@ -4036,15 +4072,20 @@ async function imgFit(b,W=768){
 // L'image a pris du temps : on repart de la recette telle qu'elle est enregistrée maintenant, et elle ne va que sur l'étape restée sans photo
 // (une photo, un schéma ou une astuce ont pu être ajoutés pendant que l'image se créait). Plusieurs images arrivent parfois ensemble pour
 // la même recette : elles sont rangées l'une après l'autre, chacune à partir de ce que la précédente a écrit.
-function imgPut(id,was,at,aid){
+// Une image refaite (old) prend la place exacte de l'ancienne, qui reste sur l'appareil comme toute photo retirée.
+function imgPut(id,was,at,aid,old){
   const go=async()=>{
     if(!recRaw.some(x=>x.id===id))return false;
     const snap=await db.collection("recettes").doc(id).get();if(!snap.exists)return false;
-    const raw={id,...snap.data()},E=arr(raw.etapes),fits=k=>!!E[k]&&!stepIds(E[k]).length&&E[k].titre===was.titre&&E[k].texte===was.texte;
+    // old = l'image d'une génération d'avant que celle-ci remplace : elle doit toujours être sur l'étape (sinon la personne l'a retirée ou changée)
+    const raw={id,...snap.data()},E=arr(raw.etapes),fits=k=>!!E[k]&&E[k].titre===was.titre&&E[k].texte===was.texte&&(old?stepIds(E[k]).includes(old):!stepIds(E[k]).length);
     const i=fits(at)?at:E.findIndex((e,k)=>fits(k));if(i<0)return false;
-    const etapes=E.map((e,k)=>k===i?{...e,image:aid}:{...e}),imgIA=[...new Set([...arr(raw.imgIA),aid])];
-    await db.collection("recettes").doc(id).update({etapes,imgIA});
-    try{stepPicsSync(loc({...raw,etapes,imgIA}))}catch(e){console.error(e)}
+    const ids=old?stepIds(E[i]).map(x=>x===old?aid:x):[aid];
+    const etapes=E.map((e,k)=>{if(k!==i)return {...e};const {image,images,...x}=e;return {...x,image:ids[0],...(ids.length>1?{images:ids.slice(1)}:{})}});
+    const imgIA=[...new Set([...arr(raw.imgIA).filter(x=>x!==old),aid])],imgGen=imgGenSet(raw,aid);
+    for(const k of Object.keys(imgGen))if(!imgIA.includes(k))delete imgGen[k];
+    await db.collection("recettes").doc(id).update({etapes,imgIA,imgGen});
+    try{stepPicsSync(loc({...raw,etapes,imgIA,imgGen}))}catch(e){console.error(e)}
     return true;
   };
   const p=IMG.putq.then(go,go);IMG.putq=p.catch(()=>{});
@@ -4081,7 +4122,7 @@ function imgStop(e){
   if(c==="off"){IMG.off=true;return true} // service pas branché : on n'insiste pas
   return false;
 }
-async function imgOne({id,i,key}){
+async function imgOne({id,i,key,old}){
   const raw=recRaw.find(x=>x.id===id),e=raw&&arr(raw.etapes)[i];if(!e)return false;
   let aid=null,P,got,text;
   try{P=await imgPrompts(raw)}
@@ -4099,7 +4140,10 @@ async function imgOne({id,i,key}){
   }
   text=String(P.p[i]||"").trim();
   if(!text){IMG.bad.add(key);return false}
-  for(let again=false;;again=true){
+  // (l'image à refaire a pu être retirée ou changée pendant la lecture : on ne demande pas une image pour rien)
+  if(old&&!arr(recRaw.find(x=>x.id===id)?.etapes).some(s=>stepIds(s).includes(old)))return false;
+  // step : 0 = la description telle quelle, 1 = sans les mots que le filtre prend pour autre chose, 2 = redite par la lecture
+  for(let step=0;;){
     try{got=await imgCall(IMG.T.image,signal=>sample.image(imgText(P,i,text),{seed:imgSeed(id,i),signal}));break}
     catch(err){
       if(err?.soft)return false;
@@ -4107,9 +4151,12 @@ async function imgOne({id,i,key}){
       if(err?.code==="timeout"||err?.code==="slow"){imgSlow(key,()=>{IMG.bad.add(key);IMG.slowBad.add(key)},()=>{IMG.bad.delete(key);IMG.slowBad.delete(key)});return false} // pas de réponse dans les temps
       if(err?.code!=="refused"){imgLater(15000);return false} // service occupé, réseau
       imgAnswered(); // (un refus est une réponse : le service ne rame pas)
-      // Refusée : on fait redire la scène avec d'autres mots, une fois. Encore refusée : l'étape reste sans image, et on s'en souvient
+      // Refusée : on retire d'abord nous-mêmes les mots que le filtre prend pour autre chose ; sinon, ou si elle est encore refusée, la lecture
+      // redit la scène avec d'autres mots, une fois. Encore refusée : l'étape reste sans image (ou garde celle d'avant), et on s'en souvient
       // d'une ouverture de l'appli à l'autre (« Créer les images » la redemande, comme un changement du texte de l'étape).
-      if(again){imgNo(key);return false}
+      if(step===0){step=1;const plain=imgPlain(text);if(plain.length>=12&&plain!==text){text=plain;continue}}
+      if(step>=2){imgNo(key);return false}
+      step=2;
       try{text=await imgSofter(text)}
       catch(e2){if(!e2?.soft)IMG.bad.add(key);return false} // pas de nouvelle description pour l'instant : on y revient à la prochaine ouverture
     }
@@ -4123,7 +4170,7 @@ async function imgOne({id,i,key}){
   try{
     const fit=await imgFit(got);
     aid=(await assets.upload(fit,{type:"image/jpeg"})).id;
-    const put=await imgPut(id,e,i,aid);
+    const put=await imgPut(id,e,i,aid,old);
     IMG.bad.add(key);
     // l'étape a reçu une photo entre-temps, ou la recette a été supprimée : l'image n'est pas gardée
     if(!put){try{await assets.delete(aid)}catch{}stepPicsSync()}
@@ -4150,6 +4197,7 @@ function imgAsk(r){
   stepPicsSync();imgSoon(100);
 }
 // « Refaire l'image » : même étape, autre tirage ; l'ancienne image reste sur l'appareil, « Annuler » la remet
+// (remise exprès, elle n'est pas refaite toute seule ensuite, même si elle est d'une génération d'avant)
 async function imgRedo(r,i,old){
   const raw=freshRaw(r),e=arr(raw.etapes)[i];if(!e||!imgOpen())return;
   if(imgQuota()){toast(IMG_QUOTA());return}
@@ -4163,9 +4211,9 @@ async function imgRedo(r,i,old){
     const fit=await imgFit(got);
     aid=(await assets.upload(fit,{type:"image/jpeg"})).id;
     let done=false;
-    await stepSetPics(r,i,l=>{if(!l.includes(old)||l.includes(aid))return l;done=true;return l.map(x=>x===old?aid:x)},x=>({imgIA:[...new Set([...arr(x.imgIA),aid])]}),true);
+    await stepSetPics(r,i,l=>{if(!l.includes(old)||l.includes(aid))return l;done=true;return l.map(x=>x===old?aid:x)},x=>({imgIA:[...new Set([...arr(x.imgIA),aid])],imgGen:imgGenSet(x,aid)}),true);
     if(!done){try{await assets.delete(aid)}catch{}return}
-    toast(L("Image refaite","Picture redone"),{ms:7000,fn:async()=>{try{await stepSetPics(r,i,l=>l.includes(aid)&&!l.includes(old)?l.map(x=>x===aid?old:x):l,null,true)}catch{toast(L("Impossible de la remettre","Couldn't bring it back"))}}});
+    toast(L("Image refaite","Picture redone"),{ms:7000,fn:async()=>{try{await stepSetPics(r,i,l=>l.includes(aid)&&!l.includes(old)?l.map(x=>x===aid?old:x):l,x=>({imgGen:imgGenSet(x,old)}),true)}catch{toast(L("Impossible de la remettre","Couldn't bring it back"))}}});
   }catch(err){
     if(aid){try{await assets.delete(aid)}catch{}}
     if(imgStop(err)){imgUi();if(err.code==="quota"){toast(IMG_QUOTA());return}}
@@ -4175,13 +4223,15 @@ async function imgRedo(r,i,old){
 // Mon compte : le réglage et l'avancement des images d'étapes
 function imgAccHTML(){
   if(!imgOpen())return "";
-  let total=0,done=0,left=0;
-  for(const r of recRaw)arr(r.etapes).forEach((e,i)=>{total++;if(stepIds(e).length)done++;else if(imgNeeds(r,i))left++});
-  const state=!imgAuto()?"":imgQuota()?IMG_QUOTA():total&&!left?(done===total?L("Toutes les images sont créées.","All the pictures are made."):L("Rien d'autre à créer pour l'instant.","Nothing else to make for now.")):navigator.onLine===false?L("En pause : pas de connexion.","Paused: no connection."):left&&!IMG.run&&imgBackFull()?L("Le reste du carnet continue demain. Les images qui restent aujourd'hui sont gardées pour la recette que tu ouvres.","The rest of the cookbook continues tomorrow. Today's remaining pictures are kept for the recipe you open."):IMG.fails>=3?L("En pause : le service d'images ne répond pas pour l'instant. Nouvel essai dans quelques minutes.","Paused: the picture service isn't answering right now. Trying again in a few minutes."):IMG.run?L("Création en cours…","Making pictures…"):"";
+  // redo = les images d'une génération d'avant (sans le geste), qui se refont toutes seules
+  let total=0,done=0,left=0,redo=0;
+  for(const r of recRaw)arr(r.etapes).forEach((e,i)=>{total++;if(stepIds(e).length){done++;if(imgAuto()&&imgOld(r,i))redo++}else if(imgNeeds(r,i))left++});
+  const state=!imgAuto()?"":imgQuota()?IMG_QUOTA():total&&!left&&!redo?(done===total?L("Toutes les images sont créées.","All the pictures are made."):L("Rien d'autre à créer pour l'instant.","Nothing else to make for now.")):navigator.onLine===false?L("En pause : pas de connexion.","Paused: no connection."):(left||redo)&&!IMG.run&&imgBackFull()?L("Le reste du carnet continue demain. Les images qui restent aujourd'hui sont gardées pour la recette que tu ouvres.","The rest of the cookbook continues tomorrow. Today's remaining pictures are kept for the recipe you open."):IMG.fails>=3?L("En pause : le service d'images ne répond pas pour l'instant. Nouvel essai dans quelques minutes.","Paused: the picture service isn't answering right now. Trying again in a few minutes."):IMG.run?L("Création en cours…","Making pictures…"):"";
   return `<section class="acc"><h2>${L("Images des étapes","Step pictures")}</h2>
-    <p class="note" style="margin:0">${L("Mijonote crée toute seule une image réaliste sous chaque étape de tes recettes, quand l'appli est ouverte. C'est gratuit, avec un nombre limité d'images par jour : un grand carnet se remplit en quelques jours. Ces images sont créées par une IA à partir du texte de l'étape : elles donnent une idée, ce ne sont pas des photos de ta recette.","Mijonote makes a realistic picture under each step of your recipes by itself, while the app is open. It's free, with a limited number of pictures per day: a big cookbook fills up in a few days. These pictures are made by an AI from the step's text: they give an idea, they are not photos of your recipe.")}</p>
+    <p class="note" style="margin:0">${L("Mijonote crée toute seule une image réaliste sous chaque étape de tes recettes, quand l'appli est ouverte : elle montre le geste à faire. C'est gratuit, avec un nombre limité d'images par jour : un grand carnet se remplit en quelques jours. Ces images sont créées par une IA à partir du texte de l'étape : elles donnent une idée, ce ne sont pas des photos de ta recette.","Mijonote makes a realistic picture under each step of your recipes by itself, while the app is open: it shows the gesture to make. It's free, with a limited number of pictures per day: a big cookbook fills up in a few days. These pictures are made by an AI from the step's text: they give an idea, they are not photos of your recipe.")}</p>
     <label class="row" style="gap:.5rem;cursor:pointer;flex-wrap:nowrap"><input type="checkbox" id="imgAuto" ${imgAuto()?"checked":""} style="width:18px;height:18px;flex:none;accent-color:var(--basil)">${L("Créer les images toutes seules","Make the pictures automatically")}</label>
     ${total?`<div class="kv"><span>${L("Étapes avec une image","Steps with a picture")}</span><b>${done} / ${total}</b></div>`:""}
+    ${redo?`<div class="kv"><span>${L("Images à refaire, pour montrer le geste","Pictures to redo, to show the gesture")}</span><b>${redo}</b></div>`:""}
     ${state?`<p class="note" style="margin:0">${esc(state)}</p>`:""}
   </section>`;
 }
@@ -4724,7 +4774,7 @@ async function famSync(){
   try{
     for(const r of famille.partage?recRaw.filter(famOk):[]){
       seen.add(r.id);
-      const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,imgIA,imgNon,...rec}=r;
+      const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,imgIA,imgNon,imgGen,...rec}=r;
       rec.etapes=arr(rec.etapes).map(({image,images,...e})=>e);
       const h=hstr(JSON.stringify(rec)+"|"+(photo||"")+"|"+prenomMoi());if(cache[id]===h)continue;
       let ph=null;
@@ -4801,7 +4851,7 @@ const lienUrl=t=>APP_URL+"recette.html#"+t;
 const newToken=()=>{const a=new Uint8Array(16);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,"0")).join("")};
 // la recette telle qu'elle part : jamais les notes perso, le journal, les voix ni les vidéos
 function packShare(r){
-  const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,partageePar,ajoute,origine,imgIA,imgNon,_raw,_preview,...rec}=r;
+  const {id,photo,voix,videoAsset,videoCut,videoDur,faite,maNote,composants,partageePar,ajoute,origine,imgIA,imgNon,imgGen,_raw,_preview,...rec}=r;
   rec.etapes=arr(rec.etapes).map(({image,images,...e})=>e);
   return rec;
 }
