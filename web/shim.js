@@ -219,7 +219,17 @@ function parseJSON(t){
   try{return JSON.parse(t)}catch{}
   const s=t.search(/[\[{]/);if(s<0)throw err("invalid_json");
   const open=t[s],close=open==="{"?"}":"]",e=t.lastIndexOf(close);
-  try{return JSON.parse(t.slice(s,e+1))}catch{throw err("invalid_json")}
+  try{return JSON.parse(t.slice(s,e+1))}catch{}
+  // la lecture gratuite ajoute parfois une accolade en trop à la fin : on garde la première valeur JSON complète du texte
+  let d=0,q=false,esc=false;
+  for(let i=s;i<t.length;i++){
+    const c=t[i];
+    if(q){if(esc)esc=false;else if(c==="\\")esc=true;else if(c==='"')q=false;continue}
+    if(c==='"')q=true;
+    else if(c==="{"||c==="[")d++;
+    else if((c==="}"||c==="]")&&--d===0){try{return JSON.parse(t.slice(s,i+1))}catch{break}}
+  }
+  throw err("invalid_json");
 }
 /* ---------- images des étapes : demandées à la fonction « image » du serveur de Mijonote (Supabase), qui garde le jeton
    du service d'images. Offre gratuite uniquement : un nombre limité d'images par jour, puis « quota » jusqu'au lendemain. ---------- */
