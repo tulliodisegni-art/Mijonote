@@ -3768,7 +3768,11 @@ const IMG_LANES=3,IMG_BACK=2;
 // Chaque image de l'IA note sa génération dans imgGen (par identifiant). Une image d'une génération d'avant est refaite toute seule :
 // elle reste en place jusqu'à ce que la nouvelle soit là, puis la nouvelle prend sa place.
 const IMG_GEN=3;
-const IMG={run:false,off:false,wait:Number(ls.get("imgia_wait",0))||0,down:0,fails:0,lost:0,told:0,t:null,at:0,force:new Set(),bad:new Set(),later:new Map(),tries:new Map(),pq:new Map(),
+// Quand le service gratuit répond qu'il n'a plus d'images (« quota »), on ne sait pas quand il repart : il annonce minuit UTC, mais
+// une fois vidé il reste fermé bien après (vu le 2026-11-26 : toujours fermé à 00h33 UTC, 14 heures après la dernière image). On lui
+// redemande donc une image toutes les heures, une seule à la fois tant qu'il n'a rien livré : une demande refusée ne coûte rien.
+const IMG_QUOTA_WAIT=3600000;
+const IMG={run:false,off:false,wait:Number(ls.get("imgia_wait",0))||0,probe:false,quotaAt:0,tw:null,down:0,fails:0,lost:0,t:null,at:0,force:new Set(),bad:new Set(),later:new Map(),tries:new Map(),pq:new Map(),
   T:{read:30000,image:25000,job:150000},
   live:new Map(),reading:new Set(),calls:new Set(),slow:new Map(),slowRun:0,slowUndo:[],slowBad:new Set(),slowLaps:new Map(),hid:0,poke:null,putq:Promise.resolve(),noteFor:null,
   // les étapes dont l'image est refusée par le service, même redite autrement : on ne la redemande pas à chaque ouverture de l'appli
@@ -3776,19 +3780,21 @@ const IMG={run:false,off:false,wait:Number(ls.get("imgia_wait",0))||0,down:0,fai
   prompts:(p=>p&&typeof p==="object"&&!Array.isArray(p)?p:{})(ls.get("imgia_p",{}))};
 // les étapes refusées avec les descriptions d'une génération d'avant ont droit à un nouvel essai avec les nouvelles
 if(ls.get("imgia_gen",0)!==IMG_GEN){if(IMG.no.size){IMG.no.clear();ls.set("imgia_no",[])}ls.set("imgia_gen",IMG_GEN)}
+// (une attente notée par une version d'avant allait jusqu'à minuit UTC : elle est ramenée à une heure)
+if(IMG.wait>Date.now()){IMG.probe=true;if(IMG.wait>Date.now()+IMG_QUOTA_WAIT){IMG.wait=Date.now()+IMG_QUOTA_WAIT;ls.set("imgia_wait",IMG.wait)}imgWake()}
 const imgAvail=()=>!!(sample&&sample.image&&db&&assets);
-// Le quota gratuit du jour sert d'abord à la recette qu'on ouvre ou qu'on cuisine : le reste du carnet (travail de fond) n'en prend pas
-// plus de IMG_DAY_BACK par jour, pour qu'il en reste pour elle plus tard dans la journée. Le jour est celui du quota (UTC) ; dans ses
-// trois dernières heures, ce qui reste ne servirait plus à personne : le carnet peut le prendre. (Compté sur cet appareil : c'est une réserve, pas une mesure.)
-// (Le service gratuit s'arrête en vrai vers 80 images par jour, vu le 2026-11-25 : le carnet en laisse environ 25 à la recette qu'on ouvre.)
-const IMG_DAY_BACK=55;
+// Le quota gratuit sert d'abord à la recette qu'on ouvre ou qu'on cuisine : le reste du carnet (travail de fond) n'en prend pas
+// plus de IMG_DAY_BACK par jour (jour UTC, compté sur cet appareil : c'est une réserve, pas une mesure), pour qu'il en reste pour elle.
+// Pas de rattrapage en fin de journée : ce qui n'est pas pris n'est pas perdu, et vider le service le ferme pour de longues heures.
+// (Le 2026-11-25, il s'est fermé après 78 images dans la journée, et sa vraie capacité est peut-être plus basse : le carnet reste en dessous.)
+const IMG_DAY_BACK=45;
 const imgDay=()=>{const d=new Date().toISOString().slice(0,10),s=ls.get("imgia_day",null);return s&&s.d===d&&Number.isFinite(s.n)?s:{d,n:0}};
 const imgCounted=()=>{const s=imgDay();ls.set("imgia_day",{d:s.d,n:s.n+1})};
-const imgBackFull=(going=0)=>new Date().getUTCHours()<21&&imgDay().n+going>=IMG_DAY_BACK;
+const imgBackFull=(going=0)=>imgDay().n+going>=IMG_DAY_BACK;
 const imgAuto=()=>ls.get("imgia",true)!==false;
 // le service existe et n'a pas dit qu'il était fermé
 const imgOpen=()=>imgAvail()&&!IMG.off;
-// plus d'images pour aujourd'hui (le quota gratuit du jour est atteint)
+// plus d'images pour l'instant (le service gratuit a répondu « quota » il y a moins d'une heure)
 const imgQuota=()=>Date.now()<IMG.wait;
 // des images peuvent être créées en ce moment (slack : une courte attente avant un nouvel essai ne change rien à l'écran)
 const imgNow=(slack=0)=>imgOpen()&&!imgQuota()&&Date.now()+slack>=IMG.down&&navigator.onLine!==false;
@@ -3812,7 +3818,7 @@ const imgHeld=id=>(IMG.later.get(id)||0)>Date.now();
 const imgPending=(r,i)=>{const raw=r._raw||r;return IMG.fails<3&&imgNow(65000)&&imgFor(raw)&&!imgHeld(raw.id)&&recRaw.some(x=>x.id===raw.id)&&imgNeeds(raw,i)};
 // (même boîte que les photos : rien ne bouge quand l'image prend sa place)
 const stepWaitHTML=big=>`<div class="steppics wait${big?" big":""}" role="status"><span><i>${L("Image en cours…","Picture on its way…")}</i></span></div>`;
-const IMG_QUOTA=()=>L("Plus d'images pour aujourd'hui : la suite se crée demain.","No more pictures today: the rest comes tomorrow.");
+const IMG_QUOTA=()=>L("Plus d'images pour l'instant : la suite se crée plus tard.","No more pictures for now: the rest comes later.");
 // au-dessus des étapes : les schémas à dessiner (quand les images ne se créent pas toutes seules), les images à demander, ou le mot d'attente
 function stepsHeadHTML(r,opt){
   if(opt.temp||!db||!assets)return "";
@@ -3961,7 +3967,7 @@ async function imgRun(){
   try{
     try{stepPicsSync()}catch(e){console.error(e)}
     for(;;){
-      while(live.size<IMG_LANES&&imgNow()&&document.visibilityState!=="hidden"){
+      while(live.size<(IMG.probe?1:IMG_LANES)&&imgNow()&&document.visibilityState!=="hidden"){
         const job=imgNext();if(!job)break;
         IMG.live.set(job.key,job);
         // (une image qui ne répondrait jamais ne garde pas sa place : au bout du délai, la suite passe)
@@ -4115,10 +4121,14 @@ function imgSlowAgain(id){
 }
 // (plusieurs images en route ratent souvent ensemble : c'est un seul raté)
 const imgLater=ms=>{const now=Date.now();if(now>=IMG.down)IMG.fails++;IMG.down=Math.max(IMG.down,now+(IMG.fails>=3?300000:ms))};
-const imgMidnight=()=>{const d=new Date();return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1,0,2)}; // le quota gratuit repart à minuit UTC
+// à la fin de l'attente, la création repart toute seule si l'appli est restée ouverte
+function imgWake(){
+  clearTimeout(IMG.tw);IMG.tw=null;
+  const ms=IMG.wait-Date.now();if(ms>0)IMG.tw=setTimeout(()=>{IMG.tw=null;try{imgUi()}catch(e){console.error(e)}imgSoon(500)},ms+1000);
+}
 function imgStop(e){
   const c=e?.code;
-  if(c==="quota"){IMG.wait=imgMidnight();ls.set("imgia_wait",IMG.wait);return true}
+  if(c==="quota"){IMG.quotaAt=Date.now();IMG.wait=IMG.quotaAt+IMG_QUOTA_WAIT;IMG.probe=true;ls.set("imgia_wait",IMG.wait);imgWake();return true}
   if(c==="off"){IMG.off=true;return true} // service pas branché : on n'insiste pas
   return false;
 }
@@ -4143,11 +4153,14 @@ async function imgOne({id,i,key,old}){
   // (l'image à refaire a pu être retirée ou changée pendant la lecture : on ne demande pas une image pour rien)
   if(old&&!arr(recRaw.find(x=>x.id===id)?.etapes).some(s=>stepIds(s).includes(old)))return false;
   // step : 0 = la description telle quelle, 1 = sans les mots que le filtre prend pour autre chose, 2 = redite par la lecture
+  let asked;
   for(let step=0;;){
+    asked=Date.now();
     try{got=await imgCall(IMG.T.image,signal=>sample.image(imgText(P,i,text),{seed:imgSeed(id,i),signal}));break}
     catch(err){
       if(err?.soft)return false;
-      if(imgStop(err)){if(err?.code==="quota"&&openId&&IMG.told!==IMG.wait){IMG.told=IMG.wait;toast(IMG_QUOTA())}return false}
+      const first=!IMG.probe; // (un seul message : pas à chaque image de la vague, ni à chaque nouvel essai d'heure en heure)
+      if(imgStop(err)){if(err?.code==="quota"&&openId&&first)toast(IMG_QUOTA());return false}
       if(err?.code==="timeout"||err?.code==="slow"){imgSlow(key,()=>{IMG.bad.add(key);IMG.slowBad.add(key)},()=>{IMG.bad.delete(key);IMG.slowBad.delete(key)});return false} // pas de réponse dans les temps
       if(err?.code!=="refused"){imgLater(15000);return false} // service occupé, réseau
       imgAnswered(); // (un refus est une réponse : le service ne rame pas)
@@ -4164,6 +4177,7 @@ async function imgOne({id,i,key,old}){
   // la description qui est passée remplace l'autre (« Refaire l'image » s'en sert)
   if(text!==P.p[i]&&IMG.prompts[id]===P){P.p[i]=text;ls.set("imgia_p",IMG.prompts)}
   IMG.fails=0;imgAnswered(); // le service répond
+  if(asked>IMG.quotaAt)IMG.probe=false; // (une image demandée avant son refus ne dit pas qu'il est reparti)
   imgCounted();
   // Chaque image reçue compte dans le quota gratuit du jour : quoi qu'il arrive ensuite, cette étape n'en redemande pas d'autre
   // toute seule avant la prochaine ouverture de l'appli (« Créer les images » la redemande).
@@ -4206,7 +4220,8 @@ async function imgRedo(r,i,old){
   let aid=null;
   try{
     const P=await imgPrompts(raw);if(!String(P.p[i]||"").trim())return oops();
-    const got=await imgCall(IMG.T.image,signal=>sample.image(imgText(P,i),{seed:Math.floor(Math.random()*2147483647),signal}));
+    const asked=Date.now(),got=await imgCall(IMG.T.image,signal=>sample.image(imgText(P,i),{seed:Math.floor(Math.random()*2147483647),signal}));
+    if(asked>IMG.quotaAt)IMG.probe=false;
     imgCounted();
     const fit=await imgFit(got);
     aid=(await assets.upload(fit,{type:"image/jpeg"})).id;
